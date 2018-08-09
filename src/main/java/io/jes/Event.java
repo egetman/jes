@@ -2,8 +2,10 @@ package io.jes;
 
 public interface Event {
 
-    Link link();
+    long getId();
 
-    long version();
+    void setId(long id);
+
+    String stream();
 
 }

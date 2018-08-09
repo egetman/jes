@@ -1,10 +1,11 @@
-package io.jes;
+package io.jes.provider;
 
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
-@SuppressWarnings("unused")
-public interface JEventStore {
+import io.jes.Event;
+
+public interface StoreProvider {
 
     Stream<Event> readFrom(long offset);
 
