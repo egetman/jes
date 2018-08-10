@@ -1,11 +1,10 @@
-package io.jes.provider.jdbc;
+package io.jes.provider;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.Objects;
 import java.util.Spliterators.AbstractSpliterator;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
@@ -15,30 +14,25 @@ import javax.annotation.Nonnull;
 import javax.sql.DataSource;
 
 import io.jes.Event;
-import io.jes.serializer.EventSerializer;
-import io.jes.serializer.KryoBinaryEventSerializer;
 import io.jes.ex.BrokenStoreException;
-import io.jes.ex.RewriteEventException;
-import io.jes.provider.StoreProvider;
+import io.jes.provider.jdbc.DataSourceSyntax;
+import io.jes.provider.jdbc.DataSourceSyntaxFactory;
+import io.jes.provider.jdbc.DataSourceType;
+import io.jes.serializer.EventSerializer;
+import io.jes.serializer.SerializerFactory;
 import lombok.extern.slf4j.Slf4j;
 
 import static java.lang.Long.MAX_VALUE;
+import static java.util.Objects.requireNonNull;
 import static java.util.Spliterator.ORDERED;
 
 @Slf4j
 public class JdbcStoreProvider implements StoreProvider {
 
-    @SuppressWarnings("SqlResolve")
-    private static final String SEQUENCE_CALL = "SELECT max(id) FROM event_store";
-    private static final String READ_EVENTS = "SELECT * FROM event_store WHERE id > ? ORDER BY id";
-    private static final String READ_EVENTS_BY_LINK = "SELECT * FROM event_store WHERE stream = ? ORDER BY id";
-    private static final String WRITE_EVENTS = "INSERT INTO event_store (id, stream, data) VALUES (?, ?, ?)";
-    private static final String CREATE_EVENT_STORE = "CREATE TABLE IF NOT EXISTS event_store "
-            + "(id BIGINT NOT NULL PRIMARY KEY, stream VARCHAR(256) NOT NULL, data BYTEA NOT NULL);";
-
-    private final EventSerializer<byte[]> serializer = new KryoBinaryEventSerializer();
+    private final EventSerializer<byte[]> serializer = SerializerFactory.binarySerializer();
 
     private final DataSource dataSource;
+    private final DataSourceSyntax syntax;
     private final SequenceGenerator sequenceGenerator;
     private final Consumer<AutoCloseable> closeQuietly = resource -> {
         try {
@@ -49,11 +43,12 @@ public class JdbcStoreProvider implements StoreProvider {
     };
 
     @SuppressWarnings("WeakerAccess")
-    public JdbcStoreProvider(@Nonnull DataSource dataSource) {
-        this.dataSource = Objects.requireNonNull(dataSource);
+    public JdbcStoreProvider(@Nonnull DataSource dataSource, @Nonnull DataSourceType type) {
+        this.dataSource = requireNonNull(dataSource);
+        this.syntax = DataSourceSyntaxFactory.forType(requireNonNull(type));
         try {
-            createEventStore(dataSource.getConnection(), CREATE_EVENT_STORE);
-            this.sequenceGenerator = new SequenceGenerator(dataSource);
+            createEventStore(dataSource.getConnection(), syntax.createStore());
+            this.sequenceGenerator = new SequenceGenerator(dataSource, syntax);
         } catch (Exception e) {
             throw new BrokenStoreException(e);
         }
@@ -67,18 +62,18 @@ public class JdbcStoreProvider implements StoreProvider {
             connection.commit();
         } catch (Exception e) {
             connection.rollback();
-            throw new BrokenStoreException(e);
+            throw e;
         }
     }
 
     @Override
     public Stream<Event> readFrom(long offset) {
-        return readBy(offset, READ_EVENTS);
+        return readBy(offset, syntax.readEvents());
     }
 
     @Override
     public Stream<Event> readBy(@Nonnull String stream) {
-        return readBy(stream, READ_EVENTS_BY_LINK);
+        return readBy(stream, syntax.readEventsByStream());
     }
 
     private Stream<Event> readBy(@Nonnull Object value, @Nonnull String from) {
@@ -97,11 +92,12 @@ public class JdbcStoreProvider implements StoreProvider {
                             return false;
                         }
 
-                        final InputStream stream = set.getBinaryStream("data");
+                        final InputStream stream = set.getBinaryStream(syntax.eventContentName());
                         byte[] bytes = new byte[stream.available()];
                         //noinspection ResultOfMethodCallIgnored
                         stream.read(bytes, 0, stream.available());
-                        action.accept(serializer.deserialize(bytes));
+                        final EventWrapper wrapper = (EventWrapper) serializer.deserialize(bytes);
+                        action.accept(wrapper.unwrap());
                     } catch (Exception e) {
                         throw new BrokenStoreException(e);
                     }
@@ -119,10 +115,7 @@ public class JdbcStoreProvider implements StoreProvider {
 
     @Override
     public void write(@Nonnull Event event) {
-        if (event.getId() != 0) {
-            throw new RewriteEventException(event);
-        }
-        writeTo(event, WRITE_EVENTS);
+        writeTo(event, syntax.writeEvents());
     }
 
     @SuppressWarnings("SameParameterValue")
@@ -131,15 +124,13 @@ public class JdbcStoreProvider implements StoreProvider {
              final PreparedStatement statement = connection.prepareStatement(where)) {
 
             connection.setAutoCommit(false);
-            final long id = sequenceGenerator.nextSequenceNum();
-            event.setId(id);
-            final byte[] bytes = serializer.serialize(event);
+            final EventWrapper wrapper = new EventWrapper(sequenceGenerator.nextSequenceNum(), event);
+            final byte[] bytes = serializer.serialize(wrapper);
 
-            try (InputStream inputStream = new ByteArrayInputStream(bytes)) {
-
-                statement.setLong(1, id);
-                statement.setString(2, event.stream());
-                statement.setBinaryStream(3, inputStream);
+            try {
+                statement.setLong(1, wrapper.id());
+                statement.setString(2, wrapper.stream());
+                statement.setBinaryStream(3, new ByteArrayInputStream(bytes));
 
                 statement.executeUpdate();
                 connection.commit();
@@ -156,13 +147,13 @@ public class JdbcStoreProvider implements StoreProvider {
 
         private static final AtomicLong GENERATOR = new AtomicLong();
 
-        SequenceGenerator(DataSource dataSource) throws Exception {
+        SequenceGenerator(DataSource dataSource, DataSourceSyntax syntax) throws Exception {
             try (Connection connection = dataSource.getConnection();
-                 PreparedStatement statement = connection.prepareStatement(SEQUENCE_CALL);
+                 PreparedStatement statement = connection.prepareStatement(syntax.nextSequenceNumber());
                  ResultSet result = statement.executeQuery()) {
 
                 if (result.next()) {
-                    GENERATOR.set(result.getLong("max"));
+                    GENERATOR.set(result.getLong(syntax.sequenceValueName()));
                 }
             }
         }

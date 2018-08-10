@@ -10,7 +10,8 @@ import org.postgresql.Driver;
 import org.testcontainers.containers.PostgreSQLContainer;
 
 import io.jes.provider.StoreProvider;
-import io.jes.provider.jdbc.JdbcStoreProvider;
+import io.jes.provider.JdbcStoreProvider;
+import io.jes.provider.jdbc.DataSourceType;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -18,7 +19,7 @@ class JdbcStoreProviderTest {
 
     @Test
     void shouldReadOwnWrites() {
-        StoreProvider provider = new JdbcStoreProvider(createDataSource());
+        StoreProvider provider = new JdbcStoreProvider(createDataSource(), DataSourceType.POSTGRESQL);
         provider.write(new SampleEvent("FOO"));
         provider.write(new SampleEvent("BAR"));
         provider.write(new SampleEvent("BAZ"));

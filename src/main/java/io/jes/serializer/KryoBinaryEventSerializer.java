@@ -15,11 +15,11 @@ import io.jes.ex.SerializationException;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class KryoBinaryEventSerializer implements EventSerializer<byte[]> {
+class KryoBinaryEventSerializer implements EventSerializer<byte[]> {
 
     private final Kryo kryo = new Kryo();
 
-    public KryoBinaryEventSerializer() {
+    KryoBinaryEventSerializer() {
         kryo.setRegistrationRequired(false);
         kryo.setInstantiatorStrategy(new DefaultInstantiatorStrategy(new StdInstantiatorStrategy()));
     }

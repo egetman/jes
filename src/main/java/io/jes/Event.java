@@ -1,11 +1,16 @@
 package io.jes;
 
+import javax.annotation.Nullable;
+
 public interface Event {
 
-    long getId();
+    @Nullable
+    default String stream() {
+        return null;
+    }
 
-    void setId(long id);
-
-    String stream();
+    default long streamVersion() {
+        return -1;
+    }
 
 }
