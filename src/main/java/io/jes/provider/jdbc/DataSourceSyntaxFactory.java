@@ -4,7 +4,7 @@ public class DataSourceSyntaxFactory {
 
     private static final String UNSUPPORTED_TYPE = "%s for %s type not supported";
 
-    public static DataSourceSyntax forType(DataSourceType type) {
+    public static DataSourceSyntax newDataSourceSyntax(DataSourceType type) {
         switch (type) {
             case POSTGRESQL:
                 return new PostgreSQLSyntax();

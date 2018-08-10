@@ -2,7 +2,7 @@ package io.jes.provider.jdbc;
 
 public interface DataSourceSyntax {
 
-    String createStore();
+    String createStore(Class<?> contentType);
 
     String writeEvents();
 
@@ -12,7 +12,4 @@ public interface DataSourceSyntax {
 
     String readEventsByStream();
 
-    String sequenceValueName();
-
-    String nextSequenceNumber();
 }

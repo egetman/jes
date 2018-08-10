@@ -15,7 +15,7 @@
         <logback.version>1.2.3</logback.version>
 
         <HikariCP.version>2.7.1</HikariCP.version>
-        <postgresql.version>9.4.1212.jre7</postgresql.version>
+        <postgresql.version>42.2.4</postgresql.version>
         <testcontainers.version>1.7.0</testcontainers.version>
         <junit-jupiter-api.version>5.2.0</junit-jupiter-api.version>
     </properties>

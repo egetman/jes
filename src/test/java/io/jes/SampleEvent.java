@@ -13,7 +13,7 @@ class SampleEvent implements Event {
 
     @Override
     public String stream() {
-        return null;
+        return stream;
     }
 
     @Override

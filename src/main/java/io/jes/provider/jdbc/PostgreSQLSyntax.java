@@ -2,18 +2,21 @@ package io.jes.provider.jdbc;
 
 class PostgreSQLSyntax implements DataSourceSyntax {
 
-    private static final String SEQUENCE_VALUE_NAME = "max";
     private static final String EVENT_CONTENT_NAME = "data";
-    private static final String SEQUENCE_CALL = "SELECT max(id) FROM event_store";
     private static final String READ_EVENTS = "SELECT * FROM event_store WHERE id > ? ORDER BY id";
     private static final String READ_EVENTS_BY_STREAM = "SELECT * FROM event_store WHERE stream = ? ORDER BY id";
-    private static final String WRITE_EVENTS = "INSERT INTO event_store (id, stream, data) VALUES (?, ?, ?)";
+    private static final String WRITE_EVENTS = "INSERT INTO event_store (stream, data) VALUES (?, ?)";
+
     private static final String CREATE_EVENT_STORE = "CREATE TABLE IF NOT EXISTS event_store "
-            + "(id BIGINT NOT NULL PRIMARY KEY, stream VARCHAR(256), data BYTEA NOT NULL);";
+            + "(id BIGSERIAL PRIMARY KEY, stream VARCHAR(32), data %s NOT NULL);";
 
     @Override
-    public String createStore() {
-        return CREATE_EVENT_STORE;
+    public String createStore(Class<?> contentType) {
+        if (contentType != String.class && contentType != byte[].class) {
+            throw new IllegalArgumentException("Illegal type of content column: " + contentType);
+        }
+        final String type = contentType == String.class ? "TEXT" : "BYTEA";
+        return String.format(CREATE_EVENT_STORE, type);
     }
 
     @Override
@@ -36,13 +39,4 @@ class PostgreSQLSyntax implements DataSourceSyntax {
         return EVENT_CONTENT_NAME;
     }
 
-    @Override
-    public String sequenceValueName() {
-        return SEQUENCE_VALUE_NAME;
-    }
-
-    @Override
-    public String nextSequenceNumber() {
-        return SEQUENCE_CALL;
-    }
 }
