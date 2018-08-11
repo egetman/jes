@@ -12,6 +12,7 @@ import javax.sql.DataSource;
 
 import io.jes.Event;
 import io.jes.ex.BrokenStoreException;
+import io.jes.ex.VersionMismatchException;
 import io.jes.provider.jdbc.DataSourceSyntax;
 import io.jes.provider.jdbc.DataSourceSyntaxFactory;
 import io.jes.provider.jdbc.DataSourceType;
@@ -52,15 +53,9 @@ public class JdbcStoreProvider<T> implements StoreProvider {
         }
     }
 
-    @SuppressWarnings("SameParameterValue")
     private void createEventStore(@Nonnull Connection connection, @Nonnull String ddl) throws Exception {
         try (PreparedStatement statement = connection.prepareStatement(ddl)) {
-            connection.setAutoCommit(false);
             statement.executeUpdate();
-            connection.commit();
-        } catch (Exception e) {
-            connection.rollback();
-            throw e;
         }
     }
 
@@ -118,21 +113,33 @@ public class JdbcStoreProvider<T> implements StoreProvider {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement statement = connection.prepareStatement(where)) {
 
-            connection.setAutoCommit(false);
+            final String stream = event.stream();
+            final long expectedVersion = event.expectedStreamVersion();
+            if (stream != null && expectedVersion != -1) {
+                try (PreparedStatement versionStatement = connection.prepareStatement(syntax.eventsStreamVersion())) {
+                    versionStatement.setString(1, stream);
+                    final ResultSet query = versionStatement.executeQuery();
+                    if (!query.next()) {
+                        throw new BrokenStoreException("Can't read stream [" + stream + "] version");
+                    }
+                    final long actualVersion = query.getLong(1);
+                    if (expectedVersion != actualVersion) {
+                        throw new VersionMismatchException(expectedVersion, actualVersion);
+                    }
+                }
+            }
+
             final T data = serializer.serialize(event);
 
-            try {
-                statement.setString(1, event.stream());
-                statement.setObject(2, data);
+            statement.setString(1, stream);
+            statement.setObject(2, data);
 
-                statement.executeUpdate();
-                connection.commit();
-            } catch (Exception e) {
-                connection.rollback();
-                throw e;
-            }
+            statement.executeUpdate();
+        } catch (BrokenStoreException | VersionMismatchException e) {
+            throw e;
         } catch (Exception e) {
             throw new BrokenStoreException(e);
         }
     }
+
 }

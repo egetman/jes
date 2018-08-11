@@ -9,7 +9,7 @@ public interface Event {
         return null;
     }
 
-    default long streamVersion() {
+    default long expectedStreamVersion() {
         return -1;
     }
 

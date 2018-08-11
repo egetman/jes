@@ -4,12 +4,14 @@ public interface DataSourceSyntax {
 
     String createStore(Class<?> contentType);
 
+    String eventContentName();
+
+
     String writeEvents();
 
     String readEvents();
 
-    String eventContentName();
-
     String readEventsByStream();
 
+    String eventsStreamVersion();
 }
