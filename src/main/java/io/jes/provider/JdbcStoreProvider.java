@@ -8,6 +8,7 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.sql.DataSource;
 
 import io.jes.Event;
@@ -42,10 +43,22 @@ public class JdbcStoreProvider<T> implements StoreProvider {
     public JdbcStoreProvider(@Nonnull DataSource dataSource,
                              @Nonnull DataSourceType type,
                              @Nonnull Class<T> serializationType) {
+        this(dataSource, type, serializationType, null);
+    }
+
+    @SuppressWarnings("WeakerAccess")
+    public JdbcStoreProvider(@Nonnull DataSource dataSource,
+                             @Nonnull DataSourceType type,
+                             @Nonnull Class<T> serializationType,
+                             @Nullable String schema) {
         try {
             this.dataSource = requireNonNull(dataSource);
             this.serializer = SerializerFactory.newEventSerializer(serializationType);
-            this.syntax = DataSourceSyntaxFactory.newDataSourceSyntax(requireNonNull(type));
+
+            requireNonNull(type);
+            final String usedSchema = schema != null && !schema.isEmpty() ? schema : getSchema(dataSource);
+
+            this.syntax = DataSourceSyntaxFactory.newDataSourceSyntax(type, usedSchema);
 
             createEventStore(dataSource.getConnection(), syntax.createStore(serializationType));
         } catch (Exception e) {
@@ -56,6 +69,13 @@ public class JdbcStoreProvider<T> implements StoreProvider {
     private void createEventStore(@Nonnull Connection connection, @Nonnull String ddl) throws Exception {
         try (PreparedStatement statement = connection.prepareStatement(ddl)) {
             statement.executeUpdate();
+        }
+    }
+
+    @Nullable
+    private String getSchema(DataSource dataSource) throws Exception {
+        try (Connection connection = dataSource.getConnection()) {
+            return connection.getSchema();
         }
     }
 

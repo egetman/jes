@@ -20,10 +20,14 @@ import lombok.extern.slf4j.Slf4j;
 import static io.jes.provider.jdbc.DataSourceType.POSTGRESQL;
 import static java.util.Arrays.asList;
 
-// todo: version caching?
-// todo: multithreaded write
-// todo: store drain-to?
-// todo: event-intersepter
+// todo: version caching? to avoid every-write check
+// todo: multithreaded write - to be or not to be?
+// todo: store drain-to? - recreate event store
+// todo: event-intersepter ?? handling?
+// todo: make snapshotting
+// todo: store structure validation on start
+// todo: event idempotency on read
+
 
 @Slf4j
 class JdbcStoreProviderTest {
