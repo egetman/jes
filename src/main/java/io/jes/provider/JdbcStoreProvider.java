@@ -55,10 +55,8 @@ public class JdbcStoreProvider<T> implements StoreProvider {
             this.dataSource = requireNonNull(dataSource);
             this.serializer = SerializerFactory.newEventSerializer(serializationType);
 
-            requireNonNull(type);
             final String usedSchema = schema != null && !schema.isEmpty() ? schema : getSchema(dataSource);
-
-            this.syntax = DataSourceSyntaxFactory.newDataSourceSyntax(type, usedSchema);
+            this.syntax = DataSourceSyntaxFactory.newDataSourceSyntax(requireNonNull(type), usedSchema);
 
             createEventStore(dataSource.getConnection(), syntax.createStore(serializationType));
         } catch (Exception e) {
@@ -81,12 +79,12 @@ public class JdbcStoreProvider<T> implements StoreProvider {
 
     @Override
     public Stream<Event> readFrom(long offset) {
-        return readBy(offset, syntax.readEvents());
+        return readBy(offset, syntax.queryEvents());
     }
 
     @Override
     public Stream<Event> readBy(@Nonnull String stream) {
-        return readBy(stream, syntax.readEventsByStream());
+        return readBy(stream, syntax.queryEventsByStream());
     }
 
     private Stream<Event> readBy(@Nonnull Object value, @Nonnull String from) {
@@ -126,7 +124,7 @@ public class JdbcStoreProvider<T> implements StoreProvider {
 
     @Override
     public void write(@Nonnull Event event) {
-        writeTo(event, syntax.writeEvents());
+        writeTo(event, syntax.insertEvents());
     }
 
     private void writeTo(Event event, String where) {
@@ -136,7 +134,7 @@ public class JdbcStoreProvider<T> implements StoreProvider {
             final String stream = event.stream();
             final long expectedVersion = event.expectedStreamVersion();
             if (stream != null && expectedVersion != -1) {
-                try (PreparedStatement versionStatement = connection.prepareStatement(syntax.eventsStreamVersion())) {
+                try (PreparedStatement versionStatement = connection.prepareStatement(syntax.queryEventsStreamVersion())) {
                     versionStatement.setString(1, stream);
                     final ResultSet query = versionStatement.executeQuery();
                     if (!query.next()) {

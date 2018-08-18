@@ -11,14 +11,14 @@ public interface DataSourceSyntax {
     String eventContentName();
 
     @Nonnull
-    String writeEvents();
+    String insertEvents();
 
     @Nonnull
-    String readEvents();
+    String queryEvents();
 
     @Nonnull
-    String readEventsByStream();
+    String queryEventsByStream();
 
     @Nonnull
-    String eventsStreamVersion();
+    String queryEventsStreamVersion();
 }

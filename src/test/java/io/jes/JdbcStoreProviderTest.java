@@ -26,7 +26,7 @@ import static java.util.Arrays.asList;
 // todo: event-intersepter ?? handling?
 // todo: make snapshotting
 // todo: store structure validation on start
-// todo: event idempotency on read
+// todo: event idempotency on read (clustered environment)
 
 
 @Slf4j

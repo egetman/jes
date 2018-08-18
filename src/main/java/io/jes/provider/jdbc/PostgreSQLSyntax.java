@@ -9,16 +9,16 @@ class PostgreSQLSyntax implements DataSourceSyntax {
     private static final String READ_EVENTS_STREAM_VERSION = "SELECT count(*) FROM %sevent_store WHERE stream = ?";
     private static final String WRITE_EVENTS = "INSERT INTO %sevent_store (stream, data) VALUES (?, ?)";
 
+    private static final String EVENT_CONTENT_NAME = "data";
     private static final String CREATE_SCHEMA = "CREATE SCHEMA IF NOT EXISTS %s;";
     private static final String CREATE_TABLE = "CREATE TABLE IF NOT EXISTS %sevent_store "
-            + "(id BIGSERIAL PRIMARY KEY, stream VARCHAR(36), data %s NOT NULL);";
-    private static final String EVENT_CONTENT_NAME = "data";
+            + "(id BIGSERIAL PRIMARY KEY, stream VARCHAR(36), " + EVENT_CONTENT_NAME + " %s NOT NULL);";
 
     private final String schema;
-    private String readEvents;
-    private String readEventsByStream;
-    private String readEventsStreamVersion;
-    private String writeEvents;
+    private String queryEvents;
+    private String queryEventsByStream;
+    private String queryEventsStreamVersion;
+    private String insertEvents;
 
     PostgreSQLSyntax(String schema) {
         this.schema = schema;
@@ -48,39 +48,39 @@ class PostgreSQLSyntax implements DataSourceSyntax {
 
     @Nonnull
     @Override
-    public String writeEvents() {
-        if (writeEvents == null) {
-            writeEvents = String.format(WRITE_EVENTS, formatSchema());
+    public String insertEvents() {
+        if (insertEvents == null) {
+            insertEvents = String.format(WRITE_EVENTS, formatSchema());
         }
-        return writeEvents;
+        return insertEvents;
     }
 
     @Nonnull
     @Override
-    public String readEvents() {
-        if (readEvents == null) {
-            readEvents = String.format(READ_EVENTS, formatSchema());
+    public String queryEvents() {
+        if (queryEvents == null) {
+            queryEvents = String.format(READ_EVENTS, formatSchema());
         }
-        return readEvents;
+        return queryEvents;
     }
 
     @Nonnull
     @Override
-    public String readEventsByStream() {
-        if (readEventsByStream == null) {
-            readEventsByStream = String.format(READ_EVENTS_BY_STREAM, formatSchema());
+    public String queryEventsByStream() {
+        if (queryEventsByStream == null) {
+            queryEventsByStream = String.format(READ_EVENTS_BY_STREAM, formatSchema());
         }
-        return readEventsByStream;
+        return queryEventsByStream;
 
     }
 
     @Nonnull
     @Override
-    public String eventsStreamVersion() {
-        if (readEventsStreamVersion == null) {
-            readEventsStreamVersion = String.format(READ_EVENTS_STREAM_VERSION, formatSchema());
+    public String queryEventsStreamVersion() {
+        if (queryEventsStreamVersion == null) {
+            queryEventsStreamVersion = String.format(READ_EVENTS_STREAM_VERSION, formatSchema());
         }
-        return readEventsStreamVersion;
+        return queryEventsStreamVersion;
     }
 
     @Nonnull
