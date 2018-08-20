@@ -8,6 +8,7 @@ import javax.persistence.EntityTransaction;
 import javax.persistence.TypedQuery;
 
 import io.jes.Event;
+import io.jes.ex.BrokenStoreException;
 import io.jes.ex.VersionMismatchException;
 import io.jes.provider.jpa.StoreEntry;
 import io.jes.serializer.EventSerializer;
@@ -71,7 +72,7 @@ public class JpaStoreProvider implements StoreProvider {
             entityManager.persist(storeEntry);
         } catch (Exception e) {
             transaction.setRollbackOnly();
-            throw e;
+            throw new BrokenStoreException(e);
         } finally {
             transaction.commit();
         }
