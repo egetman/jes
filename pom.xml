@@ -13,9 +13,11 @@
         <jsr305.version>3.0.1</jsr305.version>
         <lombok.version>1.16.18</lombok.version>
         <logback.version>1.2.3</logback.version>
+        <postgresql.version>42.2.4</postgresql.version>
+        <javax.persistence-api.version>2.2</javax.persistence-api.version>
 
         <HikariCP.version>2.7.1</HikariCP.version>
-        <postgresql.version>42.2.4</postgresql.version>
+        <hibernate.version>5.3.5.Final</hibernate.version>
         <testcontainers.version>1.7.0</testcontainers.version>
         <junit-jupiter-api.version>5.2.0</junit-jupiter-api.version>
     </properties>
@@ -29,24 +31,49 @@
     </repositories>
 
     <dependencies>
+        <!-- for clear some mess of getters/setters -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <version>${lombok.version}</version>
         </dependency>
 
+        <!-- nullble-nonnull annotations -->
         <dependency>
             <groupId>com.google.code.findbugs</groupId>
             <artifactId>jsr305</artifactId>
             <version>${jsr305.version}</version>
         </dependency>
 
+        <!-- for JpaStoreProvider-->
+        <dependency>
+            <groupId>javax.persistence</groupId>
+            <artifactId>javax.persistence-api</artifactId>
+            <version>${javax.persistence-api.version}</version>
+        </dependency>
+
+        <!-- for postgresql JdbcStoreProvider-->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>${postgresql.version}</version>
+            <scope>compile</scope>
+            <exclusions>
+                <exclusion>
+                    <artifactId>commons-logging</artifactId>
+                    <groupId>commons-logging</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <!-- for BinaryEventSerializer -->
         <dependency>
             <groupId>com.esotericsoftware</groupId>
             <artifactId>kryo</artifactId>
             <version>${kryo.version}</version>
         </dependency>
 
+        <!-- logging -->
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
@@ -59,10 +86,18 @@
             <version>${logback.version}</version>
         </dependency>
 
+        <!-- test dependencies -->
         <dependency>
             <groupId>com.zaxxer</groupId>
             <artifactId>HikariCP</artifactId>
             <version>${HikariCP.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-core</artifactId>
+            <version>${hibernate.version}</version>
             <scope>test</scope>
         </dependency>
 
@@ -91,19 +126,6 @@
             <artifactId>junit-jupiter-api</artifactId>
             <version>${junit-jupiter-api.version}</version>
             <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.postgresql</groupId>
-            <artifactId>postgresql</artifactId>
-            <version>${postgresql.version}</version>
-            <scope>compile</scope>
-            <exclusions>
-                <exclusion>
-                    <artifactId>commons-logging</artifactId>
-                    <groupId>commons-logging</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
     </dependencies>

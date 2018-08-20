@@ -1,7 +1,8 @@
-package io.jes;
+package io.jes.provider;
 
 import java.util.UUID;
 
+import io.jes.Event;
 import lombok.EqualsAndHashCode;
 
 @EqualsAndHashCode
