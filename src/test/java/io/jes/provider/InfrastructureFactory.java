@@ -28,9 +28,6 @@ import lombok.extern.slf4j.Slf4j;
 import static org.hibernate.cfg.AvailableSettings.DIALECT;
 import static org.hibernate.cfg.AvailableSettings.FORMAT_SQL;
 import static org.hibernate.cfg.AvailableSettings.HBM2DDL_AUTO;
-import static org.hibernate.cfg.AvailableSettings.JPA_JDBC_PASSWORD;
-import static org.hibernate.cfg.AvailableSettings.JPA_JDBC_URL;
-import static org.hibernate.cfg.AvailableSettings.JPA_JDBC_USER;
 import static org.hibernate.cfg.AvailableSettings.SHOW_SQL;
 import static org.hibernate.cfg.AvailableSettings.STATEMENT_BATCH_SIZE;
 import static org.hibernate.cfg.AvailableSettings.USE_QUERY_CACHE;
@@ -70,24 +67,23 @@ final class InfrastructureFactory {
 
     @SuppressWarnings("WeakerAccess")
     static EntityManagerFactory newEntityManagerFactory() {
-        PostgreSQLContainer<?> container = newPostgreSQLContainer();
-        return new HibernatePersistenceProvider().createContainerEntityManagerFactory(archiverPersistenceUnitInfo(),
+        return new HibernatePersistenceProvider().createContainerEntityManagerFactory(persistenceUnitInfo(),
                 ImmutableMap.<String, Object>builder()
                         .put(DIALECT, PostgreSQL95Dialect.class)
                         .put(USE_QUERY_CACHE, false)
                         .put(SHOW_SQL, true)
                         .put(FORMAT_SQL, true)
-                        .put(JPA_JDBC_URL, container.getJdbcUrl())
-                        .put(JPA_JDBC_USER, container.getUsername())
-                        .put(JPA_JDBC_PASSWORD, container.getPassword())
                         .put(USE_STRUCTURED_CACHE, false)
                         .put(STATEMENT_BATCH_SIZE, 20)
                         .put(HBM2DDL_AUTO, "create")
                         .build());
     }
 
-    private static PersistenceUnitInfo archiverPersistenceUnitInfo() {
+    private static PersistenceUnitInfo persistenceUnitInfo() {
         return new PersistenceUnitInfo() {
+
+            private final DataSource dataSource = newDataSource();
+
             @Override
             public String getPersistenceUnitName() {
                 return "jes";
@@ -105,7 +101,7 @@ final class InfrastructureFactory {
 
             @Override
             public DataSource getJtaDataSource() {
-                return null;
+                return dataSource;
             }
 
             @Override
@@ -121,9 +117,7 @@ final class InfrastructureFactory {
             @Override
             public List<URL> getJarFileUrls() {
                 try {
-                    return Collections.list(this.getClass()
-                            .getClassLoader()
-                            .getResources(""));
+                    return Collections.list(this.getClass().getClassLoader().getResources(""));
                 } catch (IOException e) {
                     throw new UncheckedIOException(e);
                 }
@@ -151,7 +145,7 @@ final class InfrastructureFactory {
 
             @Override
             public ValidationMode getValidationMode() {
-                return null;
+                return ValidationMode.AUTO;
             }
 
             @Override

@@ -55,7 +55,7 @@ public class JpaStoreProvider implements StoreProvider {
                     "SELECT COUNT(entity) FROM io.jes.provider.jpa.StoreEntry entity WHERE entity.stream = :stream",
                     Long.class
             );
-
+            versionQuery.setParameter("stream", stream);
             final Long actualVersion = versionQuery.getSingleResult();
             if (expectedVersion != actualVersion) {
                 throw new VersionMismatchException(expectedVersion, actualVersion);
