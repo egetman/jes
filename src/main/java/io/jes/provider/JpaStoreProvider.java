@@ -15,25 +15,29 @@ import io.jes.serializer.EventSerializer;
 import io.jes.serializer.SerializerFactory;
 
 @SuppressWarnings("JpaQlInspection")
-public class JpaStoreProvider implements StoreProvider {
+public class JpaStoreProvider<T> implements StoreProvider {
 
     private final EntityManager entityManager;
-    private final EventSerializer<byte[]> serializer = SerializerFactory.newBinarySerializer();
+    private final EventSerializer<T> serializer;
 
-    public JpaStoreProvider(@Nonnull EntityManager entityManager) {
+    public JpaStoreProvider(@Nonnull EntityManager entityManager,  @Nonnull Class<T> serializationType) {
         this.entityManager = Objects.requireNonNull(entityManager, "EntityManager must not be null");
-
+        if (serializationType != byte[].class) {
+            throw new IllegalArgumentException(serializationType + " serialization don't supported for " + getClass());
+        }
+        this.serializer = SerializerFactory.newEventSerializer(Objects.requireNonNull(serializationType));
     }
 
     @Override
     public Stream<Event> readFrom(long offset) {
         final TypedQuery<StoreEntry> query = entityManager.createQuery(
-                "SELECT entity FROM io.jes.provider.jpa.StoreEntry entity WHERE entity.id > :id ORDER BY entity.id",
+                "SELECT entity FROM io.jes.provider.jpa.StoreEntry entity WHERE entity.id > :id ORDER BY id",
                 StoreEntry.class
         );
 
         query.setParameter("id", offset);
-        return query.getResultStream().map(storeEntry -> serializer.deserialize(storeEntry.getData()));
+        //noinspection unchecked
+        return query.getResultStream().map(storeEntry -> serializer.deserialize((T) storeEntry.getData()));
     }
 
     @Override
@@ -44,7 +48,8 @@ public class JpaStoreProvider implements StoreProvider {
         );
 
         query.setParameter("stream", stream);
-        return query.getResultStream().map(storeEntry -> serializer.deserialize(storeEntry.getData()));
+        //noinspection unchecked
+        return query.getResultStream().map(storeEntry -> serializer.deserialize((T) storeEntry.getData()));
     }
 
     @Override
@@ -62,7 +67,7 @@ public class JpaStoreProvider implements StoreProvider {
                 throw new VersionMismatchException(expectedVersion, actualVersion);
             }
         }
-        final byte[] data = serializer.serialize(event);
+        final byte[] data = (byte[]) serializer.serialize(event);
         final StoreEntry storeEntry = new StoreEntry(stream, data);
 
         final EntityTransaction transaction = entityManager.getTransaction();

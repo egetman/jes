@@ -15,14 +15,14 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import static lombok.AccessLevel.PACKAGE;
+import static lombok.AccessLevel.PROTECTED;
 
 @Getter
 @Setter
 @Entity
 @Table(name = "event_store")
-@SuppressWarnings({"JpaDataSourceORMInspection", "JpaObjectClassSignatureInspection", "unused"})
-@NoArgsConstructor(access = PACKAGE, force = true)
+@SuppressWarnings({"JpaDataSourceORMInspection"})
+@NoArgsConstructor(access = PROTECTED, force = true)
 public class StoreEntry {
 
     @Id
@@ -37,11 +37,6 @@ public class StoreEntry {
     @Column(name = "data", nullable = false, updatable = false)
     private final byte[] data;
 
-    public StoreEntry(@Nonnull byte[] data) {
-        this(null, data);
-    }
-
-    @SuppressWarnings("WeakerAccess")
     public StoreEntry(@Nullable String stream, @Nonnull byte[] data) {
         this.id = null;
         this.stream = stream;

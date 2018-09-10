@@ -9,7 +9,7 @@ class JpaStoreProviderTest extends StoreProviderTest {
 
     @Override
     StoreProvider createProvider() {
-        return new JpaStoreProvider(newEntityManager());
+        return new JpaStoreProvider<>(newEntityManager(), byte[].class);
     }
 
 }

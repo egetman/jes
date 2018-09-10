@@ -3,7 +3,6 @@ package io.jes.provider;
 import lombok.extern.slf4j.Slf4j;
 
 import static io.jes.provider.InfrastructureFactory.newDataSource;
-import static io.jes.provider.jdbc.DataSourceType.POSTGRESQL;
 
 // todo: version caching? to avoid every-write check
 // todo: multithreaded write - to be or not to be?
@@ -19,7 +18,7 @@ class JdbcStoreProviderTest extends StoreProviderTest {
 
     @Override
     StoreProvider createProvider() {
-        return new JdbcStoreProvider<>(newDataSource(), POSTGRESQL, byte[].class);
+        return new JdbcStoreProvider<>(newDataSource(), byte[].class);
     }
 
 }

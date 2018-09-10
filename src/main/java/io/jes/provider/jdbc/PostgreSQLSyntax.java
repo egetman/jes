@@ -20,7 +20,7 @@ class PostgreSQLSyntax implements DataSourceSyntax {
     private String queryEventsStreamVersion;
     private String insertEvents;
 
-    PostgreSQLSyntax(String schema) {
+    PostgreSQLSyntax(@Nonnull String schema) {
         this.schema = schema;
     }
 
@@ -33,9 +33,7 @@ class PostgreSQLSyntax implements DataSourceSyntax {
         final String type = contentType == String.class ? "TEXT" : "BYTEA";
 
         final StringBuilder ddl = new StringBuilder();
-        if (schema != null) {
-            ddl.append(String.format(CREATE_SCHEMA, schema));
-        }
+        ddl.append(String.format(CREATE_SCHEMA, schema));
         ddl.append(String.format(CREATE_TABLE, formatSchema(), type));
         return ddl.toString();
     }
@@ -85,6 +83,6 @@ class PostgreSQLSyntax implements DataSourceSyntax {
 
     @Nonnull
     private String formatSchema() {
-        return schema != null ? schema + "." : "";
+        return schema + ".";
     }
 }

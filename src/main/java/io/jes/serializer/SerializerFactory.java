@@ -5,6 +5,8 @@ import javax.annotation.Nonnull;
 
 public class SerializerFactory {
 
+    private SerializerFactory() {}
+
     @Nonnull
     @SuppressWarnings("WeakerAccess")
     public static EventSerializer<byte[]> newBinarySerializer() {
