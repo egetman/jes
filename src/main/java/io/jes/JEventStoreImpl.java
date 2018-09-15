@@ -1,6 +1,7 @@
 package io.jes;
 
 import java.util.Objects;
+import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
@@ -30,4 +31,15 @@ public class JEventStoreImpl implements JEventStore {
         provider.write(Objects.requireNonNull(event, "Event must not be null"));
     }
 
+    @Override
+    public void copyTo(JEventStore store) {
+        this.copyTo(store, UnaryOperator.identity());
+    }
+
+    @Override
+    public void copyTo(JEventStore store, UnaryOperator<Event> handler) {
+        try (final Stream<Event> stream = readFrom(0)) {
+            stream.map(handler).forEach(store::write);
+        }
+    }
 }

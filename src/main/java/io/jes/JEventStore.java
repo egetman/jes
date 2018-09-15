@@ -1,5 +1,6 @@
 package io.jes;
 
+import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
@@ -45,5 +46,9 @@ public interface JEventStore {
     Stream<Event> readBy(@Nonnull String stream);
 
     void write(@Nonnull Event event);
+
+    void copyTo(JEventStore store);
+
+    void copyTo(JEventStore store, UnaryOperator<Event> handler);
 
 }
