@@ -34,7 +34,7 @@ abstract class StoreProviderTest {
     }
 
     @Test
-    void shouldReadEventsByStream() {
+    void shouldReadEventsByUuid() {
         StoreProvider provider = createProvider();
 
         final UUID uuid = UUID.randomUUID();

@@ -4,10 +4,12 @@ import java.util.UUID;
 
 import io.jes.Event;
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
 
 @EqualsAndHashCode
-class SampleEvent implements Event {
+public class SampleEvent implements Event {
 
+    @Getter
     private final String name;
     private final UUID uuid;
     private final long expectedStreamVersion;
@@ -20,7 +22,7 @@ class SampleEvent implements Event {
         this(name, uuid, -1);
     }
 
-    SampleEvent(String name, UUID uuid, long expectedStreamVersion) {
+    public SampleEvent(String name, UUID uuid, long expectedStreamVersion) {
         this.name = name;
         this.uuid = uuid;
         this.expectedStreamVersion = expectedStreamVersion;
@@ -41,6 +43,7 @@ class SampleEvent implements Event {
         final StringBuilder sb = new StringBuilder(getClass().getSimpleName() + " [");
         sb.append("name: ").append(name);
         sb.append(", uuid: ").append(uuid);
+        sb.append(", stream version: ").append(expectedStreamVersion);
         sb.append(']');
         return sb.toString();
     }
