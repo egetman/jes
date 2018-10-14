@@ -2,7 +2,7 @@ package io.jes.provider.jdbc;
 
 import javax.annotation.Nonnull;
 
-class PostgreSQLSyntax implements DataSourceSyntax {
+class PostgresDDL implements DDLProducer {
 
     private static final String READ_EVENTS = "SELECT * FROM %sevent_store WHERE id > ? ORDER BY id";
     private static final String READ_EVENTS_BY_STREAM = "SELECT * FROM %sevent_store WHERE uuid = ? ORDER BY id";
@@ -20,7 +20,7 @@ class PostgreSQLSyntax implements DataSourceSyntax {
     private String queryEventsStreamVersion;
     private String insertEvents;
 
-    PostgreSQLSyntax(@Nonnull String schema) {
+    PostgresDDL(@Nonnull String schema) {
         this.schema = schema;
     }
 

@@ -19,8 +19,8 @@ import javax.sql.DataSource;
 import io.jes.Event;
 import io.jes.ex.BrokenStoreException;
 import io.jes.ex.VersionMismatchException;
-import io.jes.provider.jdbc.DataSourceSyntax;
-import io.jes.provider.jdbc.SyntaxFactory;
+import io.jes.provider.jdbc.DDLProducer;
+import io.jes.provider.jdbc.DDLFactory;
 import io.jes.serializer.EventSerializer;
 import io.jes.serializer.SerializerFactory;
 import lombok.SneakyThrows;
@@ -34,7 +34,7 @@ import static java.util.Spliterator.ORDERED;
 public class JdbcStoreProvider<T> implements StoreProvider {
 
     private final DataSource dataSource;
-    private final DataSourceSyntax syntax;
+    private final DDLProducer ddlProducer;
     private final EventSerializer<T> serializer;
 
     @SuppressWarnings("WeakerAccess")
@@ -48,8 +48,8 @@ public class JdbcStoreProvider<T> implements StoreProvider {
                 final String schema = Objects.requireNonNull(connection.getSchema(), "Schema must not be null");
                 final DatabaseMetaData metaData = connection.getMetaData();
                 final String databaseName = metaData.getDatabaseProductName();
-                this.syntax = SyntaxFactory.newDataSourceSyntax(requireNonNull(databaseName), schema);
-                createEventStore(connection, syntax.createStore(serializationType));
+                this.ddlProducer = DDLFactory.newDataSourceSyntax(requireNonNull(databaseName), schema);
+                createEventStore(connection, ddlProducer.createStore(serializationType));
             }
         } catch (Exception e) {
             throw new BrokenStoreException(e);
@@ -65,12 +65,12 @@ public class JdbcStoreProvider<T> implements StoreProvider {
 
     @Override
     public Stream<Event> readFrom(long offset) {
-        return readBy(offset, syntax.queryEvents());
+        return readBy(offset, ddlProducer.queryEvents());
     }
 
     @Override
     public Collection<Event> readBy(@Nonnull UUID uuid) {
-        return readBy(uuid, syntax.queryEventsByStream()).collect(Collectors.toList());
+        return readBy(uuid, ddlProducer.queryEventsByStream()).collect(Collectors.toList());
     }
 
     @SuppressWarnings("squid:S2095")
@@ -98,7 +98,7 @@ public class JdbcStoreProvider<T> implements StoreProvider {
                         return false;
                     }
                     //noinspection unchecked
-                    T data = (T) set.getObject(syntax.eventContentName());
+                    T data = (T) set.getObject(ddlProducer.eventContentName());
                     action.accept(serializer.deserialize(data));
                 } catch (Exception e) {
                     throw new BrokenStoreException(e);
@@ -110,7 +110,7 @@ public class JdbcStoreProvider<T> implements StoreProvider {
 
     @Override
     public void write(@Nonnull Event event) {
-        writeTo(event, syntax.insertEvents());
+        writeTo(event, ddlProducer.insertEvents());
     }
 
     private void writeTo(Event event, String where) {
@@ -138,7 +138,7 @@ public class JdbcStoreProvider<T> implements StoreProvider {
         final UUID uuid = event.uuid();
         final long expectedVersion = event.expectedStreamVersion();
         if (uuid != null && expectedVersion != -1) {
-            try (PreparedStatement versionStatement = connection.prepareStatement(syntax.queryEventsStreamVersion())) {
+            try (PreparedStatement versionStatement = connection.prepareStatement(ddlProducer.queryEventsStreamVersion())) {
                 versionStatement.setObject(1, uuid);
                 try (final ResultSet query = versionStatement.executeQuery()) {
                     if (!query.next()) {

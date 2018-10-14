@@ -2,7 +2,7 @@ package io.jes.provider.jdbc;
 
 import javax.annotation.Nonnull;
 
-public interface DataSourceSyntax {
+public interface DDLProducer {
 
     @Nonnull
     String createStore(Class<?> contentType);
