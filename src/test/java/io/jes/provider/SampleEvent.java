@@ -9,26 +9,26 @@ import lombok.EqualsAndHashCode;
 class SampleEvent implements Event {
 
     private final String name;
-    private final String stream;
+    private final UUID uuid;
     private final long expectedStreamVersion;
 
     SampleEvent(String name) {
-        this(name, UUID.randomUUID().toString());
+        this(name, UUID.randomUUID());
     }
 
-    SampleEvent(String name, String stream) {
-        this(name, stream, -1);
+    SampleEvent(String name, UUID uuid) {
+        this(name, uuid, -1);
     }
 
-    SampleEvent(String name, String stream, long expectedStreamVersion) {
+    SampleEvent(String name, UUID uuid, long expectedStreamVersion) {
         this.name = name;
-        this.stream = stream;
+        this.uuid = uuid;
         this.expectedStreamVersion = expectedStreamVersion;
     }
 
     @Override
-    public String stream() {
-        return stream;
+    public UUID uuid() {
+        return uuid;
     }
 
     @Override
@@ -40,7 +40,7 @@ class SampleEvent implements Event {
     public String toString() {
         final StringBuilder sb = new StringBuilder(getClass().getSimpleName() + " [");
         sb.append("name: ").append(name);
-        sb.append(", stream: ").append(stream);
+        sb.append(", uuid: ").append(uuid);
         sb.append(']');
         return sb.toString();
     }

@@ -2,7 +2,7 @@ package io.jes.provider;
 
 import lombok.extern.slf4j.Slf4j;
 
-import static io.jes.provider.InfrastructureFactory.newDataSource;
+import static io.jes.provider.FancyStuff.newDataSource;
 
 // todo: version caching? to avoid every-write check
 // todo: multithreaded write - to be or not to be?

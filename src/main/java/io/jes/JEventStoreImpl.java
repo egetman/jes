@@ -1,6 +1,8 @@
 package io.jes;
 
+import java.util.Collection;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
@@ -22,8 +24,8 @@ public class JEventStoreImpl implements JEventStore {
     }
 
     @Override
-    public Stream<Event> readBy(@Nonnull String stream) {
-        return provider.readBy(Objects.requireNonNull(stream, "Event stream must not be null"));
+    public Collection<Event> readBy(@Nonnull UUID uuid) {
+        return provider.readBy(Objects.requireNonNull(uuid, "Event uuid must not be null"));
     }
 
     @Override
@@ -32,12 +34,14 @@ public class JEventStoreImpl implements JEventStore {
     }
 
     @Override
-    public void copyTo(JEventStore store) {
+    public void copyTo(@Nonnull JEventStore store) {
         this.copyTo(store, UnaryOperator.identity());
     }
 
     @Override
-    public void copyTo(JEventStore store, UnaryOperator<Event> handler) {
+    public void copyTo(@Nonnull JEventStore store, @Nonnull UnaryOperator<Event> handler) {
+        Objects.requireNonNull(store, "Store must not be null");
+        Objects.requireNonNull(handler, "Handler must not be null");
         try (final Stream<Event> stream = readFrom(0)) {
             stream.map(handler).forEach(store::write);
         }

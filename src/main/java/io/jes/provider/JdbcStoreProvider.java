@@ -5,9 +5,12 @@ import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.Collection;
 import java.util.Objects;
 import java.util.Spliterators.AbstractSpliterator;
+import java.util.UUID;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import javax.annotation.Nonnull;
@@ -66,8 +69,8 @@ public class JdbcStoreProvider<T> implements StoreProvider {
     }
 
     @Override
-    public Stream<Event> readBy(@Nonnull String stream) {
-        return readBy(stream, syntax.queryEventsByStream());
+    public Collection<Event> readBy(@Nonnull UUID uuid) {
+        return readBy(uuid, syntax.queryEventsByStream()).collect(Collectors.toList());
     }
 
     @SuppressWarnings("squid:S2095")
@@ -114,12 +117,12 @@ public class JdbcStoreProvider<T> implements StoreProvider {
         try (final Connection connection = dataSource.getConnection();
              final PreparedStatement statement = connection.prepareStatement(where)) {
 
-            final String stream = event.stream();
+            final UUID uuid = event.uuid();
             verifyStreamVersion(event, connection);
 
             final T data = serializer.serialize(event);
 
-            statement.setString(1, stream);
+            statement.setObject(1, uuid);
             statement.setObject(2, data);
 
             statement.executeUpdate();
@@ -132,14 +135,14 @@ public class JdbcStoreProvider<T> implements StoreProvider {
 
     @SneakyThrows
     private void verifyStreamVersion(Event event, Connection connection) {
-        final String stream = event.stream();
+        final UUID uuid = event.uuid();
         final long expectedVersion = event.expectedStreamVersion();
-        if (stream != null && expectedVersion != -1) {
+        if (uuid != null && expectedVersion != -1) {
             try (PreparedStatement versionStatement = connection.prepareStatement(syntax.queryEventsStreamVersion())) {
-                versionStatement.setString(1, stream);
+                versionStatement.setObject(1, uuid);
                 try (final ResultSet query = versionStatement.executeQuery()) {
                     if (!query.next()) {
-                        throw new BrokenStoreException("Can't read stream [" + stream + "] version");
+                        throw new BrokenStoreException("Can't read uuid [" + uuid + "] version");
                     }
                     final long actualVersion = query.getLong(1);
                     if (expectedVersion != actualVersion) {

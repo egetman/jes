@@ -1,11 +1,12 @@
 package io.jes;
 
+import java.util.UUID;
 import javax.annotation.Nullable;
 
 public interface Event {
 
     @Nullable
-    default String stream() {
+    default UUID uuid() {
         return null;
     }
 

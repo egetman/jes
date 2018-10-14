@@ -1,5 +1,7 @@
 package io.jes.provider;
 
+import java.util.Collection;
+import java.util.UUID;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
@@ -9,7 +11,7 @@ public interface StoreProvider {
 
     Stream<Event> readFrom(long offset);
 
-    Stream<Event> readBy(@Nonnull String stream);
+    Collection<Event> readBy(@Nonnull UUID uuid);
 
     void write(@Nonnull Event event);
 

@@ -1,5 +1,7 @@
 package io.jes;
 
+import java.util.Collection;
+import java.util.UUID;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
@@ -8,16 +10,15 @@ import javax.annotation.Nonnull;
 public interface JEventStore {
 
     /**
-     * TODO:
+     * Returns all events of the Event Store from given offset.
      *
-     * A Stream potentially wraps underlying data store-specific resources and must, therefore, be closed after usage.
-     * You can either manually close the Stream by using the close() method or by using a Java 7 try-with-resources
-     * block, as shown in the following example:
+     * <p>A Stream potentially wraps underlying data store-specific resources and must, therefore, be closed after
+     * usage. You can either manually close the Stream by using the close() method or by using a Java 7
+     * try-with-resources block, as shown in the following example:
      * <code>
      *
-     * <p>
-     * try (Stream{@code <}User{@code >} stream = store.readFrom(0)) {
-     *      stream.forEach(…);
+     * <p>try (Stream{@code <}Event{@code >} uuid = store.readFrom(0)) {
+     * uuid.forEach(…);
      * }
      * </code>
      *
@@ -27,28 +28,44 @@ public interface JEventStore {
     Stream<Event> readFrom(long offset);
 
     /**
-     * TODO:
+     * Returns all events grouped by {@literal event uuid identifier}, also known as an {@literal aggregate
+     * identifier}.
      *
-     * A Stream potentially wraps underlying data store-specific resources and must, therefore, be closed after usage.
-     * You can either manually close the Stream by using the close() method or by using a Java 7 try-with-resources
-     * block, as shown in the following example:
-     * <code>
-     *
-     * <p>
-     * try (Stream{@code <}User{@code >} stream = store.readFrom(0)) {
-     *      stream.forEach(…);
-     * }
-     * </code>
-     *
-     * @param stream the event stream to read. The {@literal stream} action as common (or group) identifier.
-     * @return {@link Stream} of events stored in that {@literal EventStore}.
+     * @param uuid identifier of event uuid to read.
+     * @return {@link Collection} of events stored in that {@literal EventStore}, grouped by {@literal uuid}.
+     * @throws NullPointerException if uuid is null.
      */
-    Stream<Event> readBy(@Nonnull String stream);
+    Collection<Event> readBy(@Nonnull UUID uuid);
 
+    /**
+     * Write given event into {@literal Event Store}.
+     * {@implNote there is no guarantee that write operation will be performed in sync manner}.
+     *
+     * @param event is an event to store.
+     * @throws NullPointerException if event is null.
+     */
     void write(@Nonnull Event event);
 
-    void copyTo(JEventStore store);
+    /**
+     * Copy whole contents of this {@literal Event Store} into given one.
+     * {@implNote it's implementation specific to use STW pause during this operation}.
+     *
+     * @param store is an Event Store to copy all events.
+     * @throws NullPointerException if store is null.
+     * @see <a href="https://leanpub.com/esversioning/read#leanpub-auto-copy-and-replace">Copy and Replace pattern</a>.
+     */
+    void copyTo(@Nonnull JEventStore store);
 
-    void copyTo(JEventStore store, UnaryOperator<Event> handler);
+    /**
+     * Copy whole contents of this {@literal Event Store} into given one with possible events change/transformation.
+     * {@implNote it's implementation specific to use STW pause during this operation}.
+     *
+     * @param store   is an Event Store to copy all events.
+     * @param handler is an event transformator. It can transform one given event into another before storing it in
+     *                the given {@literal store}.
+     * @throws NullPointerException if store or handler is null.
+     * @see <a href="https://leanpub.com/esversioning/read#leanpub-auto-copy-and-replace">Copy and Replace pattern</a>.
+     */
+    void copyTo(@Nonnull JEventStore store, @Nonnull UnaryOperator<Event> handler);
 
 }

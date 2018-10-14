@@ -38,7 +38,7 @@ class KryoBinaryEventSerializer implements EventSerializer<byte[]> {
     @Override
     public Event deserialize(byte[] event) {
         if (event == null || event.length == 0) {
-            throw new SerializationException("Can't deserialize event from 0 length binary stream");
+            throw new SerializationException("Can't deserialize event from 0 length binary uuid");
         }
         try (ByteArrayInputStream bais = new ByteArrayInputStream(event); Input input = new Input(bais, event.length)) {
             return (Event) kryo.readClassAndObject(input);

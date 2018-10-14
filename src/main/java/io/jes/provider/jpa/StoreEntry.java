@@ -1,6 +1,7 @@
 package io.jes.provider.jpa;
 
 import java.util.Objects;
+import java.util.UUID;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.persistence.Column;
@@ -30,16 +31,16 @@ public class StoreEntry {
     @Column(name = "id", unique = true, updatable = false)
     private final Long id;
 
-    @Column(name = "stream", updatable = false)
-    private final String stream;
+    @Column(name = "uuid", updatable = false)
+    private final UUID uuid;
 
     @Lob
     @Column(name = "data", nullable = false, updatable = false)
     private final byte[] data;
 
-    public StoreEntry(@Nullable String stream, @Nonnull byte[] data) {
+    public StoreEntry(@Nullable UUID uuid, @Nonnull byte[] data) {
         this.id = null;
-        this.stream = stream;
+        this.uuid = uuid;
         this.data = Objects.requireNonNull(data, "Event data can't be null");
     }
 }

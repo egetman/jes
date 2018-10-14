@@ -1,6 +1,9 @@
 package io.jes.provider;
 
+import java.util.Collection;
 import java.util.Objects;
+import java.util.UUID;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.persistence.EntityManager;
@@ -41,34 +44,36 @@ public class JpaStoreProvider<T> implements StoreProvider {
     }
 
     @Override
-    public Stream<Event> readBy(@Nonnull String stream) {
+    public Collection<Event> readBy(@Nonnull UUID uuid) {
         final TypedQuery<StoreEntry> query = entityManager.createQuery(
-                "SELECT entity FROM io.jes.provider.jpa.StoreEntry entity WHERE entity.stream = :stream ORDER BY id",
+                "SELECT entity FROM io.jes.provider.jpa.StoreEntry entity WHERE entity.uuid = :uuid ORDER BY id",
                 StoreEntry.class
         );
 
-        query.setParameter("stream", stream);
+        query.setParameter("uuid", uuid);
         //noinspection unchecked
-        return query.getResultStream().map(storeEntry -> serializer.deserialize((T) storeEntry.getData()));
+        return query.getResultStream()
+                .map(storeEntry -> serializer.deserialize((T) storeEntry.getData()))
+                .collect(Collectors.toList());
     }
 
     @Override
     public void write(@Nonnull Event event) {
-        final String stream = event.stream();
+        final UUID uuid = event.uuid();
         final long expectedVersion = event.expectedStreamVersion();
-        if (stream != null && expectedVersion != -1) {
+        if (uuid != null && expectedVersion != -1) {
             TypedQuery<Long> versionQuery = entityManager.createQuery(
-                    "SELECT COUNT(entity) FROM io.jes.provider.jpa.StoreEntry entity WHERE entity.stream = :stream",
+                    "SELECT COUNT(entity) FROM io.jes.provider.jpa.StoreEntry entity WHERE entity.uuid = :uuid",
                     Long.class
             );
-            versionQuery.setParameter("stream", stream);
+            versionQuery.setParameter("uuid", uuid);
             final Long actualVersion = versionQuery.getSingleResult();
             if (expectedVersion != actualVersion) {
                 throw new VersionMismatchException(expectedVersion, actualVersion);
             }
         }
         final byte[] data = (byte[]) serializer.serialize(event);
-        final StoreEntry storeEntry = new StoreEntry(stream, data);
+        final StoreEntry storeEntry = new StoreEntry(uuid, data);
 
         final EntityTransaction transaction = entityManager.getTransaction();
 

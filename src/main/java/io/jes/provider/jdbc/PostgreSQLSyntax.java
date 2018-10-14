@@ -5,14 +5,14 @@ import javax.annotation.Nonnull;
 class PostgreSQLSyntax implements DataSourceSyntax {
 
     private static final String READ_EVENTS = "SELECT * FROM %sevent_store WHERE id > ? ORDER BY id";
-    private static final String READ_EVENTS_BY_STREAM = "SELECT * FROM %sevent_store WHERE stream = ? ORDER BY id";
-    private static final String READ_EVENTS_STREAM_VERSION = "SELECT count(*) FROM %sevent_store WHERE stream = ?";
-    private static final String WRITE_EVENTS = "INSERT INTO %sevent_store (stream, data) VALUES (?, ?)";
+    private static final String READ_EVENTS_BY_STREAM = "SELECT * FROM %sevent_store WHERE uuid = ? ORDER BY id";
+    private static final String READ_EVENTS_STREAM_VERSION = "SELECT count(*) FROM %sevent_store WHERE uuid = ?";
+    private static final String WRITE_EVENTS = "INSERT INTO %sevent_store (uuid, data) VALUES (?, ?)";
 
     private static final String EVENT_CONTENT_NAME = "data";
     private static final String CREATE_SCHEMA = "CREATE SCHEMA IF NOT EXISTS %s;";
     private static final String CREATE_TABLE = "CREATE TABLE IF NOT EXISTS %sevent_store "
-            + "(id BIGSERIAL PRIMARY KEY, stream VARCHAR(36), " + EVENT_CONTENT_NAME + " %s NOT NULL);";
+            + "(id BIGSERIAL PRIMARY KEY, uuid uuid, " + EVENT_CONTENT_NAME + " %s NOT NULL);";
 
     private final String schema;
     private String queryEvents;

@@ -1,5 +1,6 @@
 package io.jes.provider;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -36,16 +37,16 @@ abstract class StoreProviderTest {
     void shouldReadEventsByStream() {
         StoreProvider provider = createProvider();
 
-        final String stream = UUID.randomUUID().toString();
+        final UUID uuid = UUID.randomUUID();
         final List<Event> expected = asList(
-                new SampleEvent("FOO", stream),
-                new SampleEvent("BAR", stream),
-                new SampleEvent("BAZ", stream)
+                new SampleEvent("FOO", uuid),
+                new SampleEvent("BAR", uuid),
+                new SampleEvent("BAZ", uuid)
         );
 
         expected.forEach(provider::write);
 
-        final List<Event> actual = provider.readBy(stream).collect(Collectors.toList());
+        final Collection<Event> actual = provider.readBy(uuid);
 
         Assertions.assertNotNull(actual);
         Assertions.assertIterableEquals(expected, actual);
@@ -56,11 +57,11 @@ abstract class StoreProviderTest {
     void shouldSuccessfullyWriteVersionedEventStream() {
         StoreProvider provider = createProvider();
 
-        final String stream = UUID.randomUUID().toString();
+        final UUID uuid = UUID.randomUUID();
         final List<Event> expected = asList(
-                new SampleEvent("FOO", stream, 0),
-                new SampleEvent("BAR", stream, 1),
-                new SampleEvent("BAZ", stream, 2)
+                new SampleEvent("FOO", uuid, 0),
+                new SampleEvent("BAR", uuid, 1),
+                new SampleEvent("BAZ", uuid, 2)
         );
 
         expected.forEach(provider::write);
@@ -70,11 +71,11 @@ abstract class StoreProviderTest {
     void shouldThrowVersionMismatchException() {
         StoreProvider provider = createProvider();
 
-        final String stream = UUID.randomUUID().toString();
+        final UUID uuid = UUID.randomUUID();
         final List<Event> expected = asList(
-                new SampleEvent("FOO", stream, 0),
-                new SampleEvent("BAR", stream, 1),
-                new SampleEvent("BAZ", stream, 1)
+                new SampleEvent("FOO", uuid, 0),
+                new SampleEvent("BAR", uuid, 1),
+                new SampleEvent("BAZ", uuid, 1)
         );
 
         Assertions.assertThrows(VersionMismatchException.class, () -> expected.forEach(provider::write));

@@ -34,9 +34,9 @@ import static org.hibernate.cfg.AvailableSettings.USE_QUERY_CACHE;
 import static org.hibernate.cfg.AvailableSettings.USE_STRUCTURED_CACHE;
 
 @Slf4j
-final class InfrastructureFactory {
+final class FancyStuff {
 
-    private InfrastructureFactory() {}
+    private FancyStuff() {}
 
     private static PostgreSQLContainer<?> newPostgreSQLContainer() {
         final String user = "csi";
