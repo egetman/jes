@@ -6,4 +6,4 @@ Think about:
  - make snapshotting
  - store structure validation on start
  - event idempotency on read (clustered environment)
- - event steam deletion
+ - ~~event steam deletion~~ DONE
