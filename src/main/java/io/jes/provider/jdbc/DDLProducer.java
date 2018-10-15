@@ -17,6 +17,9 @@ public interface DDLProducer {
     String queryEvents();
 
     @Nonnull
+    String deleteEvents();
+
+    @Nonnull
     String queryEventsByStream();
 
     @Nonnull

@@ -15,4 +15,6 @@ public interface StoreProvider {
 
     void write(@Nonnull Event event);
 
+    void deleteBy(@Nonnull UUID uuid);
+
 }

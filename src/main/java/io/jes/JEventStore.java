@@ -47,6 +47,13 @@ public interface JEventStore {
     void write(@Nonnull Event event);
 
     /**
+     * Delete a whole stream by it's {@literal uuid} (is a safe operation).
+     *
+     * @param uuid of stream  to delete.
+     */
+    void deleteBy(@Nonnull UUID uuid);
+
+    /**
      * Copy whole contents of this {@literal Event Store} into given one.
      * {@implNote it's implementation specific to use STW pause during this operation}.
      *

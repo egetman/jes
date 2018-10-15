@@ -8,6 +8,7 @@ class PostgresDDL implements DDLProducer {
     private static final String READ_EVENTS_BY_STREAM = "SELECT * FROM %sevent_store WHERE uuid = ? ORDER BY id";
     private static final String READ_EVENTS_STREAM_VERSION = "SELECT count(*) FROM %sevent_store WHERE uuid = ?";
     private static final String WRITE_EVENTS = "INSERT INTO %sevent_store (uuid, data) VALUES (?, ?)";
+    private static final String DELETE_EVENTS = "DELETE FROM %sevent_store WHERE uuid = ?";
 
     private static final String EVENT_CONTENT_NAME = "data";
     private static final String CREATE_SCHEMA = "CREATE SCHEMA IF NOT EXISTS %s;";
@@ -19,6 +20,7 @@ class PostgresDDL implements DDLProducer {
     private String queryEventsByStream;
     private String queryEventsStreamVersion;
     private String insertEvents;
+    private String deleteEvents;
 
     PostgresDDL(@Nonnull String schema) {
         this.schema = schema;
@@ -60,6 +62,16 @@ class PostgresDDL implements DDLProducer {
             queryEvents = String.format(READ_EVENTS, formatSchema());
         }
         return queryEvents;
+    }
+
+    @Nonnull
+    @Override
+    public String deleteEvents() {
+        if (deleteEvents == null) {
+            deleteEvents = String.format(DELETE_EVENTS, formatSchema());
+        }
+        return deleteEvents;
+
     }
 
     @Nonnull

@@ -2,6 +2,8 @@ package io.jes.provider;
 
 import java.util.UUID;
 
+import javax.annotation.Nonnull;
+
 import io.jes.Event;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -28,6 +30,7 @@ public class SampleEvent implements Event {
         this.expectedStreamVersion = expectedStreamVersion;
     }
 
+    @Nonnull
     @Override
     public UUID uuid() {
         return uuid;
@@ -43,7 +46,9 @@ public class SampleEvent implements Event {
         final StringBuilder sb = new StringBuilder(getClass().getSimpleName() + " [");
         sb.append("name: ").append(name);
         sb.append(", uuid: ").append(uuid);
-        sb.append(", stream version: ").append(expectedStreamVersion);
+        if (expectedStreamVersion != -1) {
+            sb.append(", stream version: ").append(expectedStreamVersion);
+        }
         sb.append(']');
         return sb.toString();
     }

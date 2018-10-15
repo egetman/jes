@@ -8,6 +8,7 @@ import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
+import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 
 import io.jes.Event;
@@ -16,7 +17,9 @@ import io.jes.ex.VersionMismatchException;
 import io.jes.provider.jpa.StoreEntry;
 import io.jes.serializer.EventSerializer;
 import io.jes.serializer.SerializerFactory;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @SuppressWarnings("JpaQlInspection")
 public class JpaStoreProvider<T> implements StoreProvider {
 
@@ -62,7 +65,7 @@ public class JpaStoreProvider<T> implements StoreProvider {
         final UUID uuid = event.uuid();
         final long expectedVersion = event.expectedStreamVersion();
         if (uuid != null && expectedVersion != -1) {
-            TypedQuery<Long> versionQuery = entityManager.createQuery(
+            final TypedQuery<Long> versionQuery = entityManager.createQuery(
                     "SELECT COUNT(entity) FROM io.jes.provider.jpa.StoreEntry entity WHERE entity.uuid = :uuid",
                     Long.class
             );
@@ -75,11 +78,28 @@ public class JpaStoreProvider<T> implements StoreProvider {
         final byte[] data = (byte[]) serializer.serialize(event);
         final StoreEntry storeEntry = new StoreEntry(uuid, data);
 
-        final EntityTransaction transaction = entityManager.getTransaction();
+        doInTransaction(() -> entityManager.persist(storeEntry));
+    }
 
+    @Override
+    public void deleteBy(@Nonnull UUID uuid) {
+        log.warn("Prepare to remove {} event stream", uuid);
+        final Query query = entityManager.createQuery(
+                "DELETE FROM io.jes.provider.jpa.StoreEntry entity WHERE entity.uuid = :uuid"
+        );
+        query.setParameter("uuid", uuid);
+
+        doInTransaction(() -> {
+            final int affectedEvents = query.executeUpdate();
+            log.warn("{} events successfully removed", affectedEvents);
+        });
+    }
+
+    private void doInTransaction(@Nonnull Runnable action) {
+        final EntityTransaction transaction = entityManager.getTransaction();
         try {
             transaction.begin();
-            entityManager.persist(storeEntry);
+            action.run();
         } catch (Exception e) {
             transaction.setRollbackOnly();
             throw new BrokenStoreException(e);

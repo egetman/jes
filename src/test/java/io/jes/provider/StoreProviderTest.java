@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import javax.annotation.Nonnull;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -17,11 +19,12 @@ import static java.util.Arrays.asList;
 @Slf4j
 abstract class StoreProviderTest {
 
-    abstract StoreProvider createProvider();
+    @Nonnull
+    abstract StoreProvider getProvider();
 
     @Test
     void shouldReadOwnWrites() {
-        StoreProvider provider = createProvider();
+        final StoreProvider provider = getProvider();
 
         final List<Event> expected = asList(new SampleEvent("FOO"), new SampleEvent("BAR"), new SampleEvent("BAZ"));
         expected.forEach(provider::write);
@@ -34,8 +37,8 @@ abstract class StoreProviderTest {
     }
 
     @Test
-    void shouldReadEventsByUuid() {
-        StoreProvider provider = createProvider();
+    void shouldReadEventStreamByUuid() {
+        final StoreProvider provider = getProvider();
 
         final UUID uuid = UUID.randomUUID();
         final List<Event> expected = asList(
@@ -55,7 +58,7 @@ abstract class StoreProviderTest {
 
     @Test
     void shouldSuccessfullyWriteVersionedEventStream() {
-        StoreProvider provider = createProvider();
+        final StoreProvider provider = getProvider();
 
         final UUID uuid = UUID.randomUUID();
         final List<Event> expected = asList(
@@ -69,7 +72,7 @@ abstract class StoreProviderTest {
 
     @Test
     void shouldThrowVersionMismatchException() {
-        StoreProvider provider = createProvider();
+        final StoreProvider provider = getProvider();
 
         final UUID uuid = UUID.randomUUID();
         final List<Event> expected = asList(
@@ -81,5 +84,37 @@ abstract class StoreProviderTest {
         Assertions.assertThrows(VersionMismatchException.class, () -> expected.forEach(provider::write));
     }
 
+    @Test
+    void shouldDeleteFullStreamByUuid() {
+        final StoreProvider provider = getProvider();
 
+        final UUID uuid = UUID.randomUUID();
+        final UUID anotherUuid = UUID.randomUUID();
+        final List<Event> events = asList(
+                new SampleEvent("FOO", uuid),
+                new SampleEvent("BAR", uuid),
+                new SampleEvent("BAZ", anotherUuid)
+        );
+
+        events.forEach(provider::write);
+        log.debug("Written event stream {} with size 2 and event stream {} with size 1", uuid, anotherUuid);
+        provider.deleteBy(uuid);
+
+        final List<Event> remaining = provider.readFrom(0).collect(Collectors.toList());
+        Assertions.assertEquals(1, remaining.size(), "EventStore should contain only one event");
+        Assertions.assertEquals(new SampleEvent("BAZ", anotherUuid), remaining.iterator().next());
+    }
+
+    @Test
+    void deletingNonExistingEventStreamByUuidShouldNotFail() {
+        final StoreProvider provider = getProvider();
+        final SampleEvent expected = new SampleEvent("FOO", UUID.randomUUID());
+
+        provider.write(expected);
+        provider.deleteBy(UUID.randomUUID());
+
+        final Collection<Event> actual = provider.readBy(expected.uuid());
+        Assertions.assertEquals(1, actual.size());
+        Assertions.assertEquals(expected, actual.iterator().next());
+    }
 }

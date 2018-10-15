@@ -19,8 +19,8 @@ import javax.sql.DataSource;
 import io.jes.Event;
 import io.jes.ex.BrokenStoreException;
 import io.jes.ex.VersionMismatchException;
-import io.jes.provider.jdbc.DDLProducer;
 import io.jes.provider.jdbc.DDLFactory;
+import io.jes.provider.jdbc.DDLProducer;
 import io.jes.serializer.EventSerializer;
 import io.jes.serializer.SerializerFactory;
 import lombok.SneakyThrows;
@@ -59,7 +59,10 @@ public class JdbcStoreProvider<T> implements StoreProvider {
     @SneakyThrows
     private void createEventStore(@Nonnull Connection connection, @Nonnull String ddl) {
         try (PreparedStatement statement = connection.prepareStatement(ddl)) {
-            statement.executeUpdate();
+            final int code = statement.executeUpdate();
+            if (code == 0) {
+                log.info("JEventStore successfully created");
+            }
         }
     }
 
@@ -138,9 +141,9 @@ public class JdbcStoreProvider<T> implements StoreProvider {
         final UUID uuid = event.uuid();
         final long expectedVersion = event.expectedStreamVersion();
         if (uuid != null && expectedVersion != -1) {
-            try (PreparedStatement versionStatement = connection.prepareStatement(ddlProducer.queryEventsStreamVersion())) {
-                versionStatement.setObject(1, uuid);
-                try (final ResultSet query = versionStatement.executeQuery()) {
+            try (PreparedStatement statement = connection.prepareStatement(ddlProducer.queryEventsStreamVersion())) {
+                statement.setObject(1, uuid);
+                try (final ResultSet query = statement.executeQuery()) {
                     if (!query.next()) {
                         throw new BrokenStoreException("Can't read uuid [" + uuid + "] version");
                     }
@@ -150,6 +153,19 @@ public class JdbcStoreProvider<T> implements StoreProvider {
                     }
                 }
             }
+        }
+    }
+
+    @Override
+    public void deleteBy(@Nonnull UUID uuid) {
+        log.warn("Prepare to remove {} event stream", uuid);
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(ddlProducer.deleteEvents())) {
+            statement.setObject(1, uuid);
+            final int affectedEvents = statement.executeUpdate();
+            log.warn("{} events successfully removed", affectedEvents);
+        } catch (Exception e) {
+            throw new BrokenStoreException(e);
         }
     }
 

@@ -9,7 +9,7 @@ import javax.annotation.Nonnull;
 
 import io.jes.provider.StoreProvider;
 
-@SuppressWarnings("unused")
+@SuppressWarnings({"unused", "WeakerAccess"})
 public class JEventStoreImpl implements JEventStore {
 
     private final StoreProvider provider;
@@ -25,12 +25,17 @@ public class JEventStoreImpl implements JEventStore {
 
     @Override
     public Collection<Event> readBy(@Nonnull UUID uuid) {
-        return provider.readBy(Objects.requireNonNull(uuid, "Event uuid must not be null"));
+        return provider.readBy(Objects.requireNonNull(uuid, "Event stream uuid must not be null"));
     }
 
     @Override
     public void write(@Nonnull Event event) {
         provider.write(Objects.requireNonNull(event, "Event must not be null"));
+    }
+
+    @Override
+    public void deleteBy(@Nonnull UUID uuid) {
+        provider.deleteBy(Objects.requireNonNull(uuid, "Event stream uuid must not be null"));
     }
 
     @Override
