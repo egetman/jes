@@ -30,6 +30,11 @@ import static java.lang.Long.MAX_VALUE;
 import static java.util.Objects.requireNonNull;
 import static java.util.Spliterator.ORDERED;
 
+/**
+ * JDBC {@link StoreProvider} implementation.
+ *
+ * @param <T> type of event serialization.
+ */
 @Slf4j
 public class JdbcStoreProvider<T> implements StoreProvider {
 
@@ -48,7 +53,7 @@ public class JdbcStoreProvider<T> implements StoreProvider {
                 final String schema = Objects.requireNonNull(connection.getSchema(), "Schema must not be null");
                 final DatabaseMetaData metaData = connection.getMetaData();
                 final String databaseName = metaData.getDatabaseProductName();
-                this.ddlProducer = DDLFactory.newDataSourceSyntax(requireNonNull(databaseName), schema);
+                this.ddlProducer = DDLFactory.newDDLProducer(requireNonNull(databaseName), schema);
                 createEventStore(connection, ddlProducer.createStore(serializationType));
             }
         } catch (Exception e) {
@@ -73,10 +78,9 @@ public class JdbcStoreProvider<T> implements StoreProvider {
 
     @Override
     public Collection<Event> readBy(@Nonnull UUID uuid) {
-        return readBy(uuid, ddlProducer.queryEventsByStream()).collect(Collectors.toList());
+        return readBy(uuid, ddlProducer.queryEventsByUuid()).collect(Collectors.toList());
     }
 
-    @SuppressWarnings("squid:S2095")
     private Stream<Event> readBy(@Nonnull Object value, @Nonnull String from) {
         try {
             final Connection connection = dataSource.getConnection();

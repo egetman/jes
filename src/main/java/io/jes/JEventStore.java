@@ -6,7 +6,6 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
-@SuppressWarnings("unused")
 public interface JEventStore {
 
     /**
@@ -51,6 +50,7 @@ public interface JEventStore {
      *
      * @param uuid of stream  to delete.
      */
+    @SuppressWarnings("unused")
     void deleteBy(@Nonnull UUID uuid);
 
     /**

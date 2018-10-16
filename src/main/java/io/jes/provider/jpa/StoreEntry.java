@@ -18,6 +18,9 @@ import lombok.Setter;
 
 import static lombok.AccessLevel.PROTECTED;
 
+/**
+ * Simple JPA entity for storing event data.
+ */
 @Getter
 @Setter
 @Entity

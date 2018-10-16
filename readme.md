@@ -7,3 +7,4 @@ Think about:
  - store structure validation on start
  - event idempotency on read (clustered environment)
  - ~~event steam deletion~~ DONE
+ - copy-and-replace event stream

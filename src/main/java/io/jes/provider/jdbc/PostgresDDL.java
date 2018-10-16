@@ -76,7 +76,7 @@ class PostgresDDL implements DDLProducer {
 
     @Nonnull
     @Override
-    public String queryEventsByStream() {
+    public String queryEventsByUuid() {
         if (queryEventsByStream == null) {
             queryEventsByStream = String.format(READ_EVENTS_BY_STREAM, formatSchema());
         }

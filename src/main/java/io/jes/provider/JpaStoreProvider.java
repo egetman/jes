@@ -19,6 +19,11 @@ import io.jes.serializer.EventSerializer;
 import io.jes.serializer.SerializerFactory;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * JPA {@link StoreProvider} implementation.
+ *
+ * @param <T> type of event serialization.
+ */
 @Slf4j
 @SuppressWarnings("JpaQlInspection")
 public class JpaStoreProvider<T> implements StoreProvider {
