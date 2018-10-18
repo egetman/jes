@@ -1,4 +1,4 @@
-package io.jes.provider;
+package io.jes.common;
 
 import java.util.UUID;
 
@@ -16,11 +16,11 @@ public class SampleEvent implements Event {
     private final UUID uuid;
     private final long expectedStreamVersion;
 
-    SampleEvent(String name) {
+    public SampleEvent(String name) {
         this(name, UUID.randomUUID());
     }
 
-    SampleEvent(String name, UUID uuid) {
+    public SampleEvent(String name, UUID uuid) {
         this(name, uuid, -1);
     }
 

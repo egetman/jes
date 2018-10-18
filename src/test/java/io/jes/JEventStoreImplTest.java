@@ -2,20 +2,26 @@ package io.jes;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.UnaryOperator;
 import javax.sql.DataSource;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
-import io.jes.provider.FancyStuff;
+import io.jes.common.SampleEvent;
 import io.jes.provider.JdbcStoreProvider;
-import io.jes.provider.SampleEvent;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import static java.util.stream.Collectors.toSet;
+import static org.junit.jupiter.api.TestInstance.Lifecycle;
 
+@TestInstance(Lifecycle.PER_CLASS)
 class JEventStoreImplTest {
 
     private final JEventStore source;
@@ -27,6 +33,17 @@ class JEventStoreImplTest {
 
         this.source = new JEventStoreImpl(new JdbcStoreProvider<>(sourceDataSource, byte[].class));
         this.target = new JEventStoreImpl(new JdbcStoreProvider<>(targetDataSource, byte[].class));
+    }
+
+    @AfterEach
+    void clearEventStores() {
+        clearEventStore(source);
+        clearEventStore(target);
+    }
+
+    private void clearEventStore(JEventStore store) {
+        final Set<UUID> uuids = store.readFrom(0).map(Event::uuid).filter(Objects::nonNull).collect(toSet());
+        uuids.forEach(store::deleteBy);
     }
 
     @Test

@@ -1,4 +1,4 @@
-package io.jes.provider;
+package io.jes;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -56,7 +56,7 @@ public final class FancyStuff {
         return container;
     }
 
-    static DataSource newDataSource() {
+    public static DataSource newDataSource() {
         return newDataSource("public");
     }
 
@@ -199,7 +199,7 @@ public final class FancyStuff {
         };
     }
 
-    static EntityManager newEntityManager() {
+    public static EntityManager newEntityManager() {
         return newEntityManagerFactory().createEntityManager();
     }
 

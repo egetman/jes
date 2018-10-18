@@ -153,6 +153,7 @@ public class JdbcStoreProvider<T> implements StoreProvider {
                     }
                     final long actualVersion = query.getLong(1);
                     if (expectedVersion != actualVersion) {
+                        log.error("Version mismatch detected for {}", event);
                         throw new VersionMismatchException(expectedVersion, actualVersion);
                     }
                 }

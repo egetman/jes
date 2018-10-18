@@ -2,25 +2,39 @@ package io.jes.provider;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
-
 import javax.annotation.Nonnull;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
 import io.jes.Event;
+import io.jes.common.SampleEvent;
 import io.jes.ex.VersionMismatchException;
 import lombok.extern.slf4j.Slf4j;
 
 import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
+import static org.junit.jupiter.api.TestInstance.Lifecycle;
 
 @Slf4j
+@TestInstance(Lifecycle.PER_CLASS)
 abstract class StoreProviderTest {
 
     @Nonnull
     abstract StoreProvider getProvider();
+
+    @AfterEach
+    void clearEventStore() {
+        final StoreProvider provider = getProvider();
+        final Set<UUID> uuids = provider.readFrom(0).map(Event::uuid).filter(Objects::nonNull).collect(toSet());
+        uuids.forEach(provider::deleteBy);
+    }
 
     @Test
     void shouldReadOwnWrites() {
@@ -29,7 +43,7 @@ abstract class StoreProviderTest {
         final List<Event> expected = asList(new SampleEvent("FOO"), new SampleEvent("BAR"), new SampleEvent("BAZ"));
         expected.forEach(provider::write);
 
-        final List<Event> actual = provider.readFrom(0).collect(Collectors.toList());
+        final List<Event> actual = provider.readFrom(0).collect(toList());
 
         Assertions.assertNotNull(actual);
         Assertions.assertIterableEquals(expected, actual);
@@ -100,7 +114,7 @@ abstract class StoreProviderTest {
         log.debug("Written event stream {} with size 2 and event stream {} with size 1", uuid, anotherUuid);
         provider.deleteBy(uuid);
 
-        final List<Event> remaining = provider.readFrom(0).collect(Collectors.toList());
+        final List<Event> remaining = provider.readFrom(0).collect(toList());
         Assertions.assertEquals(1, remaining.size(), "EventStore should contain only one event");
         Assertions.assertEquals(new SampleEvent("BAZ", anotherUuid), remaining.iterator().next());
     }
