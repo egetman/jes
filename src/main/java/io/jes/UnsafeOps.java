@@ -1,7 +1,6 @@
 package io.jes;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -53,27 +52,31 @@ public class UnsafeOps {
      * @throws EventStreamRewriteUnsupportedException if result event stream has the same uuid as {@literal streamUuid}.
      * @see <a href="https://leanpub.com/esversioning/read#leanpub-auto-copy-and-replace">Copy and Replace pattern</a>.
      */
-    public UUID copyAndReplace(@Nonnull UUID streamUuid, @Nonnull UnaryOperator<Event> handler) {
+    public UUID traverseAndReplace(@Nonnull UUID streamUuid, @Nonnull UnaryOperator<Event> handler) {
         requireNonNull(handler, "Event handler must not be null");
 
         final Collection<Event> original = store.readBy(streamUuid);
         nonEmpty(original, () -> new EmptyEventStreamException("Event stream not found by uuid: " + streamUuid));
 
-        final List<Event> replaced = original.stream().map(handler).filter(Objects::nonNull).collect(toList());
+        final Collection<Event> replaced = original.stream().map(handler).filter(Objects::nonNull).collect(toList());
         nonEmpty(replaced, () -> new EmptyEventStreamException("Result stream must not be empty"));
 
-        final UUID newStreamUuid = eventStreamToUniqUuid(replaced);
-        nonEqual(streamUuid, newStreamUuid, () -> new EventStreamRewriteUnsupportedException(streamUuid));
-
-        replaced.forEach(store::write);
-        final Event moved = new StreamMovedTo(streamUuid, newStreamUuid);
-        log.debug("Append {} to Event Store", moved);
-        store.write(moved);
-
-        return newStreamUuid;
+        return rewriteStream(streamUuid, replaced);
     }
 
-    UUID eventStreamToUniqUuid(@Nonnull Collection<Event> events) {
+    public UUID traverseAndReplaceAll(@Nonnull UUID streamUuid, @Nonnull UnaryOperator<Collection<Event>> handler) {
+        requireNonNull(handler, "Event handler must not be null");
+
+        final Collection<Event> original = store.readBy(streamUuid);
+        nonEmpty(original, () -> new EmptyEventStreamException("Event stream not found by uuid: " + streamUuid));
+
+        final Collection<? extends Event> replaced = handler.apply(original);
+        nonEmpty(replaced, () -> new EmptyEventStreamException("Result stream must not be empty"));
+
+        return rewriteStream(streamUuid, replaced);
+    }
+
+    UUID eventStreamToUniqUuid(@Nonnull Collection<? extends Event> events) {
         UUID uuid = null;
         for (Event event : events) {
             final UUID streamUuid = requireNonNull(event.uuid(), "Event uuid must not be null");
@@ -86,8 +89,19 @@ public class UnsafeOps {
         return uuid;
     }
 
-    private void nonEmpty(@Nonnull Collection<?> events, @Nonnull Supplier<? extends RuntimeException> supplier) {
-        if (events.isEmpty()) {
+    private UUID rewriteStream(@Nonnull UUID streamUuid, @Nonnull Collection<? extends Event> events) {
+        final UUID newStreamUuid = eventStreamToUniqUuid(events);
+        nonEqual(streamUuid, newStreamUuid, () -> new EventStreamRewriteUnsupportedException(streamUuid));
+
+        events.forEach(store::write);
+        final Event moved = new StreamMovedTo(streamUuid, newStreamUuid);
+        log.debug("Append {} to Event Store", moved);
+        store.write(moved);
+        return newStreamUuid;
+    }
+
+    private void nonEmpty(Collection<?> events, @Nonnull Supplier<? extends RuntimeException> supplier) {
+        if (events == null || events.isEmpty()) {
             throw supplier.get();
         }
     }
