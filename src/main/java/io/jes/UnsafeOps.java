@@ -33,14 +33,14 @@ public class UnsafeOps {
     }
 
     /**
-     * Copy the given stream and replace it with the new one in {@literal Event Store}.
+     * Copy the given stream and replace it with the new one in {@literal Event Store} (Old stream will not be deleted).
      * Supplied handler allow change of existing stream.
      * Note: new stream identifier (UUID) must differ from {@literal streamUuid}.
      * I.e. processed event, returned from {@link UnaryOperator#apply(Object)} MUST have new {@link Event#uuid()},
      * and ALL processed events MUST return the same {@link UUID} on {@link Event#uuid()} call.
      * Handler can return null values. Such values will be cleared from the new stream.
      * After the replace operation, a new event ({@link StreamMovedTo}) will be appended to source stream.
-     * It will contain a reference to new stream UUID.
+     * It will contain a reference to the new stream UUID.
      *
      * @param streamUuid uuid of the event stream that will be rewritten.
      * @param handler    an {@link UnaryOperator} to modify found events in stream.
@@ -64,6 +64,26 @@ public class UnsafeOps {
         return rewriteStream(streamUuid, replaced);
     }
 
+    /**
+     * Copy the given stream and replace it with the new one in {@literal Event Store} (Old stream will not be deleted).
+     * Supplied handler allow change of existing stream.
+     * Note: new stream identifier (UUID) must differ from {@literal streamUuid}.
+     * I.e. each processed event, returned from {@link UnaryOperator#apply(Object)} MUST have new {@link Event#uuid()},
+     * and ALL processed events MUST return the same {@link UUID} on {@link Event#uuid()} call.
+     * Handler can't return null values.
+     * After the replace operation, a new event ({@link StreamMovedTo}) will be appended to source stream.
+     * It will contain a reference to the new stream UUID.
+     *
+     * @param streamUuid uuid of the event stream that will be rewritten.
+     * @param handler    an {@link UnaryOperator} to modify found events in stream.
+     * @return uuid of new, rewritten event stream.
+     * @throws NullPointerException                   when {@literal streamUuid} is null, or {@literal handler} is null.
+     * @throws EmptyEventStreamException              when no event stream found by the given {@literal streamUuid} or
+     *                                                if {@literal handler} return null or empty collection.
+     * @throws EventStreamSplitUnsupportedException   if result event stream return multiple uuids.
+     * @throws EventStreamRewriteUnsupportedException if result event stream has the same uuid as {@literal streamUuid}.
+     * @see <a href="https://leanpub.com/esversioning/read#leanpub-auto-copy-and-replace">Copy and Replace pattern</a>.
+     */
     public UUID traverseAndReplaceAll(@Nonnull UUID streamUuid, @Nonnull UnaryOperator<Collection<Event>> handler) {
         requireNonNull(handler, "Event handler must not be null");
 
