@@ -22,6 +22,7 @@ import io.jes.ex.VersionMismatchException;
 import io.jes.provider.jdbc.DDLFactory;
 import io.jes.provider.jdbc.DDLProducer;
 import io.jes.serializer.EventSerializer;
+import io.jes.serializer.SerializationOption;
 import io.jes.serializer.SerializerFactory;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -43,10 +44,11 @@ public class JdbcStoreProvider<T> implements StoreProvider {
     private final EventSerializer<T> serializer;
 
     @SuppressWarnings("WeakerAccess")
-    public JdbcStoreProvider(@Nonnull DataSource dataSource, @Nonnull Class<T> serializationType) {
+    public JdbcStoreProvider(@Nonnull DataSource dataSource, @Nonnull Class<T> serializationType,
+                             @Nonnull SerializationOption... options) {
         try {
             this.dataSource = requireNonNull(dataSource);
-            this.serializer = SerializerFactory.newEventSerializer(serializationType);
+            this.serializer = SerializerFactory.newEventSerializer(serializationType, options);
 
             try (final Connection connection = dataSource.getConnection()) {
 

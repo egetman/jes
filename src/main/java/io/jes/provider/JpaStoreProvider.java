@@ -1,7 +1,6 @@
 package io.jes.provider;
 
 import java.util.Collection;
-import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -15,9 +14,14 @@ import io.jes.Event;
 import io.jes.ex.BrokenStoreException;
 import io.jes.ex.VersionMismatchException;
 import io.jes.provider.jpa.StoreEntry;
+import io.jes.provider.jpa.StoreEntryFactory;
 import io.jes.serializer.EventSerializer;
+import io.jes.serializer.SerializationOption;
 import io.jes.serializer.SerializerFactory;
 import lombok.extern.slf4j.Slf4j;
+
+import static java.lang.String.format;
+import static java.util.Objects.requireNonNull;
 
 /**
  * JPA {@link StoreProvider} implementation.
@@ -25,43 +29,45 @@ import lombok.extern.slf4j.Slf4j;
  * @param <T> type of event serialization.
  */
 @Slf4j
-@SuppressWarnings("JpaQlInspection")
 public class JpaStoreProvider<T> implements StoreProvider {
 
     private final EntityManager entityManager;
     private final EventSerializer<T> serializer;
 
-    public JpaStoreProvider(@Nonnull EntityManager entityManager,  @Nonnull Class<T> serializationType) {
-        this.entityManager = Objects.requireNonNull(entityManager, "EntityManager must not be null");
-        if (serializationType != byte[].class) {
-            throw new IllegalArgumentException(serializationType + " serialization don't supported for " + getClass());
-        }
-        this.serializer = SerializerFactory.newEventSerializer(Objects.requireNonNull(serializationType));
+    private final Class<? extends StoreEntry> entryType;
+
+    private static final String QUERY_BY_UUID = "SELECT e FROM %s e WHERE e.uuid = :uuid ORDER BY id";
+    private static final String DELETE_BY_UUID = "DELETE FROM %s e WHERE e.uuid = :uuid";
+    private static final String QUERY_COUNT_BY_UUID = "SELECT COUNT(e) FROM %s e WHERE e.uuid = :uuid";
+    private static final String QUERY_BY_OFFSET = "SELECT e FROM %s e WHERE e.id > :id ORDER BY id";
+
+    public JpaStoreProvider(@Nonnull EntityManager entityManager, @Nonnull Class<T> serializationType,
+                            @Nonnull SerializationOption... options) {
+
+        this.entityManager = requireNonNull(entityManager, "EntityManager must not be null");
+        this.serializer = SerializerFactory.newEventSerializer(serializationType, options);
+        this.entryType = StoreEntryFactory.entryTypeOf(serializationType);
     }
 
     @Override
     public Stream<Event> readFrom(long offset) {
-        final TypedQuery<StoreEntry> query = entityManager.createQuery(
-                "SELECT entity FROM io.jes.provider.jpa.StoreEntry entity WHERE entity.id > :id ORDER BY id",
-                StoreEntry.class
+        final TypedQuery<? extends StoreEntry> query = entityManager.createQuery(
+                format(QUERY_BY_OFFSET, entryType.getName()), entryType
         );
 
         query.setParameter("id", offset);
-        //noinspection unchecked
-        return query.getResultStream().map(storeEntry -> serializer.deserialize((T) storeEntry.getData()));
+        return query.getResultStream().map(storeEntry -> serializer.deserialize(storeEntry.getData()));
     }
 
     @Override
     public Collection<Event> readBy(@Nonnull UUID uuid) {
-        final TypedQuery<StoreEntry> query = entityManager.createQuery(
-                "SELECT entity FROM io.jes.provider.jpa.StoreEntry entity WHERE entity.uuid = :uuid ORDER BY id",
-                StoreEntry.class
+        final TypedQuery<? extends StoreEntry> query = entityManager.createQuery(
+                format(QUERY_BY_UUID, entryType.getName()), entryType
         );
 
         query.setParameter("uuid", uuid);
-        //noinspection unchecked
         return query.getResultStream()
-                .map(storeEntry -> serializer.deserialize((T) storeEntry.getData()))
+                .map(storeEntry -> serializer.deserialize(storeEntry.getData()))
                 .collect(Collectors.toList());
     }
 
@@ -71,8 +77,7 @@ public class JpaStoreProvider<T> implements StoreProvider {
         final long expectedVersion = event.expectedStreamVersion();
         if (uuid != null && expectedVersion != -1) {
             final TypedQuery<Long> versionQuery = entityManager.createQuery(
-                    "SELECT COUNT(entity) FROM io.jes.provider.jpa.StoreEntry entity WHERE entity.uuid = :uuid",
-                    Long.class
+                    format(QUERY_COUNT_BY_UUID, entryType.getName()), Long.class
             );
             versionQuery.setParameter("uuid", uuid);
             final Long actualVersion = versionQuery.getSingleResult();
@@ -80,18 +85,16 @@ public class JpaStoreProvider<T> implements StoreProvider {
                 throw new VersionMismatchException(expectedVersion, actualVersion);
             }
         }
-        final byte[] data = (byte[]) serializer.serialize(event);
-        final StoreEntry storeEntry = new StoreEntry(uuid, data);
 
-        doInTransaction(() -> entityManager.persist(storeEntry));
+        final T data = serializer.serialize(event);
+        final StoreEntry entry = StoreEntryFactory.newEntry(uuid, data);
+        doInTransaction(() -> entityManager.persist(entry));
     }
 
     @Override
     public void deleteBy(@Nonnull UUID uuid) {
         log.warn("Prepare to remove {} event stream", uuid);
-        final Query query = entityManager.createQuery(
-                "DELETE FROM io.jes.provider.jpa.StoreEntry entity WHERE entity.uuid = :uuid"
-        );
+        final Query query = entityManager.createQuery(format(DELETE_BY_UUID, entryType.getName()));
         query.setParameter("uuid", uuid);
 
         doInTransaction(() -> {

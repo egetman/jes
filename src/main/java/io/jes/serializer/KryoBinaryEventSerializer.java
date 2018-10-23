@@ -12,9 +12,7 @@ import org.objenesis.strategy.StdInstantiatorStrategy;
 
 import io.jes.Event;
 import io.jes.ex.SerializationException;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 class KryoBinaryEventSerializer implements EventSerializer<byte[]> {
 
     private final Kryo kryo = new Kryo();

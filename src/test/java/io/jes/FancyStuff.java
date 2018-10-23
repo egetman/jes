@@ -27,6 +27,7 @@ import org.hibernate.jpa.HibernatePersistenceProvider;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 
+import io.jes.provider.jpa.StoreEntryFactory;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
@@ -41,7 +42,7 @@ import static org.hibernate.cfg.AvailableSettings.USE_STRUCTURED_CACHE;
 @Slf4j
 public final class FancyStuff {
 
-    private static final int MAX_POOL_SIZE = 50;
+    private static final int MAX_POOL_SIZE = 10;
 
     private FancyStuff() {}
 
@@ -90,8 +91,8 @@ public final class FancyStuff {
     }
 
     @SuppressWarnings("WeakerAccess")
-    static EntityManagerFactory newEntityManagerFactory() {
-        return new HibernatePersistenceProvider().createContainerEntityManagerFactory(persistenceUnitInfo(),
+    static EntityManagerFactory newEntityManagerFactory(Class<?> serializationType) {
+        return new HibernatePersistenceProvider().createContainerEntityManagerFactory(newUnit(serializationType),
                 ImmutableMap.<String, Object>builder()
                         .put(DIALECT, PostgreSQL95Dialect.class)
                         .put(USE_QUERY_CACHE, false)
@@ -103,7 +104,7 @@ public final class FancyStuff {
                         .build());
     }
 
-    private static PersistenceUnitInfo persistenceUnitInfo() {
+    private static PersistenceUnitInfo newUnit(Class<?> serializationType) {
         return new PersistenceUnitInfo() {
 
             private final DataSource dataSource = newDataSource();
@@ -115,7 +116,7 @@ public final class FancyStuff {
 
             @Override
             public String getPersistenceProviderClassName() {
-                return "org.hibernate.jpa.HibernatePersistenceProvider";
+                return HibernatePersistenceProvider.class.getName();
             }
 
             @Override
@@ -148,18 +149,19 @@ public final class FancyStuff {
             }
 
             @Override
+            @SneakyThrows
             public URL getPersistenceUnitRootUrl() {
                 return null;
             }
 
             @Override
             public List<String> getManagedClassNames() {
-                return Collections.emptyList();
+                return Collections.singletonList(StoreEntryFactory.entryTypeOf(serializationType).getName());
             }
 
             @Override
             public boolean excludeUnlistedClasses() {
-                return false;
+                return true;
             }
 
             @Override
@@ -174,7 +176,9 @@ public final class FancyStuff {
 
             @Override
             public Properties getProperties() {
-                return new Properties();
+                final Properties properties = new Properties();
+                properties.setProperty(org.hibernate.cfg.AvailableSettings.SCANNER_DISCOVERY, "");
+                return properties;
             }
 
             @Override
@@ -199,8 +203,8 @@ public final class FancyStuff {
         };
     }
 
-    public static EntityManager newEntityManager() {
-        return newEntityManagerFactory().createEntityManager();
+    public static EntityManager newEntityManager(Class<?> serializationType) {
+        return newEntityManagerFactory(serializationType).createEntityManager();
     }
 
 }

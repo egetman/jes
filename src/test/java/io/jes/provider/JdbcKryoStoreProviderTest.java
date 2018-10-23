@@ -6,13 +6,12 @@ import lombok.extern.slf4j.Slf4j;
 
 import static io.jes.FancyStuff.newDataSource;
 
-
 @Slf4j
-class JdbcStoreProviderTest extends StoreProviderTest {
+class JdbcKryoStoreProviderTest extends StoreProviderTest {
 
     private final StoreProvider provider;
 
-    JdbcStoreProviderTest() {
+    JdbcKryoStoreProviderTest() {
         this.provider = new JdbcStoreProvider<>(newDataSource(), byte[].class);
     }
 

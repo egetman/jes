@@ -11,18 +11,18 @@ class SerializerFactoryTest {
     }
 
     @Test
-    void newStringSerializerShouldThrowUnsupportedOperationException() {
-        Assertions.assertThrows(UnsupportedOperationException.class, SerializerFactory::newStringSerializer);
+    void newStringSerializerShouldReturnGsonImplAsDefault() {
+        Assertions.assertEquals(GsonStringEventSerializer.class, SerializerFactory.newStringSerializer().getClass());
     }
 
     @Test
-    void newEventSerializerShouldThrowUnsupportedOperationExceptionWhenStringClassPassed() {
-        Assertions.assertThrows(UnsupportedOperationException.class,
-                () -> SerializerFactory.newEventSerializer(String.class));
+    void newEventSerializerShouldReturnGsonImplAsDefaultWhenStringClassPassed() {
+        Assertions.assertEquals(GsonStringEventSerializer.class,
+                SerializerFactory.newEventSerializer(String.class).getClass());
     }
 
     @Test
-    void newEventSerializerShouldReturnKryoImplWhenByteClassPassed() {
+    void newEventSerializerShouldReturnKryoImplAsDefaultWhenByteClassPassed() {
         Assertions.assertEquals(KryoBinaryEventSerializer.class,
                 SerializerFactory.newEventSerializer(byte[].class).getClass());
     }

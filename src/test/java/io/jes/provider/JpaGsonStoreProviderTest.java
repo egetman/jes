@@ -2,17 +2,14 @@ package io.jes.provider;
 
 import javax.annotation.Nonnull;
 
-import lombok.extern.slf4j.Slf4j;
-
 import static io.jes.FancyStuff.newEntityManager;
 
-@Slf4j
-class JpaStoreProviderTest extends StoreProviderTest {
+class JpaGsonStoreProviderTest extends StoreProviderTest {
 
     private final StoreProvider provider;
 
-    JpaStoreProviderTest() {
-        this.provider = new JpaStoreProvider<>(newEntityManager(), byte[].class);
+    JpaGsonStoreProviderTest() {
+        this.provider = new JpaStoreProvider<>(newEntityManager(String.class), String.class);
     }
 
     @Nonnull
