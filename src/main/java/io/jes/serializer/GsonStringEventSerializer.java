@@ -1,6 +1,7 @@
 package io.jes.serializer;
 
 import java.lang.reflect.Type;
+import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.Nonnull;
 
 import com.google.gson.Gson;
@@ -21,6 +22,7 @@ import static java.util.Objects.requireNonNull;
 public class GsonStringEventSerializer implements EventSerializer<String> {
 
     private final Gson gson;
+    private final ConcurrentHashMap<String, Class<?>> cache = new ConcurrentHashMap<>();
 
     public GsonStringEventSerializer() {
         this.gson = new GsonBuilder().registerTypeAdapter(Event.class, new EventAdapter()).create();
@@ -79,11 +81,13 @@ public class GsonStringEventSerializer implements EventSerializer<String> {
 
         @Nonnull
         private Class<?> getObjectClass(@Nonnull String className) {
-            try {
-                return Class.forName(className);
-            } catch (ClassNotFoundException e) {
-                throw new SerializationException(e);
-            }
+            return cache.computeIfAbsent(className, candidate -> {
+                try {
+                    return Class.forName(candidate);
+                } catch (ClassNotFoundException e) {
+                    throw new SerializationException(e);
+                }
+            });
         }
     }
 }
