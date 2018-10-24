@@ -17,13 +17,13 @@ public class SerializerFactory {
     @Nonnull
     public static EventSerializer<byte[]> newBinarySerializer(@Nonnull SerializationOption... options) {
         Objects.requireNonNull(options, NULL_SERIALIZER_OPTIONS_ERROR);
-        return new KryoBinaryEventSerializer();
+        return new KryoEventSerializer();
     }
 
     @Nonnull
     public static EventSerializer<String> newStringSerializer(@Nonnull SerializationOption... options) {
         Objects.requireNonNull(options, NULL_SERIALIZER_OPTIONS_ERROR);
-        return new GsonStringEventSerializer();
+        return new GsonEventSerializer();
     }
 
     @Nonnull

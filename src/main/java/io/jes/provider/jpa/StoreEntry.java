@@ -14,6 +14,7 @@ import javax.persistence.MappedSuperclass;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -26,6 +27,7 @@ import static lombok.AccessLevel.PROTECTED;
 @Getter
 @Setter
 @MappedSuperclass
+@EqualsAndHashCode(of = "uuid")
 @SuppressWarnings("JpaDataSourceORMInspection")
 @NoArgsConstructor(access = PROTECTED, force = true)
 public abstract class StoreEntry {
@@ -47,13 +49,11 @@ public abstract class StoreEntry {
     @Transient
     public abstract <T> T getData();
 
-    /**
-     * Simple JPA entity for storing event data.
-     */
     @Getter
     @Setter
     @Entity
     @NoArgsConstructor(access = PROTECTED, force = true)
+    @EqualsAndHashCode(exclude = {"data"}, callSuper = true)
     @Table(name = "event_store", indexes = {@Index(name = "uuid_idx", columnList = "uuid")})
     static class StoreBinaryEntry extends StoreEntry {
 
@@ -66,17 +66,15 @@ public abstract class StoreEntry {
         }
     }
 
-    /**
-     * Simple JPA entity for storing event data.
-     */
     @Getter
     @Setter
     @Entity
     @NoArgsConstructor(access = PROTECTED, force = true)
+    @EqualsAndHashCode(exclude = {"data"}, callSuper = true)
     @Table(name = "event_store", indexes = {@Index(name = "uuid_idx", columnList = "uuid")})
     static class StoreStringEntry extends StoreEntry {
 
-        @Column(name = "data", updatable = false, columnDefinition = "TEXT")
+        @Column(name = "data", nullable = false, updatable = false, columnDefinition = "TEXT")
         private final String data;
 
         StoreStringEntry(@Nullable UUID uuid, @Nonnull String data) {

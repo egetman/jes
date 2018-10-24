@@ -19,16 +19,16 @@ import io.jes.ex.SerializationException;
 
 import static java.util.Objects.requireNonNull;
 
-public class GsonStringEventSerializer implements EventSerializer<String> {
+class GsonEventSerializer implements EventSerializer<String> {
 
     private final Gson gson;
     private final ConcurrentHashMap<String, Class<?>> cache = new ConcurrentHashMap<>();
 
-    public GsonStringEventSerializer() {
+    GsonEventSerializer() {
         this.gson = new GsonBuilder().registerTypeAdapter(Event.class, new EventAdapter()).create();
     }
 
-    public GsonStringEventSerializer(@Nonnull GsonBuilder gsonBuilder) {
+    public GsonEventSerializer(@Nonnull GsonBuilder gsonBuilder) {
         this.gson = requireNonNull(gsonBuilder, "Gson builder must not be null")
                 .registerTypeAdapter(Event.class, new EventAdapter())
                 .create();

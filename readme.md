@@ -11,4 +11,4 @@ Think about:
  - split event stream
  - merge event streams
  - transaction processing for unsafe operations
- - string (json?) serializer 
+ - ~~string (json?) serializer~~ 

@@ -50,7 +50,6 @@ public interface JEventStore {
      *
      * @param uuid of stream  to delete.
      */
-    @SuppressWarnings("unused")
     void deleteBy(@Nonnull UUID uuid);
 
     /**

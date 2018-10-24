@@ -43,7 +43,6 @@ public class JdbcStoreProvider<T> implements StoreProvider {
     private final DDLProducer ddlProducer;
     private final EventSerializer<T> serializer;
 
-    @SuppressWarnings("WeakerAccess")
     public JdbcStoreProvider(@Nonnull DataSource dataSource, @Nonnull Class<T> serializationType,
                              @Nonnull SerializationOption... options) {
         try {

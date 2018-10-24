@@ -7,23 +7,23 @@ class SerializerFactoryTest {
 
     @Test
     void newBinarySerializerShouldReturnKryoImplAsDefault() {
-        Assertions.assertEquals(KryoBinaryEventSerializer.class, SerializerFactory.newBinarySerializer().getClass());
+        Assertions.assertEquals(KryoEventSerializer.class, SerializerFactory.newBinarySerializer().getClass());
     }
 
     @Test
     void newStringSerializerShouldReturnGsonImplAsDefault() {
-        Assertions.assertEquals(GsonStringEventSerializer.class, SerializerFactory.newStringSerializer().getClass());
+        Assertions.assertEquals(GsonEventSerializer.class, SerializerFactory.newStringSerializer().getClass());
     }
 
     @Test
     void newEventSerializerShouldReturnGsonImplAsDefaultWhenStringClassPassed() {
-        Assertions.assertEquals(GsonStringEventSerializer.class,
+        Assertions.assertEquals(GsonEventSerializer.class,
                 SerializerFactory.newEventSerializer(String.class).getClass());
     }
 
     @Test
     void newEventSerializerShouldReturnKryoImplAsDefaultWhenByteClassPassed() {
-        Assertions.assertEquals(KryoBinaryEventSerializer.class,
+        Assertions.assertEquals(KryoEventSerializer.class,
                 SerializerFactory.newEventSerializer(byte[].class).getClass());
     }
 

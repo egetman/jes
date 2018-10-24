@@ -13,11 +13,11 @@ import org.objenesis.strategy.StdInstantiatorStrategy;
 import io.jes.Event;
 import io.jes.ex.SerializationException;
 
-class KryoBinaryEventSerializer implements EventSerializer<byte[]> {
+class KryoEventSerializer implements EventSerializer<byte[]> {
 
     private final Kryo kryo = new Kryo();
 
-    KryoBinaryEventSerializer() {
+    KryoEventSerializer() {
         kryo.setRegistrationRequired(false);
         kryo.setInstantiatorStrategy(new DefaultInstantiatorStrategy(new StdInstantiatorStrategy()));
     }
