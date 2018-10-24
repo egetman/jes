@@ -6,6 +6,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.UnaryOperator;
+import javax.annotation.Nonnull;
 import javax.sql.DataSource;
 
 import org.junit.jupiter.api.AfterEach;
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
+import io.jes.common.FancyStuff;
 import io.jes.common.SampleEvent;
 import io.jes.provider.JdbcStoreProvider;
 
@@ -41,7 +43,7 @@ class JEventStoreImplTest {
         clearEventStore(target);
     }
 
-    private void clearEventStore(JEventStore store) {
+    private void clearEventStore(@Nonnull JEventStore store) {
         final Set<UUID> uuids = store.readFrom(0).map(Event::uuid).filter(Objects::nonNull).collect(toSet());
         uuids.forEach(store::deleteBy);
     }
@@ -106,7 +108,7 @@ class JEventStoreImplTest {
         private final UUID oldUuid;
         private final UUID newUuid;
 
-        private UuidChanger(UUID oldUuid, UUID newUuid, int changeCount) {
+        private UuidChanger(@Nonnull UUID oldUuid, @Nonnull UUID newUuid, int changeCount) {
             this.oldUuid = oldUuid;
             this.newUuid = newUuid;
             this.changeCount = changeCount;
@@ -115,13 +117,15 @@ class JEventStoreImplTest {
         @Override
         public Event apply(Event event) {
             if (event instanceof SampleEvent) {
-                SampleEvent sampleEvent = (SampleEvent) event;
-                if (oldUuid.equals(sampleEvent.uuid()) && changeCount > 0) {
+                final SampleEvent sampleEvent = (SampleEvent) event;
+                final UUID uuid = sampleEvent.uuid();
+                final String eventName = sampleEvent.getName();
+
+                if (oldUuid.equals(uuid) && changeCount > 0) {
                     changeCount--;
-                    return new SampleEvent(sampleEvent.getName(), newUuid, changed++);
+                    return new SampleEvent(eventName, newUuid, changed++);
                 } else if (changed != 0) {
-                    return new SampleEvent(sampleEvent.getName(), sampleEvent.uuid(),
-                            sampleEvent.expectedStreamVersion() - changed);
+                    return new SampleEvent(eventName, uuid, sampleEvent.expectedStreamVersion() - changed);
                 }
             }
             return event;

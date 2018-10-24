@@ -2,7 +2,7 @@ package io.jes.provider;
 
 import javax.annotation.Nonnull;
 
-import static io.jes.FancyStuff.newEntityManager;
+import static io.jes.common.FancyStuff.newEntityManager;
 
 class JpaGsonStoreProviderTest extends StoreProviderTest {
 

@@ -16,7 +16,7 @@ import io.jes.ex.EventStreamRewriteUnsupportedException;
 import io.jes.ex.EventStreamSplitUnsupportedException;
 import io.jes.provider.JdbcStoreProvider;
 
-import static io.jes.FancyStuff.newDataSource;
+import static io.jes.common.FancyStuff.newDataSource;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;

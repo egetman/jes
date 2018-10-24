@@ -4,7 +4,7 @@ import javax.annotation.Nonnull;
 
 import lombok.extern.slf4j.Slf4j;
 
-import static io.jes.FancyStuff.newEntityManager;
+import static io.jes.common.FancyStuff.newEntityManager;
 
 @Slf4j
 class JpaKryoStoreProviderTest extends StoreProviderTest {
