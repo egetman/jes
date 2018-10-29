@@ -9,7 +9,7 @@ import javax.annotation.Nonnull;
 
 import io.jes.provider.StoreProvider;
 
-@SuppressWarnings({"unused", "WeakerAccess"})
+@SuppressWarnings({"WeakerAccess"})
 public class JEventStoreImpl implements JEventStore {
 
     private final StoreProvider provider;
@@ -43,7 +43,9 @@ public class JEventStoreImpl implements JEventStore {
         this.copyTo(store, UnaryOperator.identity());
     }
 
+    // todo: to sync or not to sync?
     @Override
+    @SuppressWarnings("squid:S1135")
     public void copyTo(@Nonnull JEventStore store, @Nonnull UnaryOperator<Event> handler) {
         Objects.requireNonNull(store, "Store must not be null");
         Objects.requireNonNull(handler, "Handler must not be null");

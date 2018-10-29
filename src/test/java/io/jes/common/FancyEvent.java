@@ -7,12 +7,14 @@ import javax.annotation.Nullable;
 
 import io.jes.Event;
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
 
 @EqualsAndHashCode
 public class FancyEvent implements Event {
 
-    private final String name;
     private final UUID uuid;
+    @Getter
+    private final String name;
 
     public FancyEvent(@Nonnull String name, @Nonnull UUID uuid) {
         this.name = Objects.requireNonNull(name);

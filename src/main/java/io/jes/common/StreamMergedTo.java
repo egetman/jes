@@ -10,19 +10,19 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
 /**
- * Common system event that indicates stream replacement.
+ * Common system event that indicates stream merge.
  */
 @Immutable
 @EqualsAndHashCode
-public final class StreamMovedTo implements Event {
+public class StreamMergedTo implements Event {
 
     private final UUID uuid;
     @Getter
-    private final UUID movedTo;
+    private final UUID mergedTo;
 
-    public StreamMovedTo(@Nonnull UUID uuid, @Nonnull UUID movedTo) {
+    public StreamMergedTo(@Nonnull UUID uuid, @Nonnull UUID mergedTo) {
         this.uuid = Objects.requireNonNull(uuid, "Source uuid must not be null");
-        this.movedTo = Objects.requireNonNull(movedTo, "Target uuid must not be null");
+        this.mergedTo = Objects.requireNonNull(mergedTo, "Target uuid must not be null");
     }
 
     @Nonnull
@@ -35,7 +35,7 @@ public final class StreamMovedTo implements Event {
     public String toString() {
         final StringBuilder sb = new StringBuilder(getClass().getSimpleName() + " [");
         sb.append("uuid: ").append(uuid);
-        sb.append(", movedTo: ").append(movedTo);
+        sb.append(", mergedTo: ").append(mergedTo);
         sb.append(']');
         return sb.toString();
     }

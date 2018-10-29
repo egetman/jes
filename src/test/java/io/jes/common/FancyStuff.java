@@ -32,7 +32,7 @@ import static org.hibernate.cfg.AvailableSettings.USE_STRUCTURED_CACHE;
 @Slf4j
 public final class FancyStuff {
 
-    private static final int MAX_POOL_SIZE = 10;
+    private static final int MAX_POOL_SIZE = 30;
 
     private FancyStuff() {}
 
