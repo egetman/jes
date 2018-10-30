@@ -28,6 +28,7 @@ class GsonEventSerializer implements EventSerializer<String> {
         this.gson = new GsonBuilder().registerTypeAdapter(Event.class, new EventAdapter()).create();
     }
 
+    @SuppressWarnings("unused")
     public GsonEventSerializer(@Nonnull GsonBuilder gsonBuilder) {
         this.gson = requireNonNull(gsonBuilder, "Gson builder must not be null")
                 .registerTypeAdapter(Event.class, new EventAdapter())

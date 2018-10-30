@@ -44,6 +44,7 @@ public class JEventStoreImpl implements JEventStore {
     }
 
     // todo: to sync or not to sync?
+    // need to verify that no events lost after first transfer.
     @Override
     @SuppressWarnings("squid:S1135")
     public void copyTo(@Nonnull JEventStore store, @Nonnull UnaryOperator<Event> handler) {

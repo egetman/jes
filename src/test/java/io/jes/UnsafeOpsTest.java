@@ -127,10 +127,15 @@ class UnsafeOpsTest {
 
     @Test
     void traverseAndSplitShouldThrowEmptyEventStreamExceptionWhenNoEventsProducedByHandler() {
-        final SampleEvent event = new SampleEvent("FOO", randomUUID());
+        final UUID uuid = randomUUID();
+        final SampleEvent event = new SampleEvent("FOO", uuid);
         store.write(event);
 
-        assertThrows(EmptyEventStreamException.class, () -> unsafeOps.traverseAndSplit(event.uuid(), colection -> emptyMap()));
+        Map<UUID, Collection<Event>> fakeResults = new HashMap<>();
+        fakeResults.put(randomUUID(), emptyList());
+
+        assertThrows(EmptyEventStreamException.class, () -> unsafeOps.traverseAndSplit(uuid, colection -> emptyMap()));
+        assertThrows(EmptyEventStreamException.class, () -> unsafeOps.traverseAndSplit(uuid, collection -> fakeResults));
     }
 
     @Test

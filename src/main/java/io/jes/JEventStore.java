@@ -46,7 +46,7 @@ public interface JEventStore {
     void write(@Nonnull Event event);
 
     /**
-     * Delete a whole stream by it's {@literal uuid} (is a safe operation).
+     * Delete a whole stream by it's {@literal uuid} (its a safe operation).
      *
      * @param uuid of stream  to delete.
      */
@@ -58,7 +58,7 @@ public interface JEventStore {
      *
      * @param store is an Event Store to copy all events.
      * @throws NullPointerException if store is null.
-     * @see <a href="https://leanpub.com/esversioning/read#leanpub-auto-copy-and-replace">Copy and Replace pattern</a>.
+     * @see <a href="https://leanpub.com/esversioning/read#leanpub-auto-copy-transform">Copy-Transform pattern</a>.
      */
     void copyTo(@Nonnull JEventStore store);
 
@@ -70,7 +70,7 @@ public interface JEventStore {
      * @param handler is an event transformator. It can transform one given event into another before storing it in
      *                the given {@literal store}.
      * @throws NullPointerException if store or handler is null.
-     * @see <a href="https://leanpub.com/esversioning/read#leanpub-auto-copy-and-replace">Copy and Replace pattern</a>.
+     * @see <a href="https://leanpub.com/esversioning/read#leanpub-auto-copy-transform">Copy-Transform pattern</a>.
      */
     void copyTo(@Nonnull JEventStore store, @Nonnull UnaryOperator<Event> handler);
 
