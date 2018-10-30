@@ -8,7 +8,7 @@ Think about:
  - ~~event steam deletion~~ DONE
  - ~~store drain-to? - recreate event store~~ DONE
  - ~~copy-and-replace event stream~~
- - split event stream
- - merge event streams
+ - ~~split event stream~~
+ - ~~merge event streams~~
  - transaction processing for unsafe operations
  - ~~string (json?) serializer~~ 

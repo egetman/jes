@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -403,13 +404,17 @@ class UnsafeOpsTest {
         }
 
         final UUID newStreamUuid = unsafeOps.traverseAndMerge(uuids, new StreamChanger());
-        final Collection<Event> expected = asList(
+
+        final Comparator<Event> comparator = Comparator.comparing(Event::hashCode);
+        final List<Event> expected = asList(
                 new FancyEvent("FANCY", newStreamUuid),
                 new SampleEvent("SAMPLE", newStreamUuid)
         );
+        final List<Event> actual = new ArrayList<>(store.readBy(newStreamUuid));
+        // "read" order not specified, so if u pass n uuid's there is no garantee which will be read first
+        actual.sort(comparator);
+        expected.sort(comparator);
 
-        final ArrayList<Event> actual = new ArrayList<>(store.readBy(newStreamUuid));
-        actual.sort(Comparator.comparing(Event::uuid));
         assertIterableEquals(expected, actual);
 
         // check that reference from old stream to new stream exists

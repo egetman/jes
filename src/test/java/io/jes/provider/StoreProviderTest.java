@@ -2,44 +2,37 @@ package io.jes.provider;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
-import java.util.Set;
 import java.util.UUID;
-import javax.annotation.Nonnull;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import io.jes.Event;
 import io.jes.common.SampleEvent;
 import io.jes.ex.VersionMismatchException;
 import lombok.extern.slf4j.Slf4j;
 
+import static io.jes.common.FancyStuff.newDataSource;
+import static io.jes.common.FancyStuff.newEntityManager;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toSet;
-import static org.junit.jupiter.api.TestInstance.Lifecycle;
 
 @Slf4j
-@TestInstance(Lifecycle.PER_CLASS)
-abstract class StoreProviderTest {
+class StoreProviderTest {
 
-    @Nonnull
-    abstract StoreProvider getProvider();
-
-    @AfterEach
-    void clearEventStore() {
-        final StoreProvider provider = getProvider();
-        final Set<UUID> uuids = provider.readFrom(0).map(Event::uuid).filter(Objects::nonNull).collect(toSet());
-        uuids.forEach(provider::deleteBy);
+    private static Collection<StoreProvider> createProviders() {
+        return asList(
+                new JdbcStoreProvider<>(newDataSource(), byte[].class),
+                new JdbcStoreProvider<>(newDataSource(), String.class),
+                new JpaStoreProvider<>(newEntityManager(byte[].class), byte[].class),
+                new JpaStoreProvider<>(newEntityManager(String.class), String.class)
+        );
     }
 
-    @Test
-    void shouldReadOwnWrites() {
-        final StoreProvider provider = getProvider();
-
+    @ParameterizedTest
+    @MethodSource("createProviders")
+    void shouldReadOwnWrites(StoreProvider provider) {
         final List<Event> expected = asList(new SampleEvent("FOO"), new SampleEvent("BAR"), new SampleEvent("BAZ"));
         expected.forEach(provider::write);
 
@@ -50,10 +43,9 @@ abstract class StoreProviderTest {
         actual.forEach(event -> log.info("{}", event));
     }
 
-    @Test
-    void shouldReadEventStreamByUuid() {
-        final StoreProvider provider = getProvider();
-
+    @ParameterizedTest
+    @MethodSource("createProviders")
+    void shouldReadEventStreamByUuid(StoreProvider provider) {
         final UUID uuid = UUID.randomUUID();
         final List<Event> expected = asList(
                 new SampleEvent("FOO", uuid),
@@ -70,10 +62,9 @@ abstract class StoreProviderTest {
         actual.forEach(event -> log.info("Loaded event {}", event));
     }
 
-    @Test
-    void shouldSuccessfullyWriteVersionedEventStream() {
-        final StoreProvider provider = getProvider();
-
+    @ParameterizedTest
+    @MethodSource("createProviders")
+    void shouldSuccessfullyWriteVersionedEventStream(StoreProvider provider) {
         final UUID uuid = UUID.randomUUID();
         final List<Event> expected = asList(
                 new SampleEvent("FOO", uuid, 0),
@@ -84,10 +75,9 @@ abstract class StoreProviderTest {
         expected.forEach(provider::write);
     }
 
-    @Test
-    void shouldThrowVersionMismatchException() {
-        final StoreProvider provider = getProvider();
-
+    @ParameterizedTest
+    @MethodSource("createProviders")
+    void shouldThrowVersionMismatchException(StoreProvider provider) {
         final UUID uuid = UUID.randomUUID();
         final List<Event> expected = asList(
                 new SampleEvent("FOO", uuid, 0),
@@ -98,10 +88,9 @@ abstract class StoreProviderTest {
         Assertions.assertThrows(VersionMismatchException.class, () -> expected.forEach(provider::write));
     }
 
-    @Test
-    void shouldDeleteFullStreamByUuid() {
-        final StoreProvider provider = getProvider();
-
+    @ParameterizedTest
+    @MethodSource("createProviders")
+    void shouldDeleteFullStreamByUuid(StoreProvider provider) {
         final UUID uuid = UUID.randomUUID();
         final UUID anotherUuid = UUID.randomUUID();
         final List<Event> events = asList(
@@ -119,9 +108,9 @@ abstract class StoreProviderTest {
         Assertions.assertEquals(new SampleEvent("BAZ", anotherUuid), remaining.iterator().next());
     }
 
-    @Test
-    void deletingNonExistingEventStreamByUuidShouldNotFail() {
-        final StoreProvider provider = getProvider();
+    @ParameterizedTest
+    @MethodSource("createProviders")
+    void deletingNonExistingEventStreamByUuidShouldNotFail(StoreProvider provider) {
         final SampleEvent expected = new SampleEvent("FOO", UUID.randomUUID());
 
         provider.write(expected);
@@ -131,4 +120,5 @@ abstract class StoreProviderTest {
         Assertions.assertEquals(1, actual.size());
         Assertions.assertEquals(expected, actual.iterator().next());
     }
+
 }
