@@ -5,11 +5,12 @@ Think about:
  - make snapshotting
  - store structure validation on start
  - event idempotency on read (clustered environment)
- - ~~event steam deletion~~ DONE
- - ~~store drain-to? - recreate event store~~ DONE
+ - ~~event steam deletion~~
+ - ~~store drain-to? - recreate event store~~
  - ~~copy-and-replace event stream~~
  - ~~split event stream~~
  - ~~merge event streams~~
  - transaction processing for unsafe operations
  - ~~string (json?) serializer~~
  - string (xml) serializer (xstream?) 
+ - upcaster?
