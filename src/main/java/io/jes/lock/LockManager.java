@@ -1,11 +1,13 @@
 package io.jes.lock;
 
+import javax.annotation.Nonnull;
+
 public interface LockManager {
 
-    void doExclusive(String lockName, Runnable action);
+    void doExclusive(@Nonnull String key, @Nonnull Runnable action);
 
-    void doProtectedRead(String lockName, Runnable action);
+    void doProtectedRead(@Nonnull String key, @Nonnull Runnable action);
 
-    void doProtectedWrite(String lockName, Runnable action);
+    void doProtectedWrite(@Nonnull String key, @Nonnull Runnable action);
 
 }

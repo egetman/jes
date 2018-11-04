@@ -19,6 +19,7 @@
 
         <HikariCP.version>2.7.1</HikariCP.version>
         <hibernate.version>5.3.5.Final</hibernate.version>
+        <mockito-core.version>2.23.0</mockito-core.version>
         <testcontainers.version>1.9.1</testcontainers.version>
         <junit-jupiter-api.version>5.2.0</junit-jupiter-api.version>
     </properties>
@@ -44,7 +45,7 @@
             <version>${lombok.version}</version>
         </dependency>
 
-        <!-- nullble-nonnull annotations -->
+        <!-- nullable-nonnull annotations -->
         <dependency>
             <groupId>com.google.code.findbugs</groupId>
             <artifactId>jsr305</artifactId>
@@ -145,6 +146,13 @@
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-params</artifactId>
             <version>${junit-jupiter-api.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <version>${mockito-core.version}</version>
+            <artifactId>mockito-core</artifactId>
             <scope>test</scope>
         </dependency>
 

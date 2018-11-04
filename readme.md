@@ -14,3 +14,4 @@ Think about:
  - ~~string (json?) serializer~~
  - string (xml) serializer (xstream?) 
  - upcaster?
+ - check annotaions work with spring
