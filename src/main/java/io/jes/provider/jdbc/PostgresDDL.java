@@ -28,7 +28,7 @@ class PostgresDDL implements DDLProducer {
 
     @Nonnull
     @Override
-    public String createStore(Class<?> contentType) {
+    public String createStore(@Nonnull Class<?> contentType) {
         if (contentType != String.class && contentType != byte[].class) {
             throw new IllegalArgumentException("Illegal type of content column: " + contentType);
         }

@@ -16,8 +16,6 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
-import io.jes.common.FancyEvent;
-import io.jes.common.SampleEvent;
 import io.jes.common.StreamMergedTo;
 import io.jes.common.StreamMovedTo;
 import io.jes.common.StreamSplittedTo;
@@ -26,7 +24,9 @@ import io.jes.ex.EventStreamRewriteUnsupportedException;
 import io.jes.ex.EventStreamSplitUnsupportedException;
 import io.jes.provider.JdbcStoreProvider;
 
-import static io.jes.common.FancyStuff.newDataSource;
+import static io.jes.internal.Events.FancyEvent;
+import static io.jes.internal.Events.SampleEvent;
+import static io.jes.internal.FancyStuff.newDataSource;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;

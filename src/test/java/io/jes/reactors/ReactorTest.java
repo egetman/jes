@@ -4,21 +4,21 @@ import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import javax.annotation.Nonnull;
+
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import io.jes.JEventStore;
 import io.jes.JEventStoreImpl;
-import io.jes.common.FancyEvent;
-import io.jes.common.ProcessingTerminated;
-import io.jes.common.SampleEvent;
+import io.jes.internal.Events;
 import io.jes.ex.BrokenReactorException;
 import io.jes.offset.InMemoryOffset;
 import io.jes.offset.Offset;
 import io.jes.provider.JdbcStoreProvider;
 import lombok.SneakyThrows;
 
-import static io.jes.common.FancyStuff.newDataSource;
+import static io.jes.internal.FancyStuff.newDataSource;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -36,33 +36,36 @@ class ReactorTest {
 
         BrokenReactorException exception = assertThrows(BrokenReactorException.class,
                 () -> new Reactor(store, new InMemoryOffset()) {});
+
         assertEquals("Methods with @Handle annotation not found", exception.getMessage());
 
         exception = assertThrows(BrokenReactorException.class, () -> new Reactor(store, new InMemoryOffset()) {
             @Handler
-            private int handle(SampleEvent event) {
-                // do nothing
+            private int handle(Events.SampleEvent event) {
                 return -1;
             }
         });
+
         assertEquals("Handler method should not have any return value", exception.getMessage());
 
         exception = assertThrows(BrokenReactorException.class, () -> new Reactor(store, new InMemoryOffset()) {
             @Handler
-            private void handle(SampleEvent sampleEvent, FancyEvent fancyEvent) {}
+            private void handle(Events.SampleEvent sampleEvent, Events.FancyEvent fancyEvent) {}
         });
+
         assertEquals("Handler method should have only 1 parameter", exception.getMessage());
 
         exception = assertThrows(BrokenReactorException.class, () -> new Reactor(store, new InMemoryOffset()) {
             @Handler
             private void handle(Object object) {}
         });
+
         assertEquals("Handler method parameter must be an instance of the Event class. "
                 + "Found type: " + Object.class, exception.getMessage());
 
         assertDoesNotThrow(() -> new Reactor(store, new InMemoryOffset()) {
             @Handler
-            private void handle(SampleEvent event) {}
+            private void handle(Events.SampleEvent event) {}
         });
     }
 
@@ -89,16 +92,16 @@ class ReactorTest {
             assertEquals(2, sampleLatch.getCount());
             assertEquals(0, offset.value(key));
 
-            store.write(new FancyEvent("FOO", UUID.randomUUID()));
+            store.write(new Events.FancyEvent("FOO", UUID.randomUUID()));
 
             // verify reactor handle first store change
             assertTrue(fancyLatch.await(1, TimeUnit.SECONDS));
             assertEquals(0, fancyLatch.getCount());
             assertEquals(2, sampleLatch.getCount());
 
-            store.write(new SampleEvent("BAR", UUID.randomUUID()));
-            store.write(new SampleEvent("BAZ", UUID.randomUUID()));
-            store.write(new ProcessingTerminated());
+            store.write(new Events.SampleEvent("BAR", UUID.randomUUID()));
+            store.write(new Events.SampleEvent("BAZ", UUID.randomUUID()));
+            store.write(new Events.ProcessingTerminated());
 
             // verify reactor handle all other store changes
             assertTrue(sampleLatch.await(1, TimeUnit.SECONDS));
@@ -111,6 +114,56 @@ class ReactorTest {
         }
     }
 
+    @SuppressWarnings("unused")
+    static class SampleReactor extends Reactor {
+
+        @Nonnull
+        private final CountDownLatch endLatch;
+        @Nonnull
+        private final CountDownLatch startLatch;
+        @Nonnull
+        private final CountDownLatch fancyLatch;
+        @Nonnull
+        private final CountDownLatch sampleLatch;
+
+        private volatile boolean terminated;
+
+        SampleReactor(@Nonnull JEventStore store, @Nonnull Offset offset,
+                      @Nonnull CountDownLatch endLatch,
+                      @Nonnull CountDownLatch startLatch,
+                      @Nonnull CountDownLatch fancyLatch,
+                      @Nonnull CountDownLatch sampleLatch) {
+
+            super(store, offset);
+            this.startLatch = startLatch;
+            this.endLatch = endLatch;
+            this.fancyLatch = fancyLatch;
+            this.sampleLatch = sampleLatch;
+        }
 
 
+        @Handler
+        private void handle(Events.ProcessingTerminated event) {
+            this.terminated = true;
+        }
+
+        @Handler
+        private void handle(Events.SampleEvent event) {
+            sampleLatch.countDown();
+        }
+
+        @Handler
+        private void handle(Events.FancyEvent event) {
+            fancyLatch.countDown();
+        }
+
+        @Override
+        void tailStore() {
+            super.tailStore();
+            startLatch.countDown();
+            if (terminated) {
+                endLatch.countDown();
+            }
+        }
+    }
 }

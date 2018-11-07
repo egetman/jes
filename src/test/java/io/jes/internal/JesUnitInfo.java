@@ -1,4 +1,4 @@
-package io.jes.common;
+package io.jes.internal;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;

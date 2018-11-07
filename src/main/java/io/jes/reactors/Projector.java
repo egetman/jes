@@ -14,7 +14,7 @@ public abstract class Projector extends Reactor {
 
     public Projector(@Nonnull JEventStore store, @Nonnull Offset offset, @Nonnull LockManager lockManager) {
         super(store, offset);
-        this.lockManager = Objects.requireNonNull(lockManager, "LockManager must no be null");
+        this.lockManager = Objects.requireNonNull(lockManager, "LockManager must not be null");
     }
 
     @Override

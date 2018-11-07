@@ -7,21 +7,20 @@ import javax.annotation.Nonnull;
  * Factory, that provides different serialization implementations based on target serialization type and
  * {@link SerializationOption}.
  */
-@SuppressWarnings({"WeakerAccess", "unused"})
 public class SerializerFactory {
 
-    public static final String NULL_SERIALIZER_OPTIONS_ERROR = "Serialization options must not be null";
+    private static final String NULL_SERIALIZER_OPTIONS_ERROR = "Serialization options must not be null";
 
     private SerializerFactory() {}
 
     @Nonnull
-    public static EventSerializer<byte[]> newBinarySerializer(@Nonnull SerializationOption... options) {
+    static EventSerializer<byte[]> newBinarySerializer(@Nonnull SerializationOption... options) {
         Objects.requireNonNull(options, NULL_SERIALIZER_OPTIONS_ERROR);
         return new KryoEventSerializer();
     }
 
     @Nonnull
-    public static EventSerializer<String> newStringSerializer(@Nonnull SerializationOption... options) {
+    static EventSerializer<String> newStringSerializer(@Nonnull SerializationOption... options) {
         Objects.requireNonNull(options, NULL_SERIALIZER_OPTIONS_ERROR);
         return new GsonEventSerializer();
     }
@@ -33,9 +32,9 @@ public class SerializerFactory {
         Objects.requireNonNull(options, NULL_SERIALIZER_OPTIONS_ERROR);
         Objects.requireNonNull(serializationType, "Serialization type must be provided");
         if (serializationType == byte[].class) {
-            return (EventSerializer<T>) newBinarySerializer();
+            return (EventSerializer<T>) newBinarySerializer(options);
         } else if (serializationType == String.class) {
-            return (EventSerializer<T>) newStringSerializer();
+            return (EventSerializer<T>) newStringSerializer(options);
         }
         throw new IllegalArgumentException("Serialization for type " + serializationType + " not supported");
     }

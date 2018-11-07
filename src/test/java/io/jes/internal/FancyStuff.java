@@ -1,4 +1,4 @@
-package io.jes.common;
+package io.jes.internal;
 
 import java.sql.Connection;
 import java.sql.Statement;

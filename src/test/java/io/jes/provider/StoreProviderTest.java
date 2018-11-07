@@ -9,12 +9,12 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import io.jes.Event;
-import io.jes.common.SampleEvent;
 import io.jes.ex.VersionMismatchException;
 import lombok.extern.slf4j.Slf4j;
 
-import static io.jes.common.FancyStuff.newDataSource;
-import static io.jes.common.FancyStuff.newEntityManager;
+import static io.jes.internal.Events.SampleEvent;
+import static io.jes.internal.FancyStuff.newDataSource;
+import static io.jes.internal.FancyStuff.newEntityManager;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 

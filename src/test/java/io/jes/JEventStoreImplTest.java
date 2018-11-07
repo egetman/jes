@@ -14,8 +14,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
-import io.jes.common.FancyStuff;
-import io.jes.common.SampleEvent;
+import io.jes.internal.Events;
+import io.jes.internal.FancyStuff;
 import io.jes.provider.JdbcStoreProvider;
 
 import static java.util.Arrays.asList;
@@ -52,9 +52,9 @@ class JEventStoreImplTest {
     void shouldCopySourceEventStoreContentIntoTargetEventStore() {
         final UUID uuid = UUID.randomUUID();
         final List<Event> events = asList(
-                new SampleEvent("FOO", uuid, 0),
-                new SampleEvent("BAR", uuid, 1),
-                new SampleEvent("BAZ", uuid, 2)
+                new Events.SampleEvent("FOO", uuid, 0),
+                new Events.SampleEvent("BAR", uuid, 1),
+                new Events.SampleEvent("BAZ", uuid, 2)
         );
 
         events.forEach(source::write);
@@ -73,9 +73,9 @@ class JEventStoreImplTest {
     void shouldCopySourceEventStoreContentIntoTargetEventStoreWithModification() {
         final UUID uuid = UUID.randomUUID();
         final List<Event> events = asList(
-                new SampleEvent("FOO", uuid, 0),
-                new SampleEvent("BAR", uuid, 1),
-                new SampleEvent("BAZ", uuid, 2)
+                new Events.SampleEvent("FOO", uuid, 0),
+                new Events.SampleEvent("BAR", uuid, 1),
+                new Events.SampleEvent("BAZ", uuid, 2)
         );
 
         events.forEach(source::write);
@@ -93,12 +93,12 @@ class JEventStoreImplTest {
 
         final Collection<Event> modified = target.readBy(newUuid);
         Assertions.assertIterableEquals(asList(
-                new SampleEvent("FOO", newUuid, 0),
-                new SampleEvent("BAR", newUuid, 1)
+                new Events.SampleEvent("FOO", newUuid, 0),
+                new Events.SampleEvent("BAR", newUuid, 1)
         ), modified);
 
         final Collection<Event> notModified = target.readBy(uuid);
-        Assertions.assertIterableEquals(singletonList(new SampleEvent("BAZ", uuid, 0)), notModified);
+        Assertions.assertIterableEquals(singletonList(new Events.SampleEvent("BAZ", uuid, 0)), notModified);
     }
 
     private static class UuidChanger implements UnaryOperator<Event> {
@@ -116,16 +116,16 @@ class JEventStoreImplTest {
 
         @Override
         public Event apply(Event event) {
-            if (event instanceof SampleEvent) {
-                final SampleEvent sampleEvent = (SampleEvent) event;
+            if (event instanceof Events.SampleEvent) {
+                final Events.SampleEvent sampleEvent = (Events.SampleEvent) event;
                 final UUID uuid = sampleEvent.uuid();
                 final String eventName = sampleEvent.getName();
 
                 if (oldUuid.equals(uuid) && changeCount > 0) {
                     changeCount--;
-                    return new SampleEvent(eventName, newUuid, changed++);
+                    return new Events.SampleEvent(eventName, newUuid, changed++);
                 } else if (changed != 0) {
-                    return new SampleEvent(eventName, uuid, sampleEvent.expectedStreamVersion() - changed);
+                    return new Events.SampleEvent(eventName, uuid, sampleEvent.expectedStreamVersion() - changed);
                 }
             }
             return event;

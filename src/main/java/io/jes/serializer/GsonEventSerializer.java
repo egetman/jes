@@ -29,7 +29,7 @@ class GsonEventSerializer implements EventSerializer<String> {
     }
 
     @SuppressWarnings("unused")
-    public GsonEventSerializer(@Nonnull GsonBuilder gsonBuilder) {
+    GsonEventSerializer(@Nonnull GsonBuilder gsonBuilder) {
         this.gson = requireNonNull(gsonBuilder, "Gson builder must not be null")
                 .registerTypeAdapter(Event.class, new EventAdapter())
                 .create();

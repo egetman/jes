@@ -1,7 +1,12 @@
 package io.jes.reactors;
 
 import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
+import javax.annotation.Nonnull;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -9,15 +14,20 @@ import org.mockito.Mockito;
 import io.jes.Event;
 import io.jes.JEventStore;
 import io.jes.JEventStoreImpl;
-import io.jes.common.FancyEvent;
-import io.jes.common.ProcessingStarted;
-import io.jes.common.ProcessingTerminated;
-import io.jes.common.SampleEvent;
+import io.jes.lock.InMemoryLockManager;
 import io.jes.offset.InMemoryOffset;
+import io.jes.offset.Offset;
 import io.jes.provider.JdbcStoreProvider;
+import lombok.Data;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 
-import static io.jes.common.FancyStuff.newDataSource;
+import static io.jes.internal.Events.FancyEvent;
+import static io.jes.internal.Events.ProcessingStarted;
+import static io.jes.internal.Events.ProcessingTerminated;
+import static io.jes.internal.Events.SampleEvent;
+import static io.jes.internal.FancyStuff.newDataSource;
+import static io.jes.reactors.ProjectorTest.SampleProjector.Projection;
 import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
@@ -45,7 +55,9 @@ class ProjectorTest {
     void projectorShouldCorrectlyRebuildProjection() {
         final InMemoryOffset offset = new InMemoryOffset();
         final JEventStoreImpl store = new JEventStoreImpl(new JdbcStoreProvider<>(newDataSource(), String.class));
+
         try (final SampleProjector projector = new SampleProjector(store, offset)) {
+            // verify projector start listen event store and projection is not created yet
             assertTrue(projector.isStarted());
             assertNull(projector.getProjection());
 
@@ -57,7 +69,8 @@ class ProjectorTest {
             store.write(fancyEvent);
             store.write(new ProcessingTerminated());
 
-            final SampleProjector.Projection projection = projector.getProjection();
+            final Projection projection = projector.getProjection();
+
             assertNotNull(projection);
             assertEquals(4, projection.getTotalProcessed());
             assertEquals(sampleEvent.getName(), projection.getName());
@@ -68,17 +81,82 @@ class ProjectorTest {
 
             projector.recreate();
 
-            final SampleProjector.Projection newProjection = projector.getProjection();
-            assertNotNull(newProjection);
-            assertEquals(4, newProjection.getTotalProcessed());
-            assertEquals(sampleEvent.getName(), newProjection.getName());
-            assertIterableEquals(
-                    new HashSet<>(asList(sampleEvent.uuid(), fancyEvent.uuid())),
-                    newProjection.getUniqueEventStreams()
-            );
+            final Projection newProjection = projector.getProjection();
 
+            assertEquals(projection, newProjection);
             // verify that it's another, 'recreated' projection, not the same obj as earlier
             assertNotSame(projection, newProjection);
+        }
+    }
+
+    @Slf4j
+    @SuppressWarnings("unused")
+    static class SampleProjector extends Projector {
+
+        private Projection projection;
+        private CountDownLatch endStreamLatch = new CountDownLatch(1);
+        private final CountDownLatch started = new CountDownLatch(1);
+
+        SampleProjector(@Nonnull JEventStore store, @Nonnull Offset offset) {
+            super(store, offset, new InMemoryLockManager());
+        }
+
+        @Handler
+        private void handle(@Nonnull ProcessingStarted event) {
+            projection = new Projection();
+            projection.totalProcessed++;
+        }
+
+        @Handler
+        private void handle(@Nonnull SampleEvent event) {
+            projection.name = event.getName();
+            projection.totalProcessed++;
+            projection.uniqueEventStreams.add(event.uuid());
+        }
+
+        @Handler
+        private void handle(@Nonnull FancyEvent event) {
+            projection.totalProcessed++;
+            projection.uniqueEventStreams.add(event.uuid());
+        }
+
+        @Handler
+        private void handle(@Nonnull ProcessingTerminated event) {
+            projection.totalProcessed++;
+            endStreamLatch.countDown();
+        }
+
+        @SneakyThrows
+        Projection getProjection() {
+            endStreamLatch.await(1, TimeUnit.SECONDS);
+            return projection;
+        }
+
+        @Override
+        void tailStore() {
+            super.tailStore();
+            started.countDown();
+        }
+
+        @SneakyThrows
+        boolean isStarted() {
+            return started.await(1, TimeUnit.SECONDS);
+        }
+
+        @Override
+        public void recreate() {
+            super.recreate();
+            endStreamLatch = new CountDownLatch(1);
+        }
+
+        // this is just in-memory projection. But it can be any kind of projection like separate sql-db, or elastic etc.
+        @Data
+        static class Projection {
+
+            private String name;
+            private long totalProcessed;
+            private final Set<UUID> uniqueEventStreams = new HashSet<>();
+
         }
     }
 }
