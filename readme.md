@@ -3,14 +3,15 @@ Think about:
  - multithreaded write - to be or not to be?
  - event-intersepter ?? handling?
  - make snapshotting
+ - snapshots invalidation
  - store structure validation on start
- - event idempotency on read (clustered environment)
+ - ~~event idempotency on read (clustered environment)~~ done by locking for projectors
  - ~~event steam deletion~~
  - ~~store drain-to? - recreate event store~~
  - ~~copy-and-replace event stream~~
  - ~~split event stream~~
  - ~~merge event streams~~
- - transaction processing for unsafe operations
+ - transaction processing for unsafe operations??
  - ~~string (json?) serializer~~
  - string (xml) serializer (xstream?) 
  - upcaster?

@@ -8,14 +8,37 @@ import javax.annotation.Nullable;
 import io.jes.Event;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 
 public final class Events {
 
     private Events() {}
 
-    public static class ProcessingStarted implements Event {}
+    @RequiredArgsConstructor
+    @NoArgsConstructor(force = true)
+    public static class ProcessingStarted implements Event {
+        private final UUID uuid;
 
-    public static class ProcessingTerminated implements Event {}
+        @Nullable
+        @Override
+        public UUID uuid() {
+            return uuid;
+        }
+    }
+
+    @RequiredArgsConstructor
+    @NoArgsConstructor(force = true)
+    public static class ProcessingTerminated implements Event {
+
+        private final UUID uuid;
+
+        @Nullable
+        @Override
+        public UUID uuid() {
+            return uuid;
+        }
+    }
 
     @EqualsAndHashCode
     public static class FancyEvent implements Event {

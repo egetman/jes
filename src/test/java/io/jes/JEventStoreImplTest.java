@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
+import io.jes.ex.EmptyEventStreamException;
 import io.jes.internal.Events;
 import io.jes.internal.FancyStuff;
 import io.jes.provider.JdbcStoreProvider;
@@ -46,6 +47,11 @@ class JEventStoreImplTest {
     private void clearEventStore(@Nonnull JEventStore store) {
         final Set<UUID> uuids = store.readFrom(0).map(Event::uuid).filter(Objects::nonNull).collect(toSet());
         uuids.forEach(store::deleteBy);
+    }
+
+    @Test
+    void shouldThrowEmptyEventStreamExceptionOnNonExistingStreamUuid() {
+        Assertions.assertThrows(EmptyEventStreamException.class, () -> source.readBy(UUID.randomUUID()));
     }
 
     @Test
