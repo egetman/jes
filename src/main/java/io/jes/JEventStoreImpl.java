@@ -9,7 +9,6 @@ import javax.annotation.Nonnull;
 
 import io.jes.provider.StoreProvider;
 
-@SuppressWarnings({"WeakerAccess"})
 public class JEventStoreImpl implements JEventStore {
 
     private final StoreProvider provider;
