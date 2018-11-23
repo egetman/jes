@@ -1,6 +1,7 @@
 package io.jes.provider.jdbc;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import io.jes.Event;
 
@@ -47,6 +48,16 @@ public interface DDLProducer {
      */
     @Nonnull
     String queryEventsByUuid();
+
+    /**
+     * Optional query for snapshot processing.
+     * @return SQL select statement for quering events by uuid with skip first n for specific database.
+     */
+    @Nullable
+    default String queryEventsByUuidWithSkip() {
+        return null;
+    }
+
 
     /**
      * Note: event stream: collection of events grouped by {@link Event#uuid()}.

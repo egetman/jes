@@ -1,6 +1,6 @@
 package io.jes.ex;
 
-import io.jes.aggregate.Aggregate;
+import io.jes.Aggregate;
 
 public class AggregateCreationException extends RuntimeException {
 

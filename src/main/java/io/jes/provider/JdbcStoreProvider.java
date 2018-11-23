@@ -6,7 +6,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.Collection;
-import java.util.Objects;
 import java.util.Spliterators.AbstractSpliterator;
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -24,6 +23,7 @@ import io.jes.provider.jdbc.DDLProducer;
 import io.jes.serializer.EventSerializer;
 import io.jes.serializer.SerializationOption;
 import io.jes.serializer.SerializerFactory;
+import io.jes.snapshot.SnapshotReader;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
@@ -37,7 +37,7 @@ import static java.util.Spliterator.ORDERED;
  * @param <T> type of event serialization.
  */
 @Slf4j
-public class JdbcStoreProvider<T> implements StoreProvider {
+public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader {
 
     private final DataSource dataSource;
     private final DDLProducer ddlProducer;
@@ -51,7 +51,7 @@ public class JdbcStoreProvider<T> implements StoreProvider {
 
             try (final Connection connection = dataSource.getConnection()) {
 
-                final String schema = Objects.requireNonNull(connection.getSchema(), "Schema must not be null");
+                final String schema = requireNonNull(connection.getSchema(), "Schema must not be null");
                 final DatabaseMetaData metaData = connection.getMetaData();
                 final String databaseName = metaData.getDatabaseProductName();
                 this.ddlProducer = DDLFactory.newDDLProducer(requireNonNull(databaseName), schema);
@@ -74,20 +74,29 @@ public class JdbcStoreProvider<T> implements StoreProvider {
 
     @Override
     public Stream<Event> readFrom(long offset) {
-        return readBy(offset, ddlProducer.queryEvents());
+        return readBy(ddlProducer.queryEvents(), offset);
     }
 
     @Override
     public Collection<Event> readBy(@Nonnull UUID uuid) {
-        return readBy(uuid, ddlProducer.queryEventsByUuid()).collect(Collectors.toList());
+        return readBy(ddlProducer.queryEventsByUuid(), uuid).collect(Collectors.toList());
     }
 
-    private Stream<Event> readBy(@Nonnull Object value, @Nonnull String from) {
+    @Override
+    public Collection<Event> readBy(@Nonnull UUID uuid, long skip) {
+        return readBy(requireNonNull(ddlProducer.queryEventsByUuidWithSkip()), uuid, skip).collect(Collectors.toList());
+    }
+
+    private Stream<Event> readBy(@Nonnull String from, @Nonnull Object... values) {
         try {
             final Connection connection = dataSource.getConnection();
             final PreparedStatement statement = connection.prepareStatement(from);
 
-            statement.setObject(1, value);
+            int index = 1;
+            for (Object parameter : values) {
+                statement.setObject(index++, parameter);
+            }
+
             final ResultSet set = statement.executeQuery();
 
             return resultSetToStream(connection, statement, set);
@@ -186,4 +195,5 @@ public class JdbcStoreProvider<T> implements StoreProvider {
             }
         }
     }
+
 }

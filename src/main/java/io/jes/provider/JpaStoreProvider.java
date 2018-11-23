@@ -18,8 +18,10 @@ import io.jes.provider.jpa.StoreEntryFactory;
 import io.jes.serializer.EventSerializer;
 import io.jes.serializer.SerializationOption;
 import io.jes.serializer.SerializerFactory;
+import io.jes.snapshot.SnapshotReader;
 import lombok.extern.slf4j.Slf4j;
 
+import static java.lang.Integer.*;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
@@ -29,7 +31,9 @@ import static java.util.Objects.requireNonNull;
  * @param <T> type of event serialization.
  */
 @Slf4j
-public class JpaStoreProvider<T> implements StoreProvider {
+public class JpaStoreProvider<T> implements StoreProvider, SnapshotReader {
+
+    private static final int FETCH_SIZE = 100;
 
     private final EntityManager entityManager;
     private final EventSerializer<T> serializer;
@@ -56,16 +60,28 @@ public class JpaStoreProvider<T> implements StoreProvider {
         );
 
         query.setParameter("id", offset);
+        query.setHint("org.hibernate.readOnly", true);
+        query.setHint("org.hibernate.fetchSize", FETCH_SIZE);
+
         return query.getResultStream().map(storeEntry -> serializer.deserialize(storeEntry.getData()));
     }
 
     @Override
     public Collection<Event> readBy(@Nonnull UUID uuid) {
+        return readBy(uuid, 0);
+    }
+
+    @Override
+    public Collection<Event> readBy(@Nonnull UUID uuid, long skip) {
         final TypedQuery<? extends StoreEntry> query = entityManager.createQuery(
                 format(QUERY_BY_UUID, entryType.getName()), entryType
         );
 
         query.setParameter("uuid", uuid);
+        query.setMaxResults(MAX_VALUE);
+        query.setFirstResult((int) skip);
+        query.setHint("org.hibernate.readOnly", true);
+        query.setHint("org.hibernate.fetchSize", FETCH_SIZE);
         return query.getResultStream()
                 .map(storeEntry -> serializer.deserialize(storeEntry.getData()))
                 .collect(Collectors.toList());

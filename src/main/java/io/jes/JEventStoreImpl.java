@@ -7,17 +7,22 @@ import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
 import io.jes.ex.EmptyEventStreamException;
+import io.jes.snapshot.SnapshotReader;
 import io.jes.provider.StoreProvider;
-import io.jes.util.Check;
 
+import static io.jes.util.Check.nonEmpty;
 import static java.util.Objects.requireNonNull;
 
 public class JEventStoreImpl implements JEventStore {
 
+    private static final String NON_NULL_UUID = "Event stream uuid must not be null";
+
     private final StoreProvider provider;
+    private final boolean canReadSnapshots;
 
     public JEventStoreImpl(StoreProvider provider) {
         this.provider = requireNonNull(provider, "StoreProvider must not be null");
+        this.canReadSnapshots = provider instanceof SnapshotReader;
     }
 
     @Override
@@ -27,9 +32,19 @@ public class JEventStoreImpl implements JEventStore {
 
     @Override
     public Collection<Event> readBy(@Nonnull UUID uuid) {
-        final Collection<Event> events = provider.readBy(requireNonNull(uuid, "Event stream uuid must not be null"));
-        Check.nonEmpty(events, () -> new EmptyEventStreamException("Event stream with uuid " + uuid + " not found"));
+        final Collection<Event> events = provider.readBy(requireNonNull(uuid, NON_NULL_UUID));
+        nonEmpty(events, () -> new EmptyEventStreamException("Event stream with uuid " + uuid + " not found"));
         return events;
+    }
+
+    Collection<Event> readBy(@Nonnull UUID uuid, long skip) {
+        if (skip == 0) {
+            return readBy(uuid);
+        }
+        if (!canReadSnapshots) {
+            throw new IllegalStateException("Current provider doesn't support snapshotting");
+        }
+        return ((SnapshotReader) provider).readBy(requireNonNull(uuid, NON_NULL_UUID), skip);
     }
 
     @Override
@@ -39,7 +54,7 @@ public class JEventStoreImpl implements JEventStore {
 
     @Override
     public void deleteBy(@Nonnull UUID uuid) {
-        provider.deleteBy(requireNonNull(uuid, "Event stream uuid must not be null"));
+        provider.deleteBy(requireNonNull(uuid, NON_NULL_UUID));
     }
 
     @Override
