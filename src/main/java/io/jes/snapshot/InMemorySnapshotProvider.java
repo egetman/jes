@@ -10,13 +10,25 @@ import io.jes.Aggregate;
 
 public class InMemorySnapshotProvider implements SnapshotProvider {
 
-    private static final int MAX_ENTRIES = 5000;
-    private final Map<UUID, Aggregate> cache = new LinkedHashMap<UUID, Aggregate>(MAX_ENTRIES, .75f, true) {
+    private static final int MAX_CACHE_SIZE = 5000;
+
+    private final int cacheSize;
+    private final Map<UUID, Aggregate> cache = new LinkedHashMap<UUID, Aggregate>(MAX_CACHE_SIZE, .75f, true) {
         @Override
         public boolean removeEldestEntry(Map.Entry<UUID, Aggregate> eldest) {
-            return size() > MAX_ENTRIES;
+            return size() > cacheSize;
         }
     };
+
+    @SuppressWarnings("unused")
+    public InMemorySnapshotProvider() {
+        this(MAX_CACHE_SIZE);
+    }
+
+    @SuppressWarnings("WeakerAccess")
+    public InMemorySnapshotProvider(int cacheSize) {
+        this.cacheSize = cacheSize;
+    }
 
     @Nonnull
     @Override

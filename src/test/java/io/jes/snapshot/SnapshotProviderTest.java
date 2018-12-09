@@ -3,7 +3,6 @@ package io.jes.snapshot;
 import org.junit.jupiter.api.Test;
 
 import io.jes.Aggregate;
-import io.jes.AggregateImpl;
 import io.jes.ex.AggregateCreationException;
 import io.jes.internal.FancyAggregate;
 
@@ -17,7 +16,7 @@ class SnapshotProviderTest {
     void shouldThrowAggregateCreationExceptionIfFailedToInstantiateAggregate() {
         final SnapshotProvider provider = new SnapshotProvider() {};
 
-        class FooAggregate extends AggregateImpl {
+        class FooAggregate extends Aggregate {
             @SuppressWarnings("unused")
             public FooAggregate(String string, int integer) {
                 // do nothing, just to disable no-arg constructor

@@ -16,3 +16,4 @@ Think about:
  - string (xml) serializer (xstream?) 
  - upcaster?
  - check annotaions work with spring
+ - verify serialization/deserialization of abstract classes/interface references

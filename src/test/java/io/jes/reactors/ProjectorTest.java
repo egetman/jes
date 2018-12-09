@@ -5,7 +5,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-
 import javax.annotation.Nonnull;
 
 import org.junit.jupiter.api.Test;
@@ -13,7 +12,6 @@ import org.mockito.Mockito;
 
 import io.jes.Event;
 import io.jes.JEventStore;
-import io.jes.JEventStoreImpl;
 import io.jes.lock.InMemoryLockManager;
 import io.jes.offset.InMemoryOffset;
 import io.jes.offset.Offset;
@@ -54,7 +52,7 @@ class ProjectorTest {
     @SneakyThrows
     void projectorShouldCorrectlyRebuildProjection() {
         final InMemoryOffset offset = new InMemoryOffset();
-        final JEventStoreImpl store = new JEventStoreImpl(new JdbcStoreProvider<>(newDataSource(), String.class));
+        final JEventStore store = new JEventStore(new JdbcStoreProvider<>(newDataSource(), String.class));
 
         try (final SampleProjector projector = new SampleProjector(store, offset)) {
             // verify projector start listen event store and projection is not created yet

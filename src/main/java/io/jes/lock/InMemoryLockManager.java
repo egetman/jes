@@ -20,19 +20,6 @@ public class InMemoryLockManager implements LockManager {
     private static final Map<String, ReadWriteLock> LOCKS = new ConcurrentHashMap<>();
 
     @Override
-    public void doExclusive(@Nonnull String key, @Nonnull Runnable action) {
-        final ReadWriteLock lock = getLockByKey(key);
-        try {
-            lock.writeLock().lock();
-            log.trace(format(LOCK_ACQUISITION, "Exclusive (Protected write)", key));
-            requireNonNull(action, "Action must not be null").run();
-        } finally {
-            lock.writeLock().unlock();
-            log.trace(format(LOCK_RELEASE, "Exclusive (Protected write)", key));
-        }
-    }
-
-    @Override
     public void doProtectedRead(@Nonnull String key, @Nonnull Runnable action) {
         final ReadWriteLock lock = getLockByKey(key);
         try {
@@ -47,7 +34,15 @@ public class InMemoryLockManager implements LockManager {
 
     @Override
     public void doProtectedWrite(@Nonnull String key, @Nonnull Runnable action) {
-        doExclusive(key, action);
+        final ReadWriteLock lock = getLockByKey(key);
+        try {
+            lock.writeLock().lock();
+            log.trace(format(LOCK_ACQUISITION, "Exclusive (Protected write)", key));
+            requireNonNull(action, "Action must not be null").run();
+        } finally {
+            lock.writeLock().unlock();
+            log.trace(format(LOCK_RELEASE, "Exclusive (Protected write)", key));
+        }
     }
 
     @Nonnull

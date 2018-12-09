@@ -47,7 +47,7 @@ class UnsafeOpsTest {
     private final UnsafeOps unsafeOps;
 
     UnsafeOpsTest() {
-        store = new JEventStoreImpl(new JdbcStoreProvider<>(newDataSource(), byte[].class));
+        store = new JEventStore(new JdbcStoreProvider<>(newDataSource(), byte[].class));
         unsafeOps = new UnsafeOps(store);
     }
 

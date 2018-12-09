@@ -3,16 +3,14 @@ package io.jes.reactors;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-
 import javax.annotation.Nonnull;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import io.jes.JEventStore;
-import io.jes.JEventStoreImpl;
-import io.jes.internal.Events;
 import io.jes.ex.BrokenReactorException;
+import io.jes.internal.Events;
 import io.jes.offset.InMemoryOffset;
 import io.jes.offset.Offset;
 import io.jes.provider.JdbcStoreProvider;
@@ -80,7 +78,7 @@ class ReactorTest {
         final String key = SampleReactor.class.getName();
 
         final Offset offset = new InMemoryOffset();
-        final JEventStore store = new JEventStoreImpl(new JdbcStoreProvider<>(newDataSource(), byte[].class));
+        final JEventStore store = new JEventStore(new JdbcStoreProvider<>(newDataSource(), byte[].class));
 
         // after creation reactor start listening event store and handle written events
         // noinspection unused

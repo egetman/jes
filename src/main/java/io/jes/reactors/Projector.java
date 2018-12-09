@@ -19,11 +19,12 @@ public abstract class Projector extends Reactor {
 
     @Override
     void tailStore() {
-        lockManager.doExclusive(key, super::tailStore);
+        lockManager.doProtectedWrite(key, super::tailStore);
     }
 
     public void recreate() {
-        lockManager.doExclusive(key, () -> offset.reset(key));
+        lockManager.doProtectedWrite(key, () -> offset.reset(key));
     }
 
+    // todo add recreation callback to clean all state
 }

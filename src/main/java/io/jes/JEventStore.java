@@ -6,7 +6,24 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
-public interface JEventStore {
+import io.jes.ex.EmptyEventStreamException;
+import io.jes.provider.StoreProvider;
+import io.jes.snapshot.SnapshotReader;
+
+import static io.jes.util.Check.nonEmpty;
+import static java.util.Objects.requireNonNull;
+
+public class JEventStore {
+
+    private static final String NON_NULL_UUID = "Event stream uuid must not be null";
+
+    private final StoreProvider provider;
+    private final boolean canReadSnapshots;
+
+    public JEventStore(StoreProvider provider) {
+        this.provider = requireNonNull(provider, "StoreProvider must not be null");
+        this.canReadSnapshots = provider instanceof SnapshotReader;
+    }
 
     /**
      * Returns all events of the Event Store from given offset.
@@ -24,7 +41,9 @@ public interface JEventStore {
      * @param offset the offset to read from.
      * @return {@link Stream} of events stored in that {@literal EventStore}.
      */
-    Stream<Event> readFrom(long offset);
+    public Stream<Event> readFrom(long offset) {
+        return provider.readFrom(offset);
+    }
 
     /**
      * Returns all events grouped by {@literal event uuid identifier}, also known as an {@literal aggregate
@@ -32,10 +51,27 @@ public interface JEventStore {
      *
      * @param uuid identifier of event uuid to read.
      * @return {@link Collection} of events stored in that {@literal EventStore}, grouped by {@literal uuid}.
-     * @throws NullPointerException if uuid is null.
+     * @throws NullPointerException                if uuid is null.
      * @throws io.jes.ex.EmptyEventStreamException if event stream with given {@code uuid} not found.
      */
-    Collection<Event> readBy(@Nonnull UUID uuid);
+    public Collection<Event> readBy(@Nonnull UUID uuid) {
+        final Collection<Event> events = provider.readBy(requireNonNull(uuid, NON_NULL_UUID));
+        nonEmpty(events, () -> new EmptyEventStreamException("Event stream with uuid " + uuid + " not found"));
+        return events;
+    }
+
+    Collection<Event> readBy(@Nonnull UUID uuid, long skip) {
+        if (skip == 0) {
+            return readBy(uuid);
+        }
+        if (skip < 0) {
+            throw new IllegalArgumentException("'skip' argument must be greater than 0. Actual: " + skip);
+        }
+        if (!canReadSnapshots) {
+            throw new IllegalStateException("Current provider doesn't support snapshotting");
+        }
+        return ((SnapshotReader) provider).readBy(requireNonNull(uuid, NON_NULL_UUID), skip);
+    }
 
     /**
      * Write given event into {@literal Event Store}.
@@ -44,14 +80,18 @@ public interface JEventStore {
      * @param event is an event to store.
      * @throws NullPointerException if event is null.
      */
-    void write(@Nonnull Event event);
+    public void write(@Nonnull Event event) {
+        provider.write(requireNonNull(event, "Event must not be null"));
+    }
 
     /**
      * Delete a whole stream by it's {@literal uuid} (its a safe operation).
      *
      * @param uuid of stream  to delete.
      */
-    void deleteBy(@Nonnull UUID uuid);
+    public void deleteBy(@Nonnull UUID uuid) {
+        provider.deleteBy(requireNonNull(uuid, NON_NULL_UUID));
+    }
 
     /**
      * Copy whole contents of this {@literal Event Store} into given one.
@@ -61,7 +101,10 @@ public interface JEventStore {
      * @throws NullPointerException if store is null.
      * @see <a href="https://leanpub.com/esversioning/read#leanpub-auto-copy-transform">Copy-Transform pattern</a>.
      */
-    void copyTo(@Nonnull JEventStore store);
+    @SuppressWarnings("WeakerAccess")
+    public void copyTo(@Nonnull JEventStore store) {
+        this.copyTo(store, UnaryOperator.identity());
+    }
 
     /**
      * Copy whole contents of this {@literal Event Store} into given one with possible events change/transformation.
@@ -72,7 +115,15 @@ public interface JEventStore {
      *                the given {@literal store}.
      * @throws NullPointerException if store or handler is null.
      * @see <a href="https://leanpub.com/esversioning/read#leanpub-auto-copy-transform">Copy-Transform pattern</a>.
+     * todo: to sync or not to sync? need to verify that no events lost after first transfer.
      */
-    void copyTo(@Nonnull JEventStore store, @Nonnull UnaryOperator<Event> handler);
+    @SuppressWarnings("WeakerAccess")
+    public void copyTo(@Nonnull JEventStore store, @Nonnull UnaryOperator<Event> handler) {
+        requireNonNull(store, "Store must not be null");
+        requireNonNull(handler, "Handler must not be null");
+        try (final Stream<Event> stream = readFrom(0)) {
+            stream.map(handler).forEach(store::write);
+        }
+    }
 
 }

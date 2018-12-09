@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import io.jes.internal.FancyAggregate;
 import io.jes.provider.JpaStoreProvider;
 import io.jes.snapshot.InMemorySnapshotProvider;
+import io.jes.snapshot.NoopSnapshotProvider;
 
 import static io.jes.internal.Events.FancyEvent;
 import static io.jes.internal.Events.ProcessingStarted;
@@ -20,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
 
 class AggregateStoreImplTest {
 
@@ -28,8 +30,8 @@ class AggregateStoreImplTest {
         final EntityManager entityManager = newEntityManager(String.class);
         final JpaStoreProvider<String> storeProvider = new JpaStoreProvider<>(entityManager, String.class);
 
-        final JEventStore eventStore = new JEventStoreImpl(storeProvider);
-        final AggregateStore aggregateStore = new AggregateStoreImpl(eventStore, new InMemorySnapshotProvider());
+        final JEventStore eventStore = new JEventStore(storeProvider);
+        final AggregateStore aggregateStore = new AggregateStore(eventStore, new InMemorySnapshotProvider());
 
         final UUID uuid = UUID.randomUUID();
         eventStore.write(new SampleEvent("FOO", uuid));
@@ -56,4 +58,11 @@ class AggregateStoreImplTest {
         assertDoesNotThrow(() -> aggregateStore.readBy(uuid, FancyAggregate.class));
     }
 
+    @Test
+    void ifSnapshotProviderNotSpecifiedDefaultImplementationUsed() {
+        final JEventStore eventStore = mock(JEventStore.class);
+        final AggregateStore aggregateStore = new AggregateStore(eventStore);
+
+        assertEquals(NoopSnapshotProvider.class, aggregateStore.snapshotter.getClass());
+    }
 }

@@ -66,6 +66,7 @@ abstract class Reactor implements AutoCloseable {
         return eventToConsumer;
     }
 
+    // think of better solution for tailing. mb CDC (https://github.com/debezium/debezium) for db backed stores?
     void tailStore() {
         try {
             store.readFrom(offset.value(key)).forEach(event -> {

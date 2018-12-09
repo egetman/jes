@@ -1,6 +1,6 @@
 package io.jes.internal;
 
-import io.jes.AggregateImpl;
+import io.jes.Aggregate;
 import io.jes.internal.Events.FancyEvent;
 import io.jes.internal.Events.ProcessingTerminated;
 import io.jes.internal.Events.SampleEvent;
@@ -9,7 +9,7 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
-public class FancyAggregate extends AggregateImpl {
+public class FancyAggregate extends Aggregate {
 
     private String fancyName;
     private boolean cancelled;
