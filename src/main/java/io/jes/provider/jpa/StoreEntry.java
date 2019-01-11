@@ -28,7 +28,6 @@ import static lombok.AccessLevel.PROTECTED;
 @Setter
 @MappedSuperclass
 @EqualsAndHashCode(of = "uuid")
-@SuppressWarnings("JpaDataSourceORMInspection")
 @NoArgsConstructor(access = PROTECTED, force = true)
 public abstract class StoreEntry {
 

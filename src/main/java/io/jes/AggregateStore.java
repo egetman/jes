@@ -22,7 +22,6 @@ public class AggregateStore {
         this(eventStore, new NoopSnapshotProvider());
     }
 
-    @SuppressWarnings("WeakerAccess")
     public AggregateStore(@Nonnull JEventStore eventStore, @Nonnull SnapshotProvider snapshotProvider) {
         this.eventStore = requireNonNull(eventStore, "Event Store must not be null");
         this.snapshotter = requireNonNull(snapshotProvider, "Snapshot Provider must not be null");
@@ -37,13 +36,16 @@ public class AggregateStore {
      * @param uuid identifier of event stream (uuid) to read.
      * @param type class of aggregate to load
      * @param <T>  type of aggregate.
-     * @return recteated/restored form {@link JEventStore} aggregate instance.
+     * @return recreated/restored form {@link JEventStore} aggregate instance.
      * @throws NullPointerException if any of {@code uuid}/{@code type} is null.
      */
     @Nonnull
     public <T extends Aggregate> T readBy(@Nonnull UUID uuid, @Nonnull Class<T> type) {
         final T aggregate = snapshotter.initialStateOf(uuid, requireNonNull(type, "Aggregate type must not be null"));
         final Collection<Event> events = eventStore.readBy(uuid, aggregate.streamVersion());
+        if (events.isEmpty()) {
+            return aggregate;
+        }
         aggregate.handleEventStream(events);
         return snapshotter.snapshot(aggregate);
     }

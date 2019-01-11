@@ -23,4 +23,12 @@ public interface SnapshotProvider {
     default <T extends Aggregate> T snapshot(@Nonnull T aggregate) {
         return Objects.requireNonNull(aggregate, "Aggregate must not be null");
     }
+
+    /**
+     * Resets whole snapshot store from aggregates snapshots.
+     */
+    @SuppressWarnings("unused")
+    default void reset() {
+        // do nothing
+    }
 }

@@ -7,6 +7,6 @@ public class SerializationException extends RuntimeException {
     }
 
     public SerializationException(Throwable cause) {
-        super("Exception during event serialization/deserialization", cause, false, false);
+        super("Exception during serialization/deserialization", cause, false, false);
     }
 }

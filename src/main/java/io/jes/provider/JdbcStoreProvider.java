@@ -19,7 +19,7 @@ import io.jes.Event;
 import io.jes.ex.BrokenStoreException;
 import io.jes.ex.VersionMismatchException;
 import io.jes.provider.jdbc.DDLFactory;
-import io.jes.provider.jdbc.DDLProducer;
+import io.jes.provider.jdbc.StoreDDLProducer;
 import io.jes.serializer.EventSerializer;
 import io.jes.serializer.SerializationOption;
 import io.jes.serializer.SerializerFactory;
@@ -40,7 +40,7 @@ import static java.util.Spliterator.ORDERED;
 public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader {
 
     private final DataSource dataSource;
-    private final DDLProducer ddlProducer;
+    private final StoreDDLProducer ddlProducer;
     private final EventSerializer<T> serializer;
 
     public JdbcStoreProvider(@Nonnull DataSource dataSource, @Nonnull Class<T> serializationType,
@@ -115,7 +115,7 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader {
                         return false;
                     }
                     //noinspection unchecked
-                    T data = (T) set.getObject(ddlProducer.eventContentName());
+                    T data = (T) set.getObject(ddlProducer.contentName());
                     action.accept(serializer.deserialize(data));
                 } catch (Exception e) {
                     throw new BrokenStoreException(e);

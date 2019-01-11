@@ -1,10 +1,16 @@
 package io.jes.snapshot;
 
+import javax.sql.DataSource;
+
 import org.junit.jupiter.api.Test;
 
 import io.jes.Aggregate;
+import io.jes.AggregateStore;
+import io.jes.JEventStore;
 import io.jes.ex.AggregateCreationException;
 import io.jes.internal.FancyAggregate;
+import io.jes.internal.FancyStuff;
+import io.jes.provider.JdbcStoreProvider;
 
 import static java.util.UUID.randomUUID;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -39,4 +45,14 @@ class SnapshotProviderTest {
         assertSame(aggregate, provider.snapshot(aggregate));
     }
 
+    @Test
+    void shold() {
+        final DataSource dataSource = FancyStuff.newDataSource();
+        final JEventStore eventStore = new JEventStore(new JdbcStoreProvider<>(dataSource, String.class));
+        final JdbcSnapshotProvider<String> snapshotProvider = new JdbcSnapshotProvider<>(dataSource, String.class);
+        final AggregateStore aggregateStore = new AggregateStore(eventStore, snapshotProvider);
+
+//        aggregateStore
+
+    }
 }

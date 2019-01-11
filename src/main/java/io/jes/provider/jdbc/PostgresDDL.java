@@ -3,7 +3,7 @@ package io.jes.provider.jdbc;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-class PostgresDDL implements DDLProducer {
+class PostgresDDL implements StoreDDLProducer, SnapshotDDLProducer {
 
     /**
      * Provided ddl statements (assumed schema name 'foo')
@@ -27,12 +27,23 @@ class PostgresDDL implements DDLProducer {
     private static final String WRITE_EVENTS = "INSERT INTO %sevent_store (uuid, data) VALUES (?, ?)";
     private static final String DELETE_EVENTS = "DELETE FROM %sevent_store WHERE uuid = ?";
 
-    private static final String EVENT_CONTENT_NAME = "data";
+    private static final String DELETE_AGGREGATES = "DELETE FROM %ssnapshot_store";
+    private static final String WRITE_AGGREGATE = "INSERT INTO %ssnapshot_store (uuid, data) VALUES (?, ?)";
+    private static final String UPDATE_AGGREGATE = "UPDATE %ssnapshot_store SET data = ? WHERE uuid = ?";
+    private static final String READ_AGGREGATE_BY_STREAM = "SELECT * FROM %ssnapshot_store WHERE uuid = ?";
+
+    private static final String CONTENT_NAME = "data";
     private static final String CREATE_SCHEMA = "CREATE SCHEMA IF NOT EXISTS %s;";
+
     private static final String CREATE_TABLE = "CREATE TABLE IF NOT EXISTS %sevent_store "
-            + "(id BIGSERIAL PRIMARY KEY, uuid UUID, " + EVENT_CONTENT_NAME + " %s NOT NULL);";
+            + "(id BIGSERIAL PRIMARY KEY, uuid UUID, " + CONTENT_NAME + " %s NOT NULL);";
     private static final String CREATE_INDEX = "CREATE INDEX CONCURRENTLY IF NOT EXISTS uuid_idx "
             + "ON %sevent_store (uuid NULLS LAST);";
+
+    private static final String CREATE_SNAPSHOT_TABLE = "CREATE TABLE IF NOT EXISTS %ssnapshot_store "
+            + "(id BIGSERIAL PRIMARY KEY, uuid UUID NOT NULL, " + CONTENT_NAME + " TEXT NOT NULL);";
+    private static final String CREATE_SNAPSHOT_INDEX = "CREATE INDEX CONCURRENTLY IF NOT EXISTS snapshot_uuid_idx "
+            + "ON %ssnapshot_store (uuid NULLS LAST);";
 
     private final String schema;
     private String queryEvents;
@@ -41,6 +52,11 @@ class PostgresDDL implements DDLProducer {
     private String queryEventsByStreamWithSkip;
     private String insertEvents;
     private String deleteEvents;
+
+    private String insertAggregate;
+    private String updateAggregate;
+    private String deleteAggregates;
+    private String queryAggregateByStream;
 
     PostgresDDL(@Nonnull String schema) {
         this.schema = schema;
@@ -63,8 +79,8 @@ class PostgresDDL implements DDLProducer {
 
     @Nonnull
     @Override
-    public String eventContentName() {
-        return EVENT_CONTENT_NAME;
+    public String contentName() {
+        return CONTENT_NAME;
     }
 
     @Nonnull
@@ -92,7 +108,6 @@ class PostgresDDL implements DDLProducer {
             deleteEvents = String.format(DELETE_EVENTS, formatSchema());
         }
         return deleteEvents;
-
     }
 
     @Nonnull
@@ -120,6 +135,55 @@ class PostgresDDL implements DDLProducer {
             queryEventsStreamVersion = String.format(READ_EVENTS_STREAM_VERSION, formatSchema());
         }
         return queryEventsStreamVersion;
+    }
+
+    @Nonnull
+    @Override
+    public String createSnapshotStore(Class<?> contentType) {
+        if (contentType != String.class ) {
+            throw new IllegalArgumentException("Illegal type of content column: " + contentType);
+        }
+
+        final StringBuilder ddl = new StringBuilder();
+        ddl.append(String.format(CREATE_SNAPSHOT_TABLE, formatSchema()));
+        ddl.append(String.format(CREATE_SNAPSHOT_INDEX, formatSchema()));
+        return ddl.toString();
+    }
+
+    @Nonnull
+    @Override
+    public String queryAggregateByUuid() {
+        if (queryAggregateByStream == null) {
+            queryAggregateByStream = String.format(READ_AGGREGATE_BY_STREAM, formatSchema());
+        }
+        return queryAggregateByStream;
+    }
+
+    @Nonnull
+    @Override
+    public String insertAggregate() {
+        if (insertAggregate == null) {
+            insertAggregate = String.format(WRITE_AGGREGATE, formatSchema());
+        }
+        return insertAggregate;
+    }
+
+    @Nonnull
+    @Override
+    public String updateAggregate() {
+        if (updateAggregate == null) {
+            updateAggregate = String.format(UPDATE_AGGREGATE, formatSchema());
+        }
+        return updateAggregate;
+    }
+
+    @Nonnull
+    @Override
+    public String deleteAggregates() {
+        if (deleteAggregates == null) {
+            deleteAggregates = String.format(DELETE_AGGREGATES, formatSchema());
+        }
+        return deleteAggregates;
     }
 
     @Nonnull

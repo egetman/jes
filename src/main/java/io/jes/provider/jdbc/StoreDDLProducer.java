@@ -8,7 +8,7 @@ import io.jes.Event;
 /**
  * {@link io.jes.provider.JdbcStoreProvider} component, that provides database-specific SQL statements.
  */
-public interface DDLProducer {
+public interface StoreDDLProducer {
 
     /**
      * Return ddl statement for {@literal Event Store} based on event payload type.
@@ -23,7 +23,7 @@ public interface DDLProducer {
      * @return event payload (serialized data) column name, never null.
      */
     @Nonnull
-    String eventContentName();
+    String contentName();
 
     /**
      * @return SQL insert statement for specific database.
@@ -57,7 +57,6 @@ public interface DDLProducer {
     default String queryEventsByUuidWithSkip() {
         return null;
     }
-
 
     /**
      * Note: event stream: collection of events grouped by {@link Event#uuid()}.

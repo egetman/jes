@@ -9,12 +9,12 @@ class SerializerFactoryTest {
 
     @Test
     void newBinarySerializerShouldReturnKryoImplAsDefault() {
-        Assertions.assertEquals(KryoEventSerializer.class, newBinarySerializer().getClass());
+        Assertions.assertEquals(KryoEventSerializer.class, newEventBinarySerializer().getClass());
     }
 
     @Test
     void newStringSerializerShouldReturnGsonImplAsDefault() {
-        Assertions.assertEquals(GsonEventSerializer.class, newStringSerializer().getClass());
+        Assertions.assertEquals(GsonEventSerializer.class, newEventStringSerializer().getClass());
     }
 
     @Test
