@@ -15,7 +15,7 @@ import io.jes.ex.BrokenStoreException;
 import io.jes.ex.VersionMismatchException;
 import io.jes.provider.jpa.StoreEntry;
 import io.jes.provider.jpa.StoreEntryFactory;
-import io.jes.serializer.EventSerializer;
+import io.jes.serializer.Serializer;
 import io.jes.serializer.SerializationOption;
 import io.jes.serializer.SerializerFactory;
 import io.jes.snapshot.SnapshotReader;
@@ -36,7 +36,7 @@ public class JpaStoreProvider<T> implements StoreProvider, SnapshotReader {
     private static final int FETCH_SIZE = 100;
 
     private final EntityManager entityManager;
-    private final EventSerializer<T> serializer;
+    private final Serializer<Event, T> serializer;
 
     private final Class<? extends StoreEntry> entryType;
 

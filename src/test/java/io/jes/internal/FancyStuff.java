@@ -16,6 +16,10 @@ import com.zaxxer.hikari.HikariDataSource;
 
 import org.hibernate.dialect.PostgreSQL95Dialect;
 import org.hibernate.jpa.HibernatePersistenceProvider;
+import org.redisson.Redisson;
+import org.redisson.api.RedissonClient;
+import org.redisson.config.Config;
+import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 
 import lombok.SneakyThrows;
@@ -33,8 +37,30 @@ import static org.hibernate.cfg.AvailableSettings.USE_STRUCTURED_CACHE;
 public final class FancyStuff {
 
     private static final int MAX_POOL_SIZE = 30;
+    private static final int REDIS_EXPOSED_PORT = 6379;
+    private static final String REDDIS_URL_PATTERN = "redis://%s:%d";
 
     private FancyStuff() {}
+
+    @Nonnull
+    private static GenericContainer<?> newRedisContainer() {
+        final GenericContainer<?> redisContainer =
+                        new GenericContainer<>("redis:5.0")
+                        .withExposedPorts(REDIS_EXPOSED_PORT);
+        redisContainer.start();
+        return redisContainer;
+    }
+
+    @Nonnull
+    public static RedissonClient newRedissonClient() {
+        final GenericContainer<?> redisContainer = newRedisContainer();
+        final Config config = new Config();
+
+        final String redisAddress = String.format(REDDIS_URL_PATTERN, redisContainer.getContainerIpAddress(),
+                redisContainer.getMappedPort(REDIS_EXPOSED_PORT));
+        config.useSingleServer().setAddress(redisAddress);
+        return Redisson.create(config);
+    }
 
     @Nonnull
     private static PostgreSQLContainer<?> newPostgreSQLContainer() {

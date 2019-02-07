@@ -47,7 +47,8 @@ public final class Events {
         @Getter
         private final String name;
 
-        public FancyEvent(@Nonnull String name, @Nonnull UUID uuid) {
+        @java.beans.ConstructorProperties({"name", "uuid"})
+        public FancyEvent(String name, UUID uuid) {
             this.name = Objects.requireNonNull(name);
             this.uuid = Objects.requireNonNull(uuid);
         }
@@ -111,6 +112,39 @@ public final class Events {
             }
             sb.append(']');
             return sb.toString();
+        }
+    }
+
+    @RequiredArgsConstructor
+    @EqualsAndHashCode(of = "color")
+    public static class ColorChanged implements Event {
+
+        private final Color color;
+
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder(getClass().getSimpleName() + " [");
+            sb.append("color: ").append(color);
+            sb.append(']');
+            return sb.toString();
+        }
+    }
+
+    @EqualsAndHashCode
+    public static abstract class Color {
+
+        @Override
+        public String toString() {
+            return "Unknown";
+        }
+    }
+
+    @EqualsAndHashCode(callSuper = true)
+    public static class Black extends Color {
+
+        @Override
+        public String toString() {
+            return "Black";
         }
     }
 }

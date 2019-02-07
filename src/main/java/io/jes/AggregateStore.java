@@ -38,6 +38,7 @@ public class AggregateStore {
      * @param <T>  type of aggregate.
      * @return recreated/restored form {@link JEventStore} aggregate instance.
      * @throws NullPointerException if any of {@code uuid}/{@code type} is null.
+     * @throws io.jes.ex.EmptyEventStreamException if no event stream found by given {@code uuid}.
      */
     @Nonnull
     public <T extends Aggregate> T readBy(@Nonnull UUID uuid, @Nonnull Class<T> type) {

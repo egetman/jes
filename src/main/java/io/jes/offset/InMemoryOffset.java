@@ -10,7 +10,8 @@ import javax.annotation.Nonnull;
 public class InMemoryOffset implements Offset {
 
     private static final String MISSING_KEY = "Key must not be null";
-    private static final Map<String, LongAdder> OFFSETS = new ConcurrentHashMap<>();
+
+    private final Map<String, LongAdder> offsets = new ConcurrentHashMap<>();
 
     @Override
     public long value(@Nonnull String key) {
@@ -29,6 +30,6 @@ public class InMemoryOffset implements Offset {
 
     @Nonnull
     private LongAdder getOffsetByKey(@Nonnull String key) {
-        return OFFSETS.computeIfAbsent(Objects.requireNonNull(key, MISSING_KEY), ignored -> new LongAdder());
+        return offsets.computeIfAbsent(Objects.requireNonNull(key, MISSING_KEY), ignored -> new LongAdder());
     }
 }

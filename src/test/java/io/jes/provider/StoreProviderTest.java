@@ -4,6 +4,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
+import javax.annotation.Nonnull;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -32,7 +34,7 @@ class StoreProviderTest {
 
     @ParameterizedTest
     @MethodSource("createProviders")
-    void shouldReadOwnWrites(StoreProvider provider) {
+    void shouldReadOwnWrites(@Nonnull StoreProvider provider) {
         final List<Event> expected = asList(new SampleEvent("FOO"), new SampleEvent("BAR"), new SampleEvent("BAZ"));
         expected.forEach(provider::write);
 
@@ -45,7 +47,7 @@ class StoreProviderTest {
 
     @ParameterizedTest
     @MethodSource("createProviders")
-    void shouldReadEventStreamByUuid(StoreProvider provider) {
+    void shouldReadEventStreamByUuid(@Nonnull StoreProvider provider) {
         final UUID uuid = UUID.randomUUID();
         final List<Event> expected = asList(
                 new SampleEvent("FOO", uuid),
@@ -64,7 +66,7 @@ class StoreProviderTest {
 
     @ParameterizedTest
     @MethodSource("createProviders")
-    void shouldSuccessfullyWriteVersionedEventStream(StoreProvider provider) {
+    void shouldSuccessfullyWriteVersionedEventStream(@Nonnull StoreProvider provider) {
         final UUID uuid = UUID.randomUUID();
         final List<Event> expected = asList(
                 new SampleEvent("FOO", uuid, 0),
@@ -77,7 +79,7 @@ class StoreProviderTest {
 
     @ParameterizedTest
     @MethodSource("createProviders")
-    void shouldThrowVersionMismatchException(StoreProvider provider) {
+    void shouldThrowVersionMismatchException(@Nonnull StoreProvider provider) {
         final UUID uuid = UUID.randomUUID();
         final List<Event> expected = asList(
                 new SampleEvent("FOO", uuid, 0),
@@ -90,7 +92,7 @@ class StoreProviderTest {
 
     @ParameterizedTest
     @MethodSource("createProviders")
-    void shouldDeleteFullStreamByUuid(StoreProvider provider) {
+    void shouldDeleteFullStreamByUuid(@Nonnull StoreProvider provider) {
         final UUID uuid = UUID.randomUUID();
         final UUID anotherUuid = UUID.randomUUID();
         final List<Event> events = asList(
@@ -110,7 +112,7 @@ class StoreProviderTest {
 
     @ParameterizedTest
     @MethodSource("createProviders")
-    void deletingNonExistingEventStreamByUuidShouldNotFail(StoreProvider provider) {
+    void deletingNonExistingEventStreamByUuidShouldNotFail(@Nonnull StoreProvider provider) {
         final SampleEvent expected = new SampleEvent("FOO", UUID.randomUUID());
 
         provider.write(expected);

@@ -16,7 +16,8 @@ import static java.util.Objects.requireNonNull;
 @Slf4j
 public class Aggregate {
 
-    private final Map<Class<? extends Event>, Consumer<? extends Event>> appliers = new HashMap<>();
+    @SuppressWarnings("squid:S2065")
+    private final transient Map<Class<? extends Event>, Consumer<? extends Event>> appliers = new HashMap<>();
 
     protected UUID uuid;
     private long streamVersion;

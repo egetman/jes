@@ -6,7 +6,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.function.Function;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.sql.DataSource;
@@ -15,8 +14,8 @@ import io.jes.Aggregate;
 import io.jes.ex.BrokenStoreException;
 import io.jes.provider.jdbc.DDLFactory;
 import io.jes.provider.jdbc.SnapshotDDLProducer;
-import io.jes.serializer.AggregateSerializer;
 import io.jes.serializer.SerializationOption;
+import io.jes.serializer.Serializer;
 import io.jes.serializer.SerializerFactory;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -28,7 +27,7 @@ public class JdbcSnapshotProvider<T> implements SnapshotProvider {
 
     private final DataSource dataSource;
     private final SnapshotDDLProducer ddlProducer;
-    private final AggregateSerializer<T> serializer;
+    private final Serializer<Aggregate, T> serializer;
 
     @SuppressWarnings("WeakerAccess")
     public JdbcSnapshotProvider(@Nonnull DataSource dataSource, @Nonnull Class<T> serializationType,
@@ -119,11 +118,34 @@ public class JdbcSnapshotProvider<T> implements SnapshotProvider {
         });
     }
 
-    private <Y> Y execute(@Nonnull Function<Connection, Y> consumer) {
+    @SneakyThrows
+    private <Y> Y execute(@Nonnull ThrowableFunction<Connection, Y> consumer) {
         try (Connection connection = dataSource.getConnection()) {
             return Objects.requireNonNull(consumer, "Consumer must not be null").apply(connection);
         } catch (Exception e) {
             throw new BrokenStoreException(e);
         }
+    }
+
+    /**
+     * Represents a function that accepts one argument and produces a result.
+     *
+     * <p>This is a <a href="package-summary.html">functional interface</a>
+     * whose functional method is {@link #apply(Object)}.
+     *
+     * @param <T> the type of the input to the function
+     * @param <R> the type of the result of the function
+     */
+    private interface ThrowableFunction<T, R> {
+
+        /**
+         * Applies this function to the given argument.
+         *
+         * @param t the function argument
+         * @return the function result
+         */
+        @SuppressWarnings("squid:S00112")
+        R apply(T t) throws Throwable;
+
     }
 }

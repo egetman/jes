@@ -15,6 +15,7 @@ public class FancyAggregate extends Aggregate {
     private boolean cancelled;
 
 
+    @SuppressWarnings("WeakerAccess")
     public FancyAggregate() {
         registerApplier(SampleEvent.class, this::handle);
         registerApplier(FancyEvent.class, this::handle);

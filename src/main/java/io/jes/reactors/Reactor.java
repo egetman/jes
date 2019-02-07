@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
 import io.jes.Event;
@@ -68,8 +69,8 @@ abstract class Reactor implements AutoCloseable {
 
     // think of better solution for tailing. mb CDC (https://github.com/debezium/debezium) for db backed stores?
     void tailStore() {
-        try {
-            store.readFrom(offset.value(key)).forEach(event -> {
+        try (Stream<Event> eventStream = store.readFrom(offset.value(key))) {
+            eventStream.forEach(event -> {
                 final Consumer<? super Event> consumer = handlers.get(event.getClass());
                 if (consumer != null) {
                     consumer.accept(event);

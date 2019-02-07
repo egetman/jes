@@ -1,9 +1,6 @@
 package io.jes.lock;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import javax.annotation.Nonnull;
 
 import lombok.extern.slf4j.Slf4j;
@@ -12,12 +9,10 @@ import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
 @Slf4j
-public class InMemoryLockManager implements LockManager {
+abstract class AbstractReadWriteLockManager implements LockManager {
 
-    private static final String LOCK_ACQUISITION = "%s lock acquired by %s";
     private static final String LOCK_RELEASE = "%s lock released by %s";
-
-    private static final Map<String, ReadWriteLock> LOCKS = new ConcurrentHashMap<>();
+    private static final String LOCK_ACQUISITION = "%s lock acquired by %s";
 
     @Override
     public void doProtectedRead(@Nonnull String key, @Nonnull Runnable action) {
@@ -46,7 +41,7 @@ public class InMemoryLockManager implements LockManager {
     }
 
     @Nonnull
-    private ReadWriteLock getLockByKey(@Nonnull String key) {
-        return LOCKS.computeIfAbsent(requireNonNull(key, "Key must not be null"), str -> new ReentrantReadWriteLock());
-    }
+    @SuppressWarnings("WeakerAccess")
+    protected abstract ReadWriteLock getLockByKey(@Nonnull String key);
+
 }

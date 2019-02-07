@@ -1,31 +1,40 @@
 package io.jes.lock;
 
+import java.util.Collection;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.jupiter.api.Test;
+import javax.annotation.Nonnull;
+
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
+import static io.jes.internal.FancyStuff.newRedissonClient;
+import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Slf4j
-class InMemoryLockManagerTest {
+class LockManagerTest {
 
-    @Test
+    private static Collection<LockManager> createLockManagers() {
+        return asList(
+                new InMemoryReentrantLockManager(),
+                new RedissonReentrantLockManager(newRedissonClient())
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("createLockManagers")
     @SuppressWarnings("ConstantConditions")
-    void shouldThrowNpeOnNullArguments() {
-        final LockManager lockManager = new InMemoryLockManager();
-
-        assertThrows(NullPointerException.class, () -> lockManager.doExclusive(null, () -> {}));
-        assertThrows(NullPointerException.class, () -> lockManager.doExclusive("", null));
-
+    void shouldThrowNpeOnNullArguments(@Nonnull LockManager lockManager) {
         assertThrows(NullPointerException.class, () -> lockManager.doProtectedRead(null, () -> {}));
         assertThrows(NullPointerException.class, () -> lockManager.doProtectedRead("", null));
 
@@ -33,12 +42,12 @@ class InMemoryLockManagerTest {
         assertThrows(NullPointerException.class, () -> lockManager.doProtectedWrite("", null));
     }
 
-    @Test
     @SneakyThrows
-    void protectedReadShouldAllowMultipleReaders() {
+    @ParameterizedTest
+    @MethodSource("createLockManagers")
+    void protectedReadShouldAllowMultipleReaders(@Nonnull LockManager lockManager) {
         final int readersCount = 5;
         final String key = UUID.randomUUID().toString();
-        final LockManager lockManager = new InMemoryLockManager();
         final ExecutorService threadPool = Executors.newCachedThreadPool();
         final CountDownLatch latch = new CountDownLatch(readersCount);
 
@@ -58,11 +67,11 @@ class InMemoryLockManagerTest {
         assertTrue(latch.await(2, TimeUnit.SECONDS));
     }
 
-    @Test
     @SneakyThrows
-    void protectedWriteShouldBlockReaders() {
+    @ParameterizedTest
+    @MethodSource("createLockManagers")
+    void protectedWriteShouldBlockReaders(@Nonnull LockManager lockManager) {
         final String key = UUID.randomUUID().toString();
-        final LockManager lockManager = new InMemoryLockManager();
         final ExecutorService threadPool = Executors.newCachedThreadPool();
         final CountDownLatch latch = new CountDownLatch(2);
 
@@ -80,55 +89,12 @@ class InMemoryLockManagerTest {
         assertFalse(latch.await(2, TimeUnit.SECONDS));
     }
 
-    @Test
+    // note: only for reentrant impl's
     @SneakyThrows
-    void exclusiveLockShouldBlockReaders() {
+    @ParameterizedTest
+    @MethodSource("createLockManagers")
+    void protectedWriteShouldAllowReacquisitionBySameThread(@Nonnull LockManager lockManager) {
         final String key = UUID.randomUUID().toString();
-        final LockManager lockManager = new InMemoryLockManager();
-        final ExecutorService threadPool = Executors.newCachedThreadPool();
-        final CountDownLatch latch = new CountDownLatch(2);
-
-        threadPool.execute(() -> lockManager.doExclusive(key, () -> {
-            threadPool.execute(() -> lockManager.doProtectedRead(key, latch::countDown));
-            latch.countDown();
-            try {
-                latch.await();
-            } catch (InterruptedException e) {
-                log.error("", e);
-                Thread.currentThread().interrupt();
-            }
-        }));
-
-        assertFalse(latch.await(2, TimeUnit.SECONDS));
-    }
-
-    @Test
-    @SneakyThrows
-    void exclusiveLockShouldAllowReacquisitionBySameThread() {
-        final String key = UUID.randomUUID().toString();
-        final LockManager lockManager = new InMemoryLockManager();
-        final ExecutorService threadPool = Executors.newSingleThreadExecutor();
-        final CountDownLatch latch = new CountDownLatch(2);
-
-        threadPool.execute(() -> lockManager.doExclusive(key, () -> {
-            lockManager.doExclusive(key, latch::countDown);
-            latch.countDown();
-            try {
-                latch.await();
-            } catch (InterruptedException e) {
-                log.error("", e);
-                Thread.currentThread().interrupt();
-            }
-        }));
-
-        assertTrue(latch.await(2, TimeUnit.SECONDS));
-    }
-
-    @Test
-    @SneakyThrows
-    void protectedWriteShouldAllowReacquisitionBySameThread() {
-        final String key = UUID.randomUUID().toString();
-        final LockManager lockManager = new InMemoryLockManager();
         final ExecutorService threadPool = Executors.newSingleThreadExecutor();
         final CountDownLatch latch = new CountDownLatch(2);
 

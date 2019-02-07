@@ -20,7 +20,7 @@ import io.jes.ex.BrokenStoreException;
 import io.jes.ex.VersionMismatchException;
 import io.jes.provider.jdbc.DDLFactory;
 import io.jes.provider.jdbc.StoreDDLProducer;
-import io.jes.serializer.EventSerializer;
+import io.jes.serializer.Serializer;
 import io.jes.serializer.SerializationOption;
 import io.jes.serializer.SerializerFactory;
 import io.jes.snapshot.SnapshotReader;
@@ -41,7 +41,7 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader {
 
     private final DataSource dataSource;
     private final StoreDDLProducer ddlProducer;
-    private final EventSerializer<T> serializer;
+    private final Serializer<Event, T> serializer;
 
     public JdbcStoreProvider(@Nonnull DataSource dataSource, @Nonnull Class<T> serializationType,
                              @Nonnull SerializationOption... options) {

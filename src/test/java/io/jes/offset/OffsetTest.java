@@ -1,27 +1,40 @@
 package io.jes.offset;
 
+import java.util.Collection;
 import java.util.UUID;
 
-import org.junit.jupiter.api.Test;
+import javax.annotation.Nonnull;
 
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import static io.jes.internal.FancyStuff.newRedissonClient;
+import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class InMemoryOffsetTest {
+class OffsetTest {
 
-    @Test
+    private static Collection<Offset> createOffsets() {
+        return asList(
+                new InMemoryOffset(),
+                new RedissonOffset(newRedissonClient())
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("createOffsets")
     @SuppressWarnings("ConstantConditions")
-    void shouldThrowNpeOnNullArguments() {
-        final Offset offset = new InMemoryOffset();
+    void shouldThrowNpeOnNullArguments(@Nonnull Offset offset) {
         assertThrows(NullPointerException.class, () -> offset.value(null));
         assertThrows(NullPointerException.class, () -> offset.increment(null));
         assertThrows(NullPointerException.class, () -> offset.reset(null));
     }
 
-    @Test
-    void shouldIncrementOffsetValueByKey() {
+    @ParameterizedTest
+    @MethodSource("createOffsets")
+    void shouldIncrementOffsetValueByKey(@Nonnull Offset offset) {
         final String key = getClass().getName();
-        final Offset offset = new InMemoryOffset();
 
         assertEquals(0, offset.value(key));
         offset.increment(key);
@@ -31,12 +44,11 @@ class InMemoryOffsetTest {
         assertEquals(0, offset.value(UUID.randomUUID().toString()));
     }
 
-    @Test
-    void shouldResetOffsetByKey() {
+    @ParameterizedTest
+    @MethodSource("createOffsets")
+    void shouldResetOffsetByKey(@Nonnull Offset offset) {
         final String first = UUID.randomUUID().toString();
         final String second = UUID.randomUUID().toString();
-
-        final Offset offset = new InMemoryOffset();
 
         offset.increment(first);
         offset.increment(first);
