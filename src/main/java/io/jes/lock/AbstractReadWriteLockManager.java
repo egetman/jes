@@ -41,7 +41,6 @@ abstract class AbstractReadWriteLockManager implements LockManager {
     }
 
     @Nonnull
-    @SuppressWarnings("WeakerAccess")
     protected abstract ReadWriteLock getLockByKey(@Nonnull String key);
 
 }

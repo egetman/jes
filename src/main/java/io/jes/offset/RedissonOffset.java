@@ -15,6 +15,7 @@ public class RedissonOffset implements Offset {
     private final RedissonClient redissonClient;
     private final Map<String, RLongAdder> offsets = new ConcurrentHashMap<>();
 
+    @SuppressWarnings("WeakerAccess")
     public RedissonOffset(@Nonnull RedissonClient redissonClient) {
         this.redissonClient = Objects.requireNonNull(redissonClient);
     }

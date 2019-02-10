@@ -20,7 +20,7 @@ public class JEventStore {
     private final StoreProvider provider;
     private final boolean canReadSnapshots;
 
-    public JEventStore(StoreProvider provider) {
+    public JEventStore(@Nonnull StoreProvider provider) {
         this.provider = requireNonNull(provider, "StoreProvider must not be null");
         this.canReadSnapshots = provider instanceof SnapshotReader;
     }

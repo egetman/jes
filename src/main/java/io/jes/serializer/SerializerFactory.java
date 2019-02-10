@@ -13,8 +13,7 @@ import io.jes.Event;
 public class SerializerFactory {
 
 
-    private SerializerFactory() {
-    }
+    private SerializerFactory() {}
 
     @Nonnull
     @SuppressWarnings({"unused", "unchecked"})

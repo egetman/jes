@@ -29,20 +29,26 @@ public class JacksonSerializer<S> implements Serializer<S, String> {
 
     @SuppressWarnings("WeakerAccess")
     public JacksonSerializer() {
-        this(new ObjectMapper());
+        this(new ObjectMapper(), new HashMap<>());
     }
 
     @SuppressWarnings("WeakerAccess")
-    public JacksonSerializer(ObjectMapper mapper) {
+    public JacksonSerializer(ObjectMapper mapper, Map<Class<?>, String> aliases) {
         this.mapper = Objects.requireNonNull(mapper, "ObjectMapper must not be null");
-        configureMapper(this.mapper);
+        configureMapper(this.mapper, aliases);
     }
 
-    private void configureMapper(@Nonnull ObjectMapper mapper) {
+    private void configureMapper(@Nonnull ObjectMapper mapper, Map<Class<?>, String> aliases) {
         mapper.disable(FAIL_ON_EMPTY_BEANS);
         mapper.disable(FAIL_ON_UNKNOWN_PROPERTIES);
+
+        final Map<String, Class<?>> reversed = new HashMap<>();
+        for (Map.Entry<Class<?>, String> entry : aliases.entrySet()) {
+            reversed.put(entry.getValue(), entry.getKey());
+        }
+
         mapper.setDefaultTyping(new ObjectMapper.DefaultTypeResolverBuilder(ObjectMapper.DefaultTyping.NON_FINAL)
-                .init(JsonTypeInfo.Id.CUSTOM, new TypeIdWithClassNameFallbackResolver())
+                .init(JsonTypeInfo.Id.CUSTOM, new TypeIdWithClassNameFallbackResolver(aliases, reversed))
                 .inclusion(JsonTypeInfo.As.PROPERTY)
                 .typeProperty("@type"));
         mapper.setVisibility(mapper.getSerializationConfig().getDefaultVisibilityChecker()
@@ -76,14 +82,8 @@ public class JacksonSerializer<S> implements Serializer<S, String> {
         private final Map<String, Class<?>> deserializationAliases;
         private final Map<Class<?>, JavaType> typesCache = new ConcurrentHashMap<>();
 
-        @SuppressWarnings("WeakerAccess")
-        public TypeIdWithClassNameFallbackResolver() {
-            this(new HashMap<>(), new HashMap<>());
-        }
-
-        @SuppressWarnings("WeakerAccess")
-        public TypeIdWithClassNameFallbackResolver(@Nonnull Map<Class<?>, String> serializationAliases,
-                                                   @Nonnull Map<String, Class<?>> deserializationAliases) {
+        TypeIdWithClassNameFallbackResolver(@Nonnull Map<Class<?>, String> serializationAliases,
+                                            @Nonnull Map<String, Class<?>> deserializationAliases) {
             this.serializationAliases = Objects.requireNonNull(serializationAliases);
             this.deserializationAliases = Objects.requireNonNull(deserializationAliases);
         }

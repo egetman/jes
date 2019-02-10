@@ -17,3 +17,4 @@ Think about:
  - upcaster?
  - check annotaions work with spring
  - verify serialization/deserialization of abstract classes/interface references
+ - fail on unknown events?
