@@ -1,5 +1,6 @@
 package io.jes.internal;
 
+import java.beans.ConstructorProperties;
 import java.util.Objects;
 import java.util.UUID;
 import javax.annotation.Nonnull;
@@ -85,6 +86,7 @@ public final class Events {
             this(name, uuid, -1);
         }
 
+        @ConstructorProperties({"name", "uuid", "expectedStreamVersion"})
         public SampleEvent(String name, UUID uuid, long expectedStreamVersion) {
             this.name = name;
             this.uuid = uuid;
