@@ -10,16 +10,19 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import io.jes.Event;
+import io.jes.common.UnknownTypeResolved;
 import io.jes.ex.SerializationException;
 import io.jes.internal.Events;
 import io.jes.internal.Events.FancyEvent;
+import lombok.SneakyThrows;
+import net.bytebuddy.ByteBuddy;
 
 class SerializerTest {
 
     private static Stream<Serializer<Event, ?>> createSerializers() {
         return Stream.of(
-                new KryoSerializer<>(),
-                new JacksonSerializer<>()
+                new EventSerializerProxy<>(new KryoSerializer<>()),
+                new EventSerializerProxy<>(new JacksonSerializer<>())
         );
     }
 
@@ -52,6 +55,25 @@ class SerializerTest {
 
         final Event deserialized = serializer.deserialize(serialized);
         Assertions.assertEquals(event, deserialized);
+    }
+
+    @SneakyThrows
+    @ParameterizedTest
+    @MethodSource("createSerializers")
+    <T> void shouldReturnUnregisteredEventTypeWhenNoTypeInformationFound(@Nonnull Serializer<Event, T> serializer) {
+        final Class<? extends Event> dynamicEvent = new ByteBuddy()
+                .subclass(Event.class)
+                .make()
+                .load(getClass().getClassLoader())
+                .getLoaded();
+        final Event event = dynamicEvent.newInstance();
+        final T serialized = serializer.serialize(event);
+
+        final Event deserialized = serializer.deserialize(serialized);
+
+        Assertions.assertTrue(deserialized instanceof UnknownTypeResolved);
+        Assertions.assertEquals(event.getClass().getName(), ((UnknownTypeResolved) deserialized).type());
+        Assertions.assertNotNull(((UnknownTypeResolved) deserialized).raw());
     }
 
     @ParameterizedTest

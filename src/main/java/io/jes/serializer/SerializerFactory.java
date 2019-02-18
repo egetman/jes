@@ -12,25 +12,24 @@ import io.jes.Event;
  */
 public class SerializerFactory {
 
-
     private SerializerFactory() {}
 
     @Nonnull
     @SuppressWarnings({"unused", "unchecked"})
     static <E extends Serializer<Event, byte[]>> E newEventBinarySerializer(@Nonnull SerializationOption... options) {
-        return (E) new KryoSerializer<Event>();
+        return (E) new EventSerializerProxy<>(new KryoSerializer<>());
     }
 
     @Nonnull
     @SuppressWarnings({"unused", "unchecked"})
     static <E extends Serializer<Event, String>> E newEventStringSerializer(@Nonnull SerializationOption... options) {
-        return (E) new JacksonSerializer<Event>();
+        return (E) new EventSerializerProxy<>(new JacksonSerializer<>());
     }
 
     @Nonnull
     @SuppressWarnings({"unchecked", "squid:S1905"})
     public static <T> Serializer<Event, T> newEventSerializer(@Nonnull Class<T> serializationType,
-                                                       SerializationOption... options) {
+                                                              SerializationOption... options) {
         Objects.requireNonNull(serializationType, "Serialization type must be provided");
         if (serializationType == byte[].class) {
             return (Serializer<Event, T>) newEventBinarySerializer(options);

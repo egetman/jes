@@ -25,14 +25,19 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 import static com.fasterxml.jackson.databind.SerializationFeature.FAIL_ON_EMPTY_BEANS;
 
-public class JacksonSerializer<S> implements Serializer<S, String> {
+class JacksonSerializer<S> implements Serializer<S, String> {
 
     private final ObjectMapper mapper;
     private final TypeReference<S> serializationType = new TypeReference<S>() {};
 
     @SuppressWarnings("WeakerAccess")
     public JacksonSerializer() {
-        this(new ObjectMapper(), new HashMap<>());
+        this(new HashMap<>());
+    }
+
+    @SuppressWarnings("WeakerAccess")
+    public JacksonSerializer(@Nullable Map<Class<?>, String> aliases) {
+        this(new ObjectMapper(), aliases);
     }
 
     @SuppressWarnings("WeakerAccess")
@@ -115,7 +120,11 @@ public class JacksonSerializer<S> implements Serializer<S, String> {
             Class<?> clazz = deserializationAliases.get(id);
             if (clazz == null) {
                 // fallback to resolving type by class name
-                clazz = Class.forName(id);
+                try {
+                    clazz = Class.forName(id);
+                } catch (ClassNotFoundException e) {
+                    throw new TypeNotPresentException(id, e);
+                }
             }
             return typesCache.computeIfAbsent(clazz, key -> TypeFactory.defaultInstance().constructType(key));
         }
