@@ -7,8 +7,6 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.Nonnull;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DatabindContext;
 import com.fasterxml.jackson.databind.JavaType;
@@ -19,6 +17,10 @@ import com.fasterxml.jackson.databind.type.TypeFactory;
 import io.jes.ex.SerializationException;
 import lombok.SneakyThrows;
 
+import static com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.ANY;
+import static com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.NONE;
+import static com.fasterxml.jackson.annotation.JsonTypeInfo.As;
+import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 import static com.fasterxml.jackson.databind.SerializationFeature.FAIL_ON_EMPTY_BEANS;
 
@@ -48,14 +50,14 @@ public class JacksonSerializer<S> implements Serializer<S, String> {
         }
 
         mapper.setDefaultTyping(new ObjectMapper.DefaultTypeResolverBuilder(ObjectMapper.DefaultTyping.NON_FINAL)
-                .init(JsonTypeInfo.Id.CUSTOM, new TypeIdWithClassNameFallbackResolver(aliases, reversed))
-                .inclusion(JsonTypeInfo.As.PROPERTY)
+                .init(Id.CUSTOM, new TypeIdWithClassNameFallbackResolver(aliases, reversed))
+                .inclusion(As.PROPERTY)
                 .typeProperty("@type"));
         mapper.setVisibility(mapper.getSerializationConfig().getDefaultVisibilityChecker()
-                .withFieldVisibility(JsonAutoDetect.Visibility.ANY)
-                .withGetterVisibility(JsonAutoDetect.Visibility.NONE)
-                .withSetterVisibility(JsonAutoDetect.Visibility.NONE)
-                .withCreatorVisibility(JsonAutoDetect.Visibility.NONE));
+                .withFieldVisibility(ANY)
+                .withGetterVisibility(NONE)
+                .withSetterVisibility(NONE)
+                .withCreatorVisibility(NONE));
     }
 
     @Override
@@ -112,8 +114,8 @@ public class JacksonSerializer<S> implements Serializer<S, String> {
         }
 
         @Override
-        public JsonTypeInfo.Id getMechanism() {
-            return JsonTypeInfo.Id.CUSTOM;
+        public Id getMechanism() {
+            return Id.CUSTOM;
         }
     }
 
