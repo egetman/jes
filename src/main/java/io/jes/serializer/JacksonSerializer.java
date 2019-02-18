@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DatabindContext;
@@ -35,18 +36,20 @@ public class JacksonSerializer<S> implements Serializer<S, String> {
     }
 
     @SuppressWarnings("WeakerAccess")
-    public JacksonSerializer(ObjectMapper mapper, Map<Class<?>, String> aliases) {
+    public JacksonSerializer(ObjectMapper mapper, @Nullable Map<Class<?>, String> aliases) {
         this.mapper = Objects.requireNonNull(mapper, "ObjectMapper must not be null");
         configureMapper(this.mapper, aliases);
     }
 
-    private void configureMapper(@Nonnull ObjectMapper mapper, Map<Class<?>, String> aliases) {
+    private void configureMapper(@Nonnull ObjectMapper mapper, @Nullable Map<Class<?>, String> aliases) {
         mapper.disable(FAIL_ON_EMPTY_BEANS);
         mapper.disable(FAIL_ON_UNKNOWN_PROPERTIES);
 
         final Map<String, Class<?>> reversed = new HashMap<>();
-        for (Map.Entry<Class<?>, String> entry : aliases.entrySet()) {
-            reversed.put(entry.getValue(), entry.getKey());
+        if (aliases != null) {
+            for (Map.Entry<Class<?>, String> entry : aliases.entrySet()) {
+                reversed.put(entry.getValue(), entry.getKey());
+            }
         }
 
         mapper.setDefaultTyping(new ObjectMapper.DefaultTypeResolverBuilder(ObjectMapper.DefaultTyping.NON_FINAL)
@@ -84,10 +87,14 @@ public class JacksonSerializer<S> implements Serializer<S, String> {
         private final Map<String, Class<?>> deserializationAliases;
         private final Map<Class<?>, JavaType> typesCache = new ConcurrentHashMap<>();
 
-        TypeIdWithClassNameFallbackResolver(@Nonnull Map<Class<?>, String> serializationAliases,
-                                            @Nonnull Map<String, Class<?>> deserializationAliases) {
-            this.serializationAliases = Objects.requireNonNull(serializationAliases);
-            this.deserializationAliases = Objects.requireNonNull(deserializationAliases);
+        TypeIdWithClassNameFallbackResolver(@Nullable Map<Class<?>, String> serializationAliases,
+                                            @Nullable Map<String, Class<?>> deserializationAliases) {
+            this.serializationAliases = getNonNullOrDefault(serializationAliases, new HashMap<>());
+            this.deserializationAliases = getNonNullOrDefault(deserializationAliases, new HashMap<>());
+        }
+
+        private <K, V> Map<K, V> getNonNullOrDefault(@Nullable Map<K, V> map, @Nonnull Map<K, V> defaultValue) {
+            return map != null ? map : Objects.requireNonNull(defaultValue, "Default value must not be null");
         }
 
         @Override
