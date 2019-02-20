@@ -14,6 +14,7 @@
         <jsr305.version>3.0.1</jsr305.version>
         <lombok.version>1.16.18</lombok.version>
         <logback.version>1.2.3</logback.version>
+        <jackson.version>2.9.8</jackson.version>
         <redisson.version>3.10.1</redisson.version>
         <byte-buddy.version>1.9.9</byte-buddy.version>
         <postgresql.version>42.2.4</postgresql.version>
@@ -75,18 +76,24 @@
             </exclusions>
         </dependency>
 
-        <!-- for KryoBinaryEventSerializer -->
+        <!-- for KryoSerializer -->
         <dependency>
             <groupId>com.esotericsoftware</groupId>
             <artifactId>kryo</artifactId>
             <version>${kryo.version}</version>
         </dependency>
 
-        <!-- for GsonStringEventSerializer -->
+        <!-- for JacksonSerializer -->
         <dependency>
-            <groupId>com.google.code.gson</groupId>
-            <artifactId>gson</artifactId>
-            <version>${gson.version}</version>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson.version}</version>
         </dependency>
 
         <dependency>
@@ -100,6 +107,20 @@
             <groupId>org.redisson</groupId>
             <artifactId>redisson</artifactId>
             <version>${redisson.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-databind</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>net.bytebuddy</groupId>
+                    <artifactId>byte-buddy</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- logging -->
