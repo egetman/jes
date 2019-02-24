@@ -1,8 +1,7 @@
 # Jes 
 ###### Strongly inspired by:
 * [Versioning in an Event Sourced System](https://leanpub.com/esversioning) by Greg Young
-* [The dark side of event sourcing: Managing data conversion](https://ieeexplore.ieee.org/document/7884621) by  
-Michiel Overeem, Marten Spoor & Slinger Jansen 
+* [The dark side of event sourcing: Managing data conversion](https://ieeexplore.ieee.org/document/7884621) by Michiel Overeem, Marten Spoor & Slinger Jansen 
 
 ---
 Jes is a library for those who wanted to try Event Sourcing but did not know how to approach this. 
@@ -10,7 +9,7 @@ It demonstrates well the basic principles inherent in approach and does not limi
 How to use the library - everyone decides for himself, in accordance with his understanding of the concept of Event 
 Sourcing.
 
-Jes provides several abstractions, that helps correctly organize workflow of your application.
+Jes provides several abstractions, that helps organize workflow of your application.
  
 ---
 ## Getting started
@@ -90,12 +89,59 @@ public abstract class Projector extends Reactor {
 }
 ```
 
-To make it work - extend it and mark the needed method as `Handler`:
+To make it work - extend it and mark the needed methods as `Handler`:
 ```java
 @Handler
 private void handle(@Nonnull SmthHappend event) {
     ...
 }
+```
+
+## Usage
+If you are familiar with `Spring`, the typical configuration of `Jes` may look like:
+```java
+@Configuration
+@EnableAutoConfiguration
+public class JesConfig {
+
+    @Bean
+    public StoreProvider jdbcStoreProvider(DataSource dataSource) {
+        return new JdbcStoreProvider<>(dataSource, String.class);
+    }
+
+    @Bean
+    public JEventStore eventStore(StoreProvider storeProvider) {
+        return new JEventStore(storeProvider);
+    }
+
+    @Bean
+    public SnapshotProvider snapshotProvider() {
+        return new InMemorySnapshotProvider();
+    }
+
+    @Bean
+    public AggregateStore aggregateStore(JEventStore eventStore, SnapshotProvider snapshotProvider) {
+        return new AggregateStore(eventStore, snapshotProvider);
+    }
+
+    @Bean
+    public Offset offset() {
+        // you can use RedissonOffset if you use Redisson
+        return new InMemoryOffset();
+    }
+
+    @Bean
+    public LockManager lockManager() {
+        // you can use RedissonReentrantLockManager if you use Redisson
+        return new InMemoryReentrantLockManager();
+    }
+
+    @Bean
+    public Projector userProjector(JEventStore eventStore, Offset offset, LockManager lockManager) {
+        return new UserProjector(eventStore, offset, lockManager);
+    }
+}
+
 ```
 
 ## Features
@@ -118,3 +164,5 @@ private void handle(@Nonnull SmthHappend event) {
  - upcasting
  - ~~verify serialization/deserialization of abstract classes/interface references~~
  - ~~don't fail on unknown events~~ done via common event type for unregistered events
+ 
+ ###### PRs are welcome
