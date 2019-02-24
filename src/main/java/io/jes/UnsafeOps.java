@@ -61,7 +61,7 @@ public class UnsafeOps {
      *                                                if {@literal handler} transform all source events into nulls.
      * @throws EventStreamSplitUnsupportedException   if result event stream return multiple uuids.
      * @throws EventStreamRewriteUnsupportedException if result event stream has the same uuid as {@literal streamUuid}.
-     * @see <a href="https://leanpub.com/esversioning/read#leanpub-auto-copy-and-replace">Copy and Replace pattern</a>.
+     * @see <a href="https://leanpub.com/esversioning/read#leanpub-auto-copy-and-replace">Copy and Replace pattern</a>
      */
     @Nonnull
     public UUID traverseAndReplace(@Nonnull UUID streamUuid, @Nonnull UnaryOperator<Event> handler) {
@@ -89,7 +89,7 @@ public class UnsafeOps {
      *                                                if {@literal handler} return null or empty collection.
      * @throws EventStreamSplitUnsupportedException   if result event stream return multiple uuids.
      * @throws EventStreamRewriteUnsupportedException if result event stream has the same uuid as {@literal streamUuid}.
-     * @see <a href="https://leanpub.com/esversioning/read#leanpub-auto-copy-and-replace">Copy and Replace pattern</a>.
+     * @see <a href="https://leanpub.com/esversioning/read#leanpub-auto-copy-and-replace">Copy and Replace pattern</a>
      */
     @Nonnull
     public UUID traverseAndReplaceAll(@Nonnull UUID streamUuid, @Nonnull UnaryOperator<Collection<Event>> handler) {
@@ -120,7 +120,7 @@ public class UnsafeOps {
      * @throws EventStreamSplitUnsupportedException   if result event stream return multiple uuids.
      * @throws EventStreamRewriteUnsupportedException if result event stream has the same uuid as any of
      *                                                {@literal streamUuids}.
-     * @see <a href="https://leanpub.com/esversioning/read#leanpub-auto-copy-and-replace">Copy and Replace pattern</a>.
+     * @see <a href="https://leanpub.com/esversioning/read#leanpub-auto-copy-and-replace">Copy and Replace pattern</a>
      */
     @Nonnull
     public UUID traverseAndMerge(@Nonnull Set<UUID> streamUuids,
@@ -151,7 +151,7 @@ public class UnsafeOps {
      *                                                if {@literal handler} return null or empty map.
      * @throws EventStreamRewriteUnsupportedException if any of result event streams has the same uuid as the
      *                                                {@literal streamUuid}.
-     * @see <a href="https://leanpub.com/esversioning/read#leanpub-auto-copy-and-replace">Copy and Replace pattern</a>.
+     * @see <a href="https://leanpub.com/esversioning/read#leanpub-auto-copy-and-replace">Copy and Replace pattern</a>
      */
     @Nonnull
     public Set<UUID> traverseAndSplit(@Nonnull UUID streamUuid,

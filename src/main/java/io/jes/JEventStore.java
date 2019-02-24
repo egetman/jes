@@ -33,8 +33,8 @@ public class JEventStore {
      * try-with-resources block, as shown in the following example:
      * <code>
      *
-     * <p>try (Stream{@code <}Event{@code >} uuid = store.readFrom(0)) {
-     * uuid.forEach(…);
+     * try (Stream{@code <}Event{@code >} uuid = store.readFrom(0)) {
+     *      uuid.forEach(…);
      * }
      * </code>
      *
@@ -99,13 +99,14 @@ public class JEventStore {
      *
      * @param store is an Event Store to copy all events.
      * @throws NullPointerException if store is null.
-     * @see <a href="https://leanpub.com/esversioning/read#leanpub-auto-copy-transform">Copy-Transform pattern</a>.
+     * @see <a href="https://leanpub.com/esversioning/read#leanpub-auto-copy-transform">Copy-Transform pattern</a>
      */
     @SuppressWarnings("WeakerAccess")
     public void copyTo(@Nonnull JEventStore store) {
         this.copyTo(store, UnaryOperator.identity());
     }
 
+    //todo: to sync or not to sync? need to verify that no events lost after first transfer.
     /**
      * Copy whole contents of this {@literal Event Store} into given one with possible events change/transformation.
      * {@implNote it's implementation specific to use STW pause during this operation}.
@@ -114,8 +115,7 @@ public class JEventStore {
      * @param handler is an event transformator. It can transform one given event into another before storing it in
      *                the given {@literal store}.
      * @throws NullPointerException if store or handler is null.
-     * @see <a href="https://leanpub.com/esversioning/read#leanpub-auto-copy-transform">Copy-Transform pattern</a>.
-     * todo: to sync or not to sync? need to verify that no events lost after first transfer.
+     * @see <a href="https://leanpub.com/esversioning/read#leanpub-auto-copy-transform">Copy-Transform pattern</a>
      */
     @SuppressWarnings("WeakerAccess")
     public void copyTo(@Nonnull JEventStore store, @Nonnull UnaryOperator<Event> handler) {
