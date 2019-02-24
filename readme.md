@@ -149,7 +149,9 @@ public class JesConfig {
 - [x] event stream split: event stream corrections
 - [x] event stream merge: event stream corrections
 - [x] event stream deletion: event stream corrections
+- [x] multiple event versions: versioning
 - [ ] upcasting: versioning
+- [ ] lazy transformation: versioning
 - [x] copy-and-transform event store: versioning
 - [x] strong/weak schema formats (partial): core
 - [x] pull-based projectors: core
@@ -162,6 +164,7 @@ public class JesConfig {
  - ~~event idempotency on read (clustered environment)~~ done by locking for projectors
  - string (xml) serializer (xstream?): use SerializationOption to specify type?
  - upcasting
+ - lazy transformation
  - ~~verify serialization/deserialization of abstract classes/interface references~~
  - ~~don't fail on unknown events~~ done via common event type for unregistered events
  
