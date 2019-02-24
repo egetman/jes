@@ -9,8 +9,15 @@ import io.jes.ex.AggregateCreationException;
 
 public interface SnapshotProvider {
 
+    /**
+     * Returns initial state for given {@literal type} aggregate.
+     *
+     * @param uuid is event stream (aggregate) identifier.
+     * @param type is the class of aggregate.
+     * @param <T>  is the type of agregate.
+     * @return aggregate of type {@literal T} initialized with initial state.
+     */
     @Nonnull
-    @SuppressWarnings("unused")
     default <T extends Aggregate> T initialStateOf(@Nonnull UUID uuid, @Nonnull Class<T> type) {
         try {
             return type.newInstance();

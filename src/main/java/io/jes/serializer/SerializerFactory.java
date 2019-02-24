@@ -26,6 +26,9 @@ public class SerializerFactory {
         return (E) new EventSerializerProxy<>(new JacksonSerializer<>());
     }
 
+    /**
+     * Produces and return new {@link Serializer} for events.
+     */
     @Nonnull
     @SuppressWarnings({"unchecked", "squid:S1905"})
     public static <T> Serializer<Event, T> newEventSerializer(@Nonnull Class<T> serializationType,
@@ -39,6 +42,9 @@ public class SerializerFactory {
         throw new IllegalArgumentException("Serialization for type " + serializationType + " not supported");
     }
 
+    /**
+     * Produces and return new {@link Serializer} for aggregates.
+     */
     @Nonnull
     @SuppressWarnings({"unchecked", "unused", "squid:S2293"})
     public static <T> Serializer<Aggregate, T> newAggregateSerializer(@Nonnull Class<T> serializationType,

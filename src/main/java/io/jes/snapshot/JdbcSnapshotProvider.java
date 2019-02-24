@@ -29,7 +29,6 @@ public class JdbcSnapshotProvider<T> implements SnapshotProvider {
     private final SnapshotDDLProducer ddlProducer;
     private final Serializer<Aggregate, T> serializer;
 
-    @SuppressWarnings("WeakerAccess")
     public JdbcSnapshotProvider(@Nonnull DataSource dataSource, @Nonnull Class<T> serializationType,
                                 @Nonnull SerializationOption... options) {
         try {
@@ -141,11 +140,11 @@ public class JdbcSnapshotProvider<T> implements SnapshotProvider {
         /**
          * Applies this function to the given argument.
          *
-         * @param t the function argument
+         * @param argument the function argument
          * @return the function result
          */
         @SuppressWarnings("squid:S00112")
-        R apply(T t) throws Throwable;
+        R apply(T argument) throws Throwable;
 
     }
 }

@@ -12,6 +12,9 @@ public class StoreEntryFactory {
 
     private StoreEntryFactory() {}
 
+    /**
+     * Resolves and return entry type based on provided {@literal payloadClass} type.
+     */
     public static Class<? extends StoreEntry> entryTypeOf(@Nonnull Class<?> payloadClass) {
         if (String.class == payloadClass) {
             return StoreEntry.StoreStringEntry.class;
@@ -21,6 +24,9 @@ public class StoreEntryFactory {
         throw new SerializationException("Payload of type " + payloadClass + " cannot be processed");
     }
 
+    /**
+     * Factory mathod for creatig new {@literal store entry} based on paeload type.
+     */
     public static StoreEntry newEntry(@Nullable UUID uuid, @Nonnull Object payload) {
         Objects.requireNonNull(payload, "Event payload must not be null");
         if (payload instanceof String) {

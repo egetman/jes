@@ -8,15 +8,15 @@ class PostgresDDL implements StoreDDLProducer, SnapshotDDLProducer {
     /**
      * Provided ddl statements (assumed schema name 'foo')
      *
-     * CREATE SCHEMA IF NOT EXISTS foo;
+     * <p>CREATE SCHEMA IF NOT EXISTS foo;</p>
      *
-     * CREATE TABLE IF NOT EXISTS foo.event_store (
+     * <p>CREATE TABLE IF NOT EXISTS foo.event_store (
      *      id BIGSERIAL PRIMARY KEY,
      *      uuid UUID,
      *      data (BYTEA | TEXT) NOT NULL
-     * );
+     * );</p>
      *
-     * CREATE INDEX CONCURRENTLY IF NOT EXISTS uuid_idx ON foo.event_store (uuid NULLS LAST);
+     * <p>CREATE INDEX CONCURRENTLY IF NOT EXISTS uuid_idx ON foo.event_store (uuid NULLS LAST);</p>
      *
      */
     private static final String READ_EVENTS = "SELECT * FROM %sevent_store WHERE id > ? ORDER BY id";

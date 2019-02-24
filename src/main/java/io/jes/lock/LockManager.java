@@ -7,7 +7,7 @@ import javax.annotation.Nonnull;
  * clustered environment. (To avoid situations when multiple services read the same offset from
  * {@link io.jes.JEventStore} and apply duplicate changes concurrently).
  *
- * Note: there no any reentrancy guarantee by contract. Different implementations may or may not behave as reentrant.
+ * <p>Note: there no any reentrancy guarantee by contract. Different implementations may or may not behave as reentrant.
  */
 public interface LockManager {
 

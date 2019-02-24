@@ -21,7 +21,7 @@ import io.jes.serializer.SerializerFactory;
 import io.jes.snapshot.SnapshotReader;
 import lombok.extern.slf4j.Slf4j;
 
-import static java.lang.Integer.*;
+import static java.lang.Integer.MAX_VALUE;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 

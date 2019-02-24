@@ -13,6 +13,14 @@ public class DDLFactory {
 
     private static final String UNSUPPORTED_TYPE = "%s for %s type not supported";
 
+    /**
+     * Constructs new DDL producer based on DB vendor name and provided schema.
+     *
+     * @param databaseName vendor name of db product. Obtained through
+     *                     {@code connection.getMetaData()..getDatabaseProductName()}.
+     * @param schema schema name to use.
+     * @return {@link StoreDDLProducer} for event store.
+     */
     public static StoreDDLProducer newDDLProducer(@Nonnull String databaseName, @Nonnull String schema) {
         if ("PostgreSQL".equals(databaseName)) {
             return new PostgresDDL(schema);
@@ -21,6 +29,14 @@ public class DDLFactory {
         }
     }
 
+    /**
+     * Constructs new DDL producer based on DB vendor name and provided schema.
+     *
+     * @param databaseName vendor name of db product. Obtained through
+     *                     {@code connection.getMetaData()..getDatabaseProductName()}.
+     * @param schema schema name to use.
+     * @return {@link SnapshotDDLProducer} for snapshot store.
+     */
     public static SnapshotDDLProducer newSnapshotDDLProducer(@Nonnull String databaseName, @Nonnull String schema) {
         if ("PostgreSQL".equals(databaseName)) {
             return new PostgresDDL(schema);
