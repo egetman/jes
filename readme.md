@@ -171,5 +171,6 @@ public class JesConfig {
  - lazy transformation
  - ~~verify serialization/deserialization of abstract classes/interface references~~
  - ~~don't fail on unknown events~~ done via common event type for unregistered events
+ - make reactors pull-mechanism customisable (for db CDC?)
  
  ###### PRs are welcome
