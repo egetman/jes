@@ -172,5 +172,6 @@ public class JesConfig {
  - ~~verify serialization/deserialization of abstract classes/interface references~~
  - ~~don't fail on unknown events~~ done via common event type for unregistered events
  - make reactors pull-mechanism customisable (for db CDC?)
+ - add demo app
  
  ###### PRs are welcome
