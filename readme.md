@@ -173,5 +173,6 @@ public class JesConfig {
  - ~~don't fail on unknown events~~ done via common event type for unregistered events
  - make reactors pull-mechanism customisable (for db CDC?)
  - add demo app
+ - add InMemoryStoreProvider (H2 or just collections?) for testing && H2 support 
  
  ###### PRs are welcome
