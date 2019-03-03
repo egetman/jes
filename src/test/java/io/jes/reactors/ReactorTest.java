@@ -16,7 +16,7 @@ import io.jes.offset.Offset;
 import io.jes.provider.JdbcStoreProvider;
 import lombok.SneakyThrows;
 
-import static io.jes.internal.FancyStuff.newDataSource;
+import static io.jes.internal.FancyStuff.newPostgresDataSource;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -78,7 +78,7 @@ class ReactorTest {
         final String key = SampleReactor.class.getName();
 
         final Offset offset = new InMemoryOffset();
-        final JEventStore store = new JEventStore(new JdbcStoreProvider<>(newDataSource(), byte[].class));
+        final JEventStore store = new JEventStore(new JdbcStoreProvider<>(newPostgresDataSource(), byte[].class));
 
         // after creation reactor start listening event store and handle written events
         // noinspection unused

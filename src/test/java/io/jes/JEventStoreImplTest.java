@@ -32,8 +32,8 @@ class JEventStoreImplTest {
     private final JEventStore target;
 
     JEventStoreImplTest() {
-        final DataSource sourceDataSource = FancyStuff.newDataSource("source");
-        final DataSource targetDataSource = FancyStuff.newDataSource("target");
+        final DataSource sourceDataSource = FancyStuff.newPostgresDataSource("source");
+        final DataSource targetDataSource = FancyStuff.newPostgresDataSource("target");
 
         this.source = new JEventStore(new JdbcStoreProvider<>(sourceDataSource, byte[].class));
         this.target = new JEventStore(new JdbcStoreProvider<>(targetDataSource, byte[].class));

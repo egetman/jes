@@ -16,7 +16,7 @@ import io.jes.internal.Events;
 import io.jes.internal.FancyAggregate;
 import io.jes.provider.JdbcStoreProvider;
 
-import static io.jes.internal.FancyStuff.newDataSource;
+import static io.jes.internal.FancyStuff.newPostgresDataSource;
 import static io.jes.internal.FancyStuff.newRedissonClient;
 import static java.util.Arrays.asList;
 import static java.util.UUID.randomUUID;
@@ -29,7 +29,7 @@ class SnapshotProviderTest {
     private static Collection<SnapshotProvider> createSnapshotProviders() {
         return asList(
                 new InMemorySnapshotProvider(),
-                new JdbcSnapshotProvider<>(newDataSource(), String.class),
+                new JdbcSnapshotProvider<>(newPostgresDataSource(), String.class),
                 new RedissonSnapshotProvider(newRedissonClient())
         );
     }
@@ -65,7 +65,7 @@ class SnapshotProviderTest {
     @ParameterizedTest
     @MethodSource("createSnapshotProviders")
     void sholdCreateSnapshotAndUpdateItReadThroughAggregateStore(@Nonnull SnapshotProvider provider) {
-        final JEventStore eventStore = new JEventStore(new JdbcStoreProvider<>(newDataSource(), String.class));
+        final JEventStore eventStore = new JEventStore(new JdbcStoreProvider<>(newPostgresDataSource(), String.class));
         final AggregateStore aggregateStore = new AggregateStore(eventStore, provider);
 
         final UUID uuid = randomUUID();

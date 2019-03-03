@@ -3,7 +3,6 @@ package io.jes.provider;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
-
 import javax.annotation.Nonnull;
 
 import org.junit.jupiter.api.Assertions;
@@ -15,8 +14,9 @@ import io.jes.ex.VersionMismatchException;
 import lombok.extern.slf4j.Slf4j;
 
 import static io.jes.internal.Events.SampleEvent;
-import static io.jes.internal.FancyStuff.newDataSource;
 import static io.jes.internal.FancyStuff.newEntityManager;
+import static io.jes.internal.FancyStuff.newH2DataSource;
+import static io.jes.internal.FancyStuff.newPostgresDataSource;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 
@@ -25,8 +25,10 @@ class StoreProviderTest {
 
     private static Collection<StoreProvider> createProviders() {
         return asList(
-                new JdbcStoreProvider<>(newDataSource(), byte[].class),
-                new JdbcStoreProvider<>(newDataSource(), String.class),
+                new JdbcStoreProvider<>(newH2DataSource(), String.class),
+                new JdbcStoreProvider<>(newH2DataSource(), byte[].class),
+                new JdbcStoreProvider<>(newPostgresDataSource(), byte[].class),
+                new JdbcStoreProvider<>(newPostgresDataSource(), String.class),
                 new JpaStoreProvider<>(newEntityManager(byte[].class), byte[].class),
                 new JpaStoreProvider<>(newEntityManager(String.class), String.class)
         );

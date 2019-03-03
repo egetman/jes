@@ -1,5 +1,7 @@
 package io.jes.provider;
 
+import java.sql.Blob;
+import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
@@ -114,8 +116,7 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader {
                     if (!set.next()) {
                         return false;
                     }
-                    //noinspection unchecked
-                    T data = (T) set.getObject(ddlProducer.contentName());
+                    T data = unwrapJdbcType(set.getObject(ddlProducer.contentName()));
                     action.accept(serializer.deserialize(data));
                 } catch (Exception e) {
                     throw new BrokenStoreException(e);
@@ -194,6 +195,19 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader {
                 }
             }
         }
+    }
+
+    @SneakyThrows
+    @SuppressWarnings("unchecked")
+    private T unwrapJdbcType(Object jdbcType) {
+        if (jdbcType instanceof String || jdbcType instanceof byte[]) {
+            return (T) jdbcType;
+        } else if (jdbcType instanceof Clob) {
+            return (T) ((Clob) jdbcType).getSubString(1, (int) ((Clob) jdbcType).length());
+        } else if (jdbcType instanceof Blob) {
+            return (T) ((Blob) jdbcType).getBytes(1, (int) ((Blob) jdbcType).length());
+        }
+        throw new IllegalArgumentException("Unsupported jdbc type: " + jdbcType.getClass());
     }
 
 }

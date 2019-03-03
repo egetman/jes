@@ -5,6 +5,7 @@ import java.sql.Statement;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.UUID;
 import javax.annotation.Nonnull;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -14,6 +15,8 @@ import javax.sql.DataSource;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
+import org.h2.jdbcx.JdbcConnectionPool;
+import org.h2.jdbcx.JdbcDataSource;
 import org.hibernate.dialect.PostgreSQL95Dialect;
 import org.hibernate.jpa.HibernatePersistenceProvider;
 import org.redisson.Redisson;
@@ -75,12 +78,21 @@ public final class FancyStuff {
     }
 
     @Nonnull
-    public static DataSource newDataSource() {
-        return newDataSource("public");
+    public static DataSource newH2DataSource() {
+        final JdbcDataSource jdbcDataSource = new JdbcDataSource();
+        jdbcDataSource.setUser("admin");
+        jdbcDataSource.setPasswordChars("password".toCharArray());
+        jdbcDataSource.setUrl("jdbc:h2:mem:jes-" + UUID.randomUUID());
+        return JdbcConnectionPool.create(jdbcDataSource);
     }
 
     @Nonnull
-    public static DataSource newDataSource(@Nonnull String schemaName) {
+    public static DataSource newPostgresDataSource() {
+        return newPostgresDataSource("public");
+    }
+
+    @Nonnull
+    public static DataSource newPostgresDataSource(@Nonnull String schemaName) {
         PostgreSQLContainer<?> container = newPostgreSQLContainer();
         final HikariConfig config = new HikariConfig();
 
@@ -124,7 +136,7 @@ public final class FancyStuff {
 
     @Nonnull
     private static PersistenceUnitInfo newUnit(Class<?> serializationType) {
-        return new JesUnitInfo(newDataSource(), serializationType);
+        return new JesUnitInfo(newPostgresDataSource(), serializationType);
     }
 
     @Nonnull

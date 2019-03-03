@@ -24,7 +24,7 @@ import static io.jes.internal.Events.FancyEvent;
 import static io.jes.internal.Events.ProcessingStarted;
 import static io.jes.internal.Events.ProcessingTerminated;
 import static io.jes.internal.Events.SampleEvent;
-import static io.jes.internal.FancyStuff.newDataSource;
+import static io.jes.internal.FancyStuff.newPostgresDataSource;
 import static io.jes.reactors.ProjectorTest.SampleProjector.Projection;
 import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -52,7 +52,7 @@ class ProjectorTest {
     @SneakyThrows
     void projectorShouldCorrectlyRebuildProjection() {
         final InMemoryOffset offset = new InMemoryOffset();
-        final JEventStore store = new JEventStore(new JdbcStoreProvider<>(newDataSource(), String.class));
+        final JEventStore store = new JEventStore(new JdbcStoreProvider<>(newPostgresDataSource(), String.class));
 
         try (final SampleProjector projector = new SampleProjector(store, offset)) {
             // verify projector start listen event store and projection is not created yet

@@ -26,7 +26,7 @@ import io.jes.provider.JdbcStoreProvider;
 
 import static io.jes.internal.Events.FancyEvent;
 import static io.jes.internal.Events.SampleEvent;
-import static io.jes.internal.FancyStuff.newDataSource;
+import static io.jes.internal.FancyStuff.newPostgresDataSource;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
@@ -47,7 +47,7 @@ class UnsafeOpsTest {
     private final UnsafeOps unsafeOps;
 
     UnsafeOpsTest() {
-        store = new JEventStore(new JdbcStoreProvider<>(newDataSource(), byte[].class));
+        store = new JEventStore(new JdbcStoreProvider<>(newPostgresDataSource(), byte[].class));
         unsafeOps = new UnsafeOps(store);
     }
 

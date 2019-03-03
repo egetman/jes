@@ -20,6 +20,7 @@
         <postgresql.version>42.2.4</postgresql.version>
         <javax.persistence-api.version>2.2</javax.persistence-api.version>
 
+        <h2.version>1.4.198</h2.version>
         <HikariCP.version>2.7.1</HikariCP.version>
         <hibernate.version>5.3.5.Final</hibernate.version>
         <mockito-core.version>2.23.0</mockito-core.version>
@@ -144,6 +145,13 @@
         </dependency>
 
         <!-- test dependencies -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <version>${h2.version}</version>
+            <scope>test</scope>
+        </dependency>
+
         <dependency>
             <groupId>com.zaxxer</groupId>
             <artifactId>HikariCP</artifactId>

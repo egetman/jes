@@ -24,6 +24,8 @@ public class DDLFactory {
     public static StoreDDLProducer newDDLProducer(@Nonnull String databaseName, @Nonnull String schema) {
         if ("PostgreSQL".equals(databaseName)) {
             return new PostgresDDL(schema);
+        } else if ("H2".equals(databaseName)) {
+           return new H2DDL(schema);
         } else {
             throw new IllegalArgumentException(format(UNSUPPORTED_TYPE, StoreDDLProducer.class, databaseName));
         }
