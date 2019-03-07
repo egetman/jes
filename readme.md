@@ -160,6 +160,7 @@ public class JesConfig {
 - [x] strong/weak schema formats (partial): core
 - [x] pull-based projectors: core
 - [x] snapshotting: core
+- [x] stream-level optimistic locking: flow
 
 ## Todo:
  - version caching? to avoid every-write check
@@ -173,6 +174,6 @@ public class JesConfig {
  - ~~don't fail on unknown events~~ done via common event type for unregistered events
  - make reactors pull-mechanism customisable (for db CDC?)
  - add demo app
- - add InMemoryStoreProvider (H2 or just collections?) for testing && H2 support 
+ - ~~add InMemoryStoreProvider (H2 or just collections?) for testing && H2 support~~ 
  
  ###### PRs are welcome

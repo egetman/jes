@@ -25,6 +25,7 @@ class StoreProviderTest {
 
     private static Collection<StoreProvider> createProviders() {
         return asList(
+                new InMemoryStoreProvider(),
                 new JdbcStoreProvider<>(newH2DataSource(), String.class),
                 new JdbcStoreProvider<>(newH2DataSource(), byte[].class),
                 new JdbcStoreProvider<>(newPostgresDataSource(), byte[].class),
