@@ -17,16 +17,18 @@
         <jackson.version>2.9.8</jackson.version>
         <redisson.version>3.10.1</redisson.version>
         <byte-buddy.version>1.9.9</byte-buddy.version>
-        <postgresql.version>42.2.4</postgresql.version>
         <javax.persistence-api.version>2.2</javax.persistence-api.version>
 
+        <!-- test dependencies versions -->
         <h2.version>1.4.198</h2.version>
         <HikariCP.version>2.7.1</HikariCP.version>
+        <postgresql.version>42.2.4</postgresql.version>
         <hibernate.version>5.3.5.Final</hibernate.version>
         <mockito-core.version>2.23.0</mockito-core.version>
         <testcontainers.version>1.9.1</testcontainers.version>
         <junit-jupiter.version>5.4.0</junit-jupiter.version>
 
+        <!-- plugin versions -->
         <maven-jar-plugin.version>3.1.0</maven-jar-plugin.version>
         <maven-source-plugin.version>3.0.1</maven-source-plugin.version>
         <jacoco-maven-plugin.version>0.8.3</jacoco-maven-plugin.version>
@@ -68,20 +70,6 @@
             <groupId>javax.persistence</groupId>
             <artifactId>javax.persistence-api</artifactId>
             <version>${javax.persistence-api.version}</version>
-        </dependency>
-
-        <!-- for postgresql JdbcStoreProvider-->
-        <dependency>
-            <groupId>org.postgresql</groupId>
-            <artifactId>postgresql</artifactId>
-            <version>${postgresql.version}</version>
-            <scope>compile</scope>
-            <exclusions>
-                <exclusion>
-                    <artifactId>commons-logging</artifactId>
-                    <groupId>commons-logging</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <!-- for KryoSerializer -->
@@ -145,6 +133,21 @@
         </dependency>
 
         <!-- test dependencies -->
+
+        <!-- for JdbcStoreProvider-->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>${postgresql.version}</version>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <artifactId>commons-logging</artifactId>
+                    <groupId>commons-logging</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
