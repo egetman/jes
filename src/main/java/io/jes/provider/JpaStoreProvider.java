@@ -2,10 +2,14 @@ package io.jes.provider;
 
 import java.util.Collection;
 import java.util.UUID;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
 import javax.persistence.EntityTransaction;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
@@ -15,8 +19,8 @@ import io.jes.ex.BrokenStoreException;
 import io.jes.ex.VersionMismatchException;
 import io.jes.provider.jpa.StoreEntry;
 import io.jes.provider.jpa.StoreEntryFactory;
-import io.jes.serializer.Serializer;
 import io.jes.serializer.SerializationOption;
+import io.jes.serializer.Serializer;
 import io.jes.serializer.SerializerFactory;
 import io.jes.snapshot.SnapshotReader;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +31,8 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * JPA {@link StoreProvider} implementation.
+ * {@implNote this implementation works correctly with application-managed entity manager factory && disabled
+ * autocommit feature - JpaStoreProvider manage transactions manually}.
  *
  * @param <T> type of event serialization.
  */
@@ -34,9 +40,11 @@ import static java.util.Objects.requireNonNull;
 public class JpaStoreProvider<T> implements StoreProvider, SnapshotReader {
 
     private static final int FETCH_SIZE = 100;
+    private static final String READ_ONLY_HINT = "org.hibernate.readOnly";
+    private static final String FETCH_SIZE_HINT = "org.hibernate.fetchSize";
 
-    private final EntityManager entityManager;
     private final Serializer<Event, T> serializer;
+    private final EntityManagerFactory entityManagerFactory;
 
     private final Class<? extends StoreEntry> entryType;
 
@@ -45,25 +53,39 @@ public class JpaStoreProvider<T> implements StoreProvider, SnapshotReader {
     private static final String QUERY_COUNT_BY_UUID = "SELECT COUNT(e) FROM %s e WHERE e.uuid = :uuid";
     private static final String QUERY_BY_OFFSET = "SELECT e FROM %s e WHERE e.id > :id ORDER BY id";
 
-    public JpaStoreProvider(@Nonnull EntityManager entityManager, @Nonnull Class<T> serializationType,
+    public JpaStoreProvider(@Nonnull EntityManagerFactory entityManagerFactory, @Nonnull Class<T> serializationType,
                             @Nonnull SerializationOption... options) {
 
-        this.entityManager = requireNonNull(entityManager, "EntityManager must not be null");
+        this.entityManagerFactory = requireNonNull(entityManagerFactory, "EntityManagerFactory must not be null");
         this.serializer = SerializerFactory.newEventSerializer(serializationType, options);
         this.entryType = StoreEntryFactory.entryTypeOf(serializationType);
     }
 
     @Override
     public Stream<Event> readFrom(long offset) {
-        final TypedQuery<? extends StoreEntry> query = entityManager.createQuery(
-                format(QUERY_BY_OFFSET, entryType.getName()), entryType
-        );
+        return doInTransactionAndKeepAlive((entityManager, transaction) -> {
+            final TypedQuery<? extends StoreEntry> query = entityManager.createQuery(
+                    format(QUERY_BY_OFFSET, entryType.getName()), entryType
+            );
 
-        query.setParameter("id", offset);
-        query.setHint("org.hibernate.readOnly", true);
-        query.setHint("org.hibernate.fetchSize", FETCH_SIZE);
+            query.setParameter("id", offset);
+            query.setHint(READ_ONLY_HINT, true);
+            query.setHint(FETCH_SIZE_HINT, FETCH_SIZE);
 
-        return query.getResultStream().map(storeEntry -> serializer.deserialize(storeEntry.getData()));
+            return query.getResultStream()
+                    .map(storeEntry -> serializer.deserialize(storeEntry.getData()))
+                    .onClose(() -> {
+                        try {
+                            transaction.commit();
+                            entityManager.close();
+                        } catch (Exception e) {
+                            if (transaction.isActive()) {
+                                transaction.rollback();
+                            }
+                            throw new BrokenStoreException(e);
+                        }
+                    });
+        });
     }
 
     @Override
@@ -73,18 +95,20 @@ public class JpaStoreProvider<T> implements StoreProvider, SnapshotReader {
 
     @Override
     public Collection<Event> readBy(@Nonnull UUID uuid, long skip) {
-        final TypedQuery<? extends StoreEntry> query = entityManager.createQuery(
-                format(QUERY_BY_UUID, entryType.getName()), entryType
-        );
+        return doInTransaction(entityManager -> {
+            final TypedQuery<? extends StoreEntry> query = entityManager.createQuery(
+                    format(QUERY_BY_UUID, entryType.getName()), entryType
+            );
 
-        query.setParameter("uuid", uuid);
-        query.setMaxResults(MAX_VALUE);
-        query.setFirstResult((int) skip);
-        query.setHint("org.hibernate.readOnly", true);
-        query.setHint("org.hibernate.fetchSize", FETCH_SIZE);
-        return query.getResultStream()
-                .map(storeEntry -> serializer.deserialize(storeEntry.getData()))
-                .collect(Collectors.toList());
+            query.setParameter("uuid", uuid);
+            query.setMaxResults(MAX_VALUE);
+            query.setFirstResult((int) skip);
+            query.setHint(READ_ONLY_HINT, true);
+            query.setHint(FETCH_SIZE_HINT, FETCH_SIZE);
+            return query.getResultStream()
+                    .map(storeEntry -> serializer.deserialize(storeEntry.getData()))
+                    .collect(Collectors.toList());
+        });
     }
 
     @Override
@@ -92,11 +116,17 @@ public class JpaStoreProvider<T> implements StoreProvider, SnapshotReader {
         final UUID uuid = event.uuid();
         final long expectedVersion = event.expectedStreamVersion();
         if (uuid != null && expectedVersion != -1) {
-            final TypedQuery<Long> versionQuery = entityManager.createQuery(
-                    format(QUERY_COUNT_BY_UUID, entryType.getName()), Long.class
-            );
-            versionQuery.setParameter("uuid", uuid);
-            final Long actualVersion = versionQuery.getSingleResult();
+
+            final long actualVersion = doInTransaction(entityManager -> {
+                final TypedQuery<Long> versionQuery = entityManager.createQuery(
+                        format(QUERY_COUNT_BY_UUID, entryType.getName()), Long.class
+                );
+                versionQuery.setParameter("uuid", uuid);
+                versionQuery.setHint(READ_ONLY_HINT, true);
+
+                return versionQuery.getSingleResult();
+            });
+
             if (expectedVersion != actualVersion) {
                 throw new VersionMismatchException(expectedVersion, actualVersion);
             }
@@ -104,31 +134,63 @@ public class JpaStoreProvider<T> implements StoreProvider, SnapshotReader {
 
         final T data = serializer.serialize(event);
         final StoreEntry entry = StoreEntryFactory.newEntry(uuid, data);
-        doInTransaction(() -> entityManager.persist(entry));
+        final Consumer<EntityManager> consumer = entityManager -> entityManager.persist(entry);
+        doInTransaction(consumer);
     }
 
     @Override
     public void deleteBy(@Nonnull UUID uuid) {
         log.warn("Prepare to remove {} event stream", uuid);
-        final Query query = entityManager.createQuery(format(DELETE_BY_UUID, entryType.getName()));
-        query.setParameter("uuid", uuid);
 
-        doInTransaction(() -> {
-            final int affectedEvents = query.executeUpdate();
-            log.warn("{} events successfully removed", affectedEvents);
+        final int affectedEvents = doInTransaction(entityManager -> {
+            final Query query = entityManager.createQuery(format(DELETE_BY_UUID, entryType.getName()));
+            query.setParameter("uuid", uuid);
+
+            return query.executeUpdate();
         });
+        log.warn("{} events successfully removed", affectedEvents);
     }
 
-    private void doInTransaction(@Nonnull Runnable action) {
+    private <R> R doInTransaction(@Nonnull Function<EntityManager, R> action) {
+        final EntityManager entityManager = entityManagerFactory.createEntityManager();
         final EntityTransaction transaction = entityManager.getTransaction();
         try {
             transaction.begin();
-            action.run();
+            final R result = action.apply(entityManager);
+            transaction.commit();
+            return result;
         } catch (Exception e) {
-            transaction.setRollbackOnly();
+            transaction.rollback();
             throw new BrokenStoreException(e);
         } finally {
+            entityManager.close();
+        }
+    }
+
+    private void doInTransaction(@Nonnull Consumer<EntityManager> action) {
+        final EntityManager entityManager = entityManagerFactory.createEntityManager();
+        final EntityTransaction transaction = entityManager.getTransaction();
+        try {
+            transaction.begin();
+            action.accept(entityManager);
             transaction.commit();
+        } catch (Exception e) {
+            transaction.rollback();
+            throw new BrokenStoreException(e);
+        } finally {
+            entityManager.close();
+        }
+    }
+
+    private <R> R doInTransactionAndKeepAlive(@Nonnull BiFunction<EntityManager, EntityTransaction, R> action) {
+        final EntityManager entityManager = entityManagerFactory.createEntityManager();
+        final EntityTransaction transaction = entityManager.getTransaction();
+        try {
+            transaction.begin();
+            return action.apply(entityManager, transaction);
+        } catch (Exception e) {
+            transaction.rollback();
+            throw new BrokenStoreException(e);
         }
     }
 

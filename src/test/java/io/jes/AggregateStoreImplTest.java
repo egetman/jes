@@ -1,8 +1,7 @@
 package io.jes;
 
 import java.util.UUID;
-
-import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
 
 import org.junit.jupiter.api.Test;
 
@@ -15,7 +14,7 @@ import static io.jes.internal.Events.FancyEvent;
 import static io.jes.internal.Events.ProcessingStarted;
 import static io.jes.internal.Events.ProcessingTerminated;
 import static io.jes.internal.Events.SampleEvent;
-import static io.jes.internal.FancyStuff.newEntityManager;
+import static io.jes.internal.FancyStuff.newEntityManagerFactory;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -27,7 +26,7 @@ class AggregateStoreImplTest {
 
     @Test
     void aggregateStateShouldReactToEventStreamChange() {
-        final EntityManager entityManager = newEntityManager(String.class);
+        final EntityManagerFactory entityManager = newEntityManagerFactory(String.class);
         final JpaStoreProvider<String> storeProvider = new JpaStoreProvider<>(entityManager, String.class);
 
         final JEventStore eventStore = new JEventStore(storeProvider);

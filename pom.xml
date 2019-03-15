@@ -22,11 +22,11 @@
         <!-- test dependencies versions -->
         <h2.version>1.4.198</h2.version>
         <HikariCP.version>2.7.1</HikariCP.version>
-        <postgresql.version>42.2.4</postgresql.version>
-        <hibernate.version>5.3.5.Final</hibernate.version>
+        <postgresql.version>42.2.5</postgresql.version>
+        <hibernate.version>5.4.1.Final</hibernate.version>
         <mockito-core.version>2.23.0</mockito-core.version>
-        <testcontainers.version>1.9.1</testcontainers.version>
         <junit-jupiter.version>5.4.0</junit-jupiter.version>
+        <testcontainers.version>1.10.6</testcontainers.version>
 
         <!-- plugin versions -->
         <maven-jar-plugin.version>3.1.0</maven-jar-plugin.version>

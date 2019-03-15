@@ -17,7 +17,6 @@ import javax.persistence.Transient;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 import static lombok.AccessLevel.PROTECTED;
 
@@ -25,7 +24,6 @@ import static lombok.AccessLevel.PROTECTED;
  * Simple JPA entity for storing event data.
  */
 @Getter
-@Setter
 @MappedSuperclass
 @EqualsAndHashCode(of = "uuid")
 @NoArgsConstructor(access = PROTECTED, force = true)
@@ -34,13 +32,13 @@ public abstract class StoreEntry {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", unique = true, updatable = false)
-    private final Long id;
+    private final long id;
 
     @Column(name = "uuid", updatable = false)
     private final UUID uuid;
 
     StoreEntry(@Nullable UUID uuid) {
-        this.id = null;
+        this.id = 0;
         this.uuid = uuid;
     }
 
@@ -49,7 +47,6 @@ public abstract class StoreEntry {
     public abstract <T> T getData();
 
     @Getter
-    @Setter
     @Entity
     @NoArgsConstructor(access = PROTECTED, force = true)
     @EqualsAndHashCode(exclude = {"data"}, callSuper = true)
@@ -66,7 +63,6 @@ public abstract class StoreEntry {
     }
 
     @Getter
-    @Setter
     @Entity
     @NoArgsConstructor(access = PROTECTED, force = true)
     @EqualsAndHashCode(exclude = {"data"}, callSuper = true)

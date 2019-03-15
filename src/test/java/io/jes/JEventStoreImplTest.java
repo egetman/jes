@@ -6,6 +6,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.UnaryOperator;
+import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.sql.DataSource;
 
@@ -46,8 +47,10 @@ class JEventStoreImplTest {
     }
 
     private void clearEventStore(@Nonnull JEventStore store) {
-        final Set<UUID> uuids = store.readFrom(0).map(Event::uuid).filter(Objects::nonNull).collect(toSet());
-        uuids.forEach(store::deleteBy);
+        try (final Stream<Event> stream = store.readFrom(0)) {
+            final Set<UUID> uuids = stream.map(Event::uuid).filter(Objects::nonNull).collect(toSet());
+            uuids.forEach(store::deleteBy);
+        }
     }
 
     @Test

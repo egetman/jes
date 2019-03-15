@@ -61,7 +61,7 @@ public class JdbcStoreProvider<T>... {
 }
 
 public class JpaStoreProvider<T>... {
-    public JpaStoreProvider(@Nonnull EntityManager entityManager, @Nonnull Class<T> serializationType, 
+    public JpaStoreProvider(@Nonnull EntityManagerFactory entityManagerFactory, @Nonnull Class<T> serializationType, 
                             @Nonnull SerializationOption... options) {
 }
 ```

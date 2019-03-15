@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import javax.annotation.Nonnull;
-import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.spi.PersistenceUnitInfo;
 import javax.sql.DataSource;
@@ -28,6 +27,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
+import static org.hibernate.cfg.AvailableSettings.AUTOCOMMIT;
 import static org.hibernate.cfg.AvailableSettings.DIALECT;
 import static org.hibernate.cfg.AvailableSettings.FORMAT_SQL;
 import static org.hibernate.cfg.AvailableSettings.HBM2DDL_AUTO;
@@ -131,6 +131,7 @@ public final class FancyStuff {
         properties.put(USE_STRUCTURED_CACHE, false);
         properties.put(STATEMENT_BATCH_SIZE, 20);
         properties.put(HBM2DDL_AUTO, "create");
+        properties.put(AUTOCOMMIT, false);
         return new HibernatePersistenceProvider().createContainerEntityManagerFactory(unitInfo, properties);
     }
 
@@ -140,10 +141,9 @@ public final class FancyStuff {
     }
 
     @Nonnull
-    public static EntityManager newEntityManager(Class<?> serializationType) {
+    public static EntityManagerFactory newEntityManagerFactory(Class<?> serializationType) {
         final PersistenceUnitInfo unitInfo = newUnit(serializationType);
-
-        return newEntityManagerFactory(unitInfo).createEntityManager();
+        return newEntityManagerFactory(unitInfo);
     }
 
 }

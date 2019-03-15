@@ -3,22 +3,36 @@ package io.jes.provider;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import io.jes.Event;
 import io.jes.ex.VersionMismatchException;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 import static io.jes.internal.Events.SampleEvent;
-import static io.jes.internal.FancyStuff.newEntityManager;
+import static io.jes.internal.FancyStuff.newEntityManagerFactory;
 import static io.jes.internal.FancyStuff.newH2DataSource;
 import static io.jes.internal.FancyStuff.newPostgresDataSource;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.IntStream.range;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertIterableEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Slf4j
 class StoreProviderTest {
@@ -30,8 +44,8 @@ class StoreProviderTest {
                 new JdbcStoreProvider<>(newH2DataSource(), byte[].class),
                 new JdbcStoreProvider<>(newPostgresDataSource(), byte[].class),
                 new JdbcStoreProvider<>(newPostgresDataSource(), String.class),
-                new JpaStoreProvider<>(newEntityManager(byte[].class), byte[].class),
-                new JpaStoreProvider<>(newEntityManager(String.class), String.class)
+                new JpaStoreProvider<>(newEntityManagerFactory(byte[].class), byte[].class),
+                new JpaStoreProvider<>(newEntityManagerFactory(String.class), String.class)
         );
     }
 
@@ -41,10 +55,13 @@ class StoreProviderTest {
         final List<Event> expected = asList(new SampleEvent("FOO"), new SampleEvent("BAR"), new SampleEvent("BAZ"));
         expected.forEach(provider::write);
 
-        final List<Event> actual = provider.readFrom(0).collect(toList());
+        final List<Event> actual;
+        try (final Stream<Event> stream = provider.readFrom(0)) {
+            actual = stream.collect(toList());
+        }
 
-        Assertions.assertNotNull(actual);
-        Assertions.assertIterableEquals(expected, actual);
+        assertNotNull(actual);
+        assertIterableEquals(expected, actual);
         actual.forEach(event -> log.info("{}", event));
     }
 
@@ -62,8 +79,8 @@ class StoreProviderTest {
 
         final Collection<Event> actual = provider.readBy(uuid);
 
-        Assertions.assertNotNull(actual);
-        Assertions.assertIterableEquals(expected, actual);
+        assertNotNull(actual);
+        assertIterableEquals(expected, actual);
         actual.forEach(event -> log.info("Loaded event {}", event));
     }
 
@@ -90,7 +107,8 @@ class StoreProviderTest {
                 new SampleEvent("BAZ", uuid, 1)
         );
 
-        Assertions.assertThrows(VersionMismatchException.class, () -> expected.forEach(provider::write));
+        assertThrows(VersionMismatchException.class, () -> expected.forEach(provider::write));
+        assertDoesNotThrow(() -> provider.write(new SampleEvent("LAZ", uuid, 2)));
     }
 
     @ParameterizedTest
@@ -108,9 +126,12 @@ class StoreProviderTest {
         log.debug("Written event stream {} with size 2 and event stream {} with size 1", uuid, anotherUuid);
         provider.deleteBy(uuid);
 
-        final List<Event> remaining = provider.readFrom(0).collect(toList());
-        Assertions.assertEquals(1, remaining.size(), "EventStore should contain only one event");
-        Assertions.assertEquals(new SampleEvent("BAZ", anotherUuid), remaining.iterator().next());
+        final List<Event> remaining;
+        try (final Stream<Event> stream = provider.readFrom(0)) {
+            remaining = stream.collect(toList());
+        }
+        assertEquals(1, remaining.size(), "EventStore should contain only one event");
+        assertEquals(new SampleEvent("BAZ", anotherUuid), remaining.iterator().next());
     }
 
     @ParameterizedTest
@@ -122,8 +143,86 @@ class StoreProviderTest {
         provider.deleteBy(UUID.randomUUID());
 
         final Collection<Event> actual = provider.readBy(expected.uuid());
-        Assertions.assertEquals(1, actual.size());
-        Assertions.assertEquals(expected, actual.iterator().next());
+        assertEquals(1, actual.size());
+        assertEquals(expected, actual.iterator().next());
+    }
+
+    @SneakyThrows
+    @ParameterizedTest
+    @MethodSource("createProviders")
+    void concurrentVersionedWriteShouldBeThreadSafe(@Nonnull StoreProvider provider) {
+        // prepare test data
+        final int expectedErrorsCount = 10;
+        final int versionedDatasetSize = expectedErrorsCount * 10;
+        final UUID uuid = UUID.randomUUID();
+
+        final List<Event> unversionedEvents = generateEvents(expectedErrorsCount, uuid);
+        final List<Event> versionedEvents = generateVersionedEvents(0, versionedDatasetSize, uuid);
+
+        // allow some versioned writes first
+        final CountDownLatch startPoint = new CountDownLatch(expectedErrorsCount);
+
+        final Callable<CallResult> versionedWriter = () -> {
+            int writeCount = 0;
+            int exceptionsCount = 0;
+            for (Event versionedEvent : versionedEvents) {
+                try {
+                    provider.write(versionedEvent);
+                    writeCount++;
+                    startPoint.countDown();
+                } catch (VersionMismatchException e) {
+                    log.error("Caught {} {}", e.getClass(), exceptionsCount);
+                    exceptionsCount++;
+                }
+            }
+            return new CallResult(writeCount, exceptionsCount);
+        };
+
+        final Callable<CallResult> unversionedWriter = () -> {
+            int writeCount = 0;
+            int exceptionsCount = 0;
+            try {
+                startPoint.await();
+                for (Event unversioned : unversionedEvents) {
+                    // unversioned events don't have version check, so every write should be successfull
+                    provider.write(unversioned);
+                    writeCount++;
+                }
+            } catch (VersionMismatchException e) {
+                exceptionsCount++;
+            }
+            return new CallResult(writeCount, exceptionsCount);
+        };
+
+        final ExecutorService executor = Executors.newFixedThreadPool(2);
+        final Future<CallResult> unversionedWrites = executor.submit(unversionedWriter);
+        final Future<CallResult> versionedWrites = executor.submit(versionedWriter);
+
+
+        assertEquals(expectedErrorsCount, unversionedWrites.get().getWriteCount());
+        assertEquals(0, unversionedWrites.get().getExceptionsCount());
+
+        assertEquals(versionedDatasetSize - expectedErrorsCount, versionedWrites.get().getWriteCount());
+        assertEquals(expectedErrorsCount, versionedWrites.get().getExceptionsCount());
+    }
+
+
+    @SuppressWarnings("SameParameterValue")
+    private List<Event> generateEvents(int count, UUID uuid) {
+        return range(0, count).mapToObj(ignored -> new SampleEvent("Sample", uuid)).collect(toList());
+    }
+
+    @SuppressWarnings("SameParameterValue")
+    private List<Event> generateVersionedEvents(int startVersion, int count, UUID uuid) {
+        return range(startVersion, count).mapToObj(idx -> new SampleEvent("Sample", uuid, idx)).collect(toList());
+    }
+
+    @Getter
+    @RequiredArgsConstructor
+    private static class CallResult {
+
+        private final int writeCount;
+        private final int exceptionsCount;
     }
 
 }
