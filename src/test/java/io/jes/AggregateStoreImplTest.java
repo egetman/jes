@@ -55,6 +55,10 @@ class AggregateStoreImplTest {
         // not handled event type should not broke anithing
         eventStore.write(new ProcessingStarted(uuid));
         assertDoesNotThrow(() -> aggregateStore.readBy(uuid, FancyAggregate.class));
+
+        try {
+            entityManager.close();
+        } catch (Exception ignored) {}
     }
 
     @Test

@@ -24,11 +24,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Slf4j
 class LockManagerTest {
 
+    private static final Collection<LockManager> LOCK_MANAGERS = asList(
+            new InMemoryReentrantLockManager(),
+            new RedissonReentrantLockManager(newRedissonClient())
+    );
+
     private static Collection<LockManager> createLockManagers() {
-        return asList(
-                new InMemoryReentrantLockManager(),
-                new RedissonReentrantLockManager(newRedissonClient())
-        );
+        return LOCK_MANAGERS;
     }
 
     @ParameterizedTest

@@ -78,7 +78,8 @@ class ReactorTest {
         final String key = SampleReactor.class.getName();
 
         final Offset offset = new InMemoryOffset();
-        final JEventStore store = new JEventStore(new JdbcStoreProvider<>(newPostgresDataSource(), byte[].class));
+        final JdbcStoreProvider<byte[]> provider = new JdbcStoreProvider<>(newPostgresDataSource(), byte[].class);
+        final JEventStore store = new JEventStore(provider);
 
         // after creation reactor start listening event store and handle written events
         // noinspection unused
@@ -110,6 +111,9 @@ class ReactorTest {
             assertTrue(endLatch.await(1, TimeUnit.SECONDS));
             assertEquals(4, offset.value(key));
         }
+        try {
+            provider.close();
+        } catch (Exception ignored) {}
     }
 
     @SuppressWarnings("unused")

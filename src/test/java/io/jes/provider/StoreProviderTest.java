@@ -2,6 +2,8 @@ package io.jes.provider;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
@@ -11,6 +13,8 @@ import java.util.concurrent.Future;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -27,6 +31,7 @@ import static io.jes.internal.FancyStuff.newH2DataSource;
 import static io.jes.internal.FancyStuff.newPostgresDataSource;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 import static java.util.stream.IntStream.range;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -37,21 +42,24 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @Slf4j
 class StoreProviderTest {
 
+    private static final Collection<StoreProvider> PROVIDERS = asList(
+            new InMemoryStoreProvider(),
+            new JdbcStoreProvider<>(newH2DataSource(), String.class),
+            new JdbcStoreProvider<>(newH2DataSource(), byte[].class),
+            new JdbcStoreProvider<>(newPostgresDataSource(), byte[].class),
+            new JdbcStoreProvider<>(newPostgresDataSource(), String.class),
+            new JpaStoreProvider<>(newEntityManagerFactory(byte[].class), byte[].class),
+            new JpaStoreProvider<>(newEntityManagerFactory(String.class), String.class)
+    );
+
     private static Collection<StoreProvider> createProviders() {
-        return asList(
-                new InMemoryStoreProvider(),
-                new JdbcStoreProvider<>(newH2DataSource(), String.class),
-                new JdbcStoreProvider<>(newH2DataSource(), byte[].class),
-                new JdbcStoreProvider<>(newPostgresDataSource(), byte[].class),
-                new JdbcStoreProvider<>(newPostgresDataSource(), String.class),
-                new JpaStoreProvider<>(newEntityManagerFactory(byte[].class), byte[].class),
-                new JpaStoreProvider<>(newEntityManagerFactory(String.class), String.class)
-        );
+        return PROVIDERS;
     }
 
     @ParameterizedTest
     @MethodSource("createProviders")
     void shouldReadOwnWrites(@Nonnull StoreProvider provider) {
+
         final List<Event> expected = asList(new SampleEvent("FOO"), new SampleEvent("BAR"), new SampleEvent("BAZ"));
         expected.forEach(provider::write);
 
@@ -225,4 +233,23 @@ class StoreProviderTest {
         private final int exceptionsCount;
     }
 
+    @AfterEach
+    void clearEventStore() {
+        for (StoreProvider provider : PROVIDERS) {
+            try (final Stream<Event> stream = provider.readFrom(0)) {
+                final Set<UUID> uuids = stream.map(Event::uuid).filter(Objects::nonNull).collect(toSet());
+                uuids.forEach(provider::deleteBy);
+            }
+        }
+    }
+
+    @AfterAll
+    @SneakyThrows
+    static void closeResources() {
+        for (StoreProvider provider : PROVIDERS) {
+            if (provider instanceof AutoCloseable) {
+                ((AutoCloseable) provider).close();
+            }
+        }
+    }
 }

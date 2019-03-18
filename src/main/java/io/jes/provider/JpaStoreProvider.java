@@ -37,7 +37,7 @@ import static java.util.Objects.requireNonNull;
  * @param <T> type of event serialization.
  */
 @Slf4j
-public class JpaStoreProvider<T> implements StoreProvider, SnapshotReader {
+public class JpaStoreProvider<T> implements StoreProvider, SnapshotReader, AutoCloseable {
 
     private static final int FETCH_SIZE = 100;
     private static final String READ_ONLY_HINT = "org.hibernate.readOnly";
@@ -191,6 +191,15 @@ public class JpaStoreProvider<T> implements StoreProvider, SnapshotReader {
         } catch (Exception e) {
             transaction.rollback();
             throw new BrokenStoreException(e);
+        }
+    }
+
+    @Override
+    public void close() {
+        try {
+            entityManagerFactory.close();
+        } catch (Exception e) {
+            log.error("Failed to close resource:", e);
         }
     }
 

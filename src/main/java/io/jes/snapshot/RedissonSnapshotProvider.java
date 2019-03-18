@@ -17,12 +17,10 @@ public class RedissonSnapshotProvider implements SnapshotProvider {
     private static final int MAX_CACHE_SIZE = 5000;
     private final ConcurrentMap<UUID, Aggregate> redisCache;
 
-    @SuppressWarnings("WeakerAccess")
     public RedissonSnapshotProvider(@Nonnull RedissonClient redissonClient) {
         this(redissonClient, new JsonJacksonCodec(), MAX_CACHE_SIZE);
     }
 
-    @SuppressWarnings("WeakerAccess")
     public RedissonSnapshotProvider(@Nonnull RedissonClient redissonClient, @Nonnull Codec codec, int cacheSize) {
         Objects.requireNonNull(redissonClient, "Redisson client must not be null");
         final LocalCachedMapOptions<UUID, Aggregate> options = LocalCachedMapOptions.<UUID, Aggregate>defaults()

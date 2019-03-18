@@ -11,7 +11,6 @@ import java.util.Collection;
 import java.util.Spliterators.AbstractSpliterator;
 import java.util.UUID;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import javax.annotation.Nonnull;
@@ -22,8 +21,8 @@ import io.jes.ex.BrokenStoreException;
 import io.jes.ex.VersionMismatchException;
 import io.jes.provider.jdbc.DDLFactory;
 import io.jes.provider.jdbc.StoreDDLProducer;
-import io.jes.serializer.Serializer;
 import io.jes.serializer.SerializationOption;
+import io.jes.serializer.Serializer;
 import io.jes.serializer.SerializerFactory;
 import io.jes.snapshot.SnapshotReader;
 import lombok.SneakyThrows;
@@ -32,6 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 import static java.lang.Long.MAX_VALUE;
 import static java.util.Objects.requireNonNull;
 import static java.util.Spliterator.ORDERED;
+import static java.util.stream.Collectors.toList;
 
 /**
  * JDBC {@link StoreProvider} implementation.
@@ -39,7 +39,7 @@ import static java.util.Spliterator.ORDERED;
  * @param <T> type of event serialization.
  */
 @Slf4j
-public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader {
+public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, AutoCloseable {
 
     private final DataSource dataSource;
     private final StoreDDLProducer ddlProducer;
@@ -81,12 +81,16 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader {
 
     @Override
     public Collection<Event> readBy(@Nonnull UUID uuid) {
-        return readBy(ddlProducer.queryEventsByUuid(), uuid).collect(Collectors.toList());
+        try (final Stream<Event> stream = readBy(ddlProducer.queryEventsByUuid(), uuid)) {
+            return stream.collect(toList());
+        }
     }
 
     @Override
     public Collection<Event> readBy(@Nonnull UUID uuid, long skip) {
-        return readBy(requireNonNull(ddlProducer.queryEventsByUuidWithSkip()), uuid, skip).collect(Collectors.toList());
+        try (final Stream<Event> stream = readBy(requireNonNull(ddlProducer.queryEventsByUuidWithSkip()), uuid, skip)) {
+            return stream.collect(toList());
+        }
     }
 
     private Stream<Event> readBy(@Nonnull String from, @Nonnull Object... values) {
@@ -210,4 +214,14 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader {
         throw new IllegalArgumentException("Unsupported jdbc type: " + jdbcType.getClass());
     }
 
+    @Override
+    public void close() {
+        if (dataSource instanceof AutoCloseable) {
+            try {
+                ((AutoCloseable) dataSource).close();
+            } catch (Exception e) {
+                log.error("Failed to close resource:", e);
+            }
+        }
+    }
 }

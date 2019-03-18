@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.UUID;
 import javax.annotation.Nonnull;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -15,6 +16,7 @@ import io.jes.ex.EmptyEventStreamException;
 import io.jes.internal.Events;
 import io.jes.internal.FancyAggregate;
 import io.jes.provider.JdbcStoreProvider;
+import lombok.SneakyThrows;
 
 import static io.jes.internal.FancyStuff.newPostgresDataSource;
 import static io.jes.internal.FancyStuff.newRedissonClient;
@@ -26,12 +28,14 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class SnapshotProviderTest {
 
+    private static final Collection<SnapshotProvider> SNAPSHOT_PROVIDERS = asList(
+            new InMemorySnapshotProvider(),
+            new JdbcSnapshotProvider<>(newPostgresDataSource(), String.class),
+            new RedissonSnapshotProvider(newRedissonClient())
+    );
+
     private static Collection<SnapshotProvider> createSnapshotProviders() {
-        return asList(
-                new InMemorySnapshotProvider(),
-                new JdbcSnapshotProvider<>(newPostgresDataSource(), String.class),
-                new RedissonSnapshotProvider(newRedissonClient())
-        );
+        return SNAPSHOT_PROVIDERS;
     }
 
     @ParameterizedTest
@@ -85,4 +89,15 @@ class SnapshotProviderTest {
         final FancyAggregate fromSnapshot = provider.initialStateOf(uuid, FancyAggregate.class);
         assertEquals(fromStore, fromSnapshot);
     }
+
+    @AfterAll
+    @SneakyThrows
+    static void closeResources() {
+        for (SnapshotProvider snapshotProvider : SNAPSHOT_PROVIDERS) {
+            if (snapshotProvider instanceof AutoCloseable) {
+                ((AutoCloseable) snapshotProvider).close();
+            }
+        }
+    }
+
 }

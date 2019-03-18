@@ -27,6 +27,8 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
+import static java.time.LocalDateTime.now;
+import static java.time.ZoneOffset.UTC;
 import static org.hibernate.cfg.AvailableSettings.AUTOCOMMIT;
 import static org.hibernate.cfg.AvailableSettings.DIALECT;
 import static org.hibernate.cfg.AvailableSettings.FORMAT_SQL;
@@ -39,7 +41,7 @@ import static org.hibernate.cfg.AvailableSettings.USE_STRUCTURED_CACHE;
 @Slf4j
 public final class FancyStuff {
 
-    private static final int MAX_POOL_SIZE = 30;
+    private static final int MAX_POOL_SIZE = 10;
     private static final int REDIS_EXPOSED_PORT = 6379;
     private static final String REDDIS_URL_PATTERN = "redis://%s:%d";
 
@@ -93,6 +95,7 @@ public final class FancyStuff {
 
     @Nonnull
     public static DataSource newPostgresDataSource(@Nonnull String schemaName) {
+        schemaName = schemaName + "_" + now().toInstant(UTC).toEpochMilli();
         PostgreSQLContainer<?> container = newPostgreSQLContainer();
         final HikariConfig config = new HikariConfig();
 

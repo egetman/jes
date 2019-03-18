@@ -52,7 +52,8 @@ class ProjectorTest {
     @SneakyThrows
     void projectorShouldCorrectlyRebuildProjection() {
         final InMemoryOffset offset = new InMemoryOffset();
-        final JEventStore store = new JEventStore(new JdbcStoreProvider<>(newPostgresDataSource(), String.class));
+        final JdbcStoreProvider<String> provider = new JdbcStoreProvider<>(newPostgresDataSource(), String.class);
+        final JEventStore store = new JEventStore(provider);
 
         try (final SampleProjector projector = new SampleProjector(store, offset)) {
             // verify projector start listen event store and projection is not created yet
@@ -85,6 +86,10 @@ class ProjectorTest {
             // verify that it's another, 'recreated' projection, not the same obj as earlier
             assertNotSame(projection, newProjection);
         }
+
+        try {
+            provider.close();
+        } catch (Exception ignored) {}
     }
 
     @Slf4j

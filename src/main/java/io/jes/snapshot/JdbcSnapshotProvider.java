@@ -23,7 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 import static java.util.Objects.requireNonNull;
 
 @Slf4j
-public class JdbcSnapshotProvider<T> implements SnapshotProvider {
+public class JdbcSnapshotProvider<T> implements SnapshotProvider, AutoCloseable {
 
     private final DataSource dataSource;
     private final SnapshotDDLProducer ddlProducer;
@@ -123,6 +123,17 @@ public class JdbcSnapshotProvider<T> implements SnapshotProvider {
             return Objects.requireNonNull(consumer, "Consumer must not be null").apply(connection);
         } catch (Exception e) {
             throw new BrokenStoreException(e);
+        }
+    }
+
+    @Override
+    public void close() {
+        if (dataSource instanceof AutoCloseable) {
+            try {
+                ((AutoCloseable) dataSource).close();
+            } catch (Exception e) {
+                log.error("Failed to close resource:", e);
+            }
         }
     }
 

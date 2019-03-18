@@ -15,10 +15,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
 import io.jes.ex.EmptyEventStreamException;
-import io.jes.internal.FancyStuff;
 import io.jes.provider.JdbcStoreProvider;
 
 import static io.jes.internal.Events.SampleEvent;
+import static io.jes.internal.FancyStuff.newPostgresDataSource;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toSet;
@@ -33,8 +33,8 @@ class JEventStoreImplTest {
     private final JEventStore target;
 
     JEventStoreImplTest() {
-        final DataSource sourceDataSource = FancyStuff.newPostgresDataSource("source");
-        final DataSource targetDataSource = FancyStuff.newPostgresDataSource("target");
+        final DataSource sourceDataSource = newPostgresDataSource("source");
+        final DataSource targetDataSource = newPostgresDataSource("target");
 
         this.source = new JEventStore(new JdbcStoreProvider<>(sourceDataSource, byte[].class));
         this.target = new JEventStore(new JdbcStoreProvider<>(targetDataSource, byte[].class));
