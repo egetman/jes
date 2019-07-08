@@ -81,10 +81,10 @@ public class SerializerFactory {
                                                                      SerializationOption... options) {
         Objects.requireNonNull(serializationType, "Serialization type must be provided");
         if (serializationType == byte[].class) {
-            Serializer<Aggregate, byte[]> serializer = newBinarySerializer(options);
+            Serializer<Aggregate, byte[]> serializer = new KryoSerializer<>();
             return (Serializer<Aggregate, T>) serializer;
         } else if (serializationType == String.class) {
-            Serializer<Aggregate, String> serializer = newStringSerializer(options);
+            Serializer<Aggregate, String> serializer = new JacksonSerializer<>();
             return (Serializer<Aggregate, T>) serializer;
         }
         throw new IllegalArgumentException("Serialization for type " + serializationType + " not supported");
