@@ -7,7 +7,6 @@ import io.jes.JEventStore;
 import io.jes.lock.LockManager;
 import io.jes.offset.Offset;
 
-@SuppressWarnings("WeakerAccess")
 public abstract class Projector extends Reactor {
 
     private final LockManager lockManager;

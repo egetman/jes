@@ -203,7 +203,7 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
 
     @SneakyThrows
     @SuppressWarnings("unchecked")
-    private T unwrapJdbcType(Object jdbcType) {
+    private T unwrapJdbcType(@Nonnull Object jdbcType) {
         if (jdbcType instanceof String || jdbcType instanceof byte[]) {
             return (T) jdbcType;
         } else if (jdbcType instanceof Clob) {

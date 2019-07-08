@@ -16,7 +16,6 @@ import com.fasterxml.jackson.databind.jsontype.impl.TypeIdResolverBase;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 
 import io.jes.ex.SerializationException;
-import lombok.SneakyThrows;
 
 import static com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.ANY;
 import static com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.NONE;
@@ -115,7 +114,6 @@ class JacksonSerializer<S> implements Serializer<S, String> {
         }
 
         @Override
-        @SneakyThrows
         public JavaType typeFromId(DatabindContext context, String id) {
             Class<?> clazz = deserializationAliases.get(id);
             if (clazz == null) {

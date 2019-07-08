@@ -5,6 +5,7 @@ import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -83,4 +84,17 @@ class SerializerTest {
         Assertions.assertThrows(SerializationException.class, () -> serializer.deserialize(wrongInput));
     }
 
+    @Test
+    void shouldSerializeObjectWithAliasIfTypeRegistryPassed() {
+        final TypeRegistry registry = new TypeRegistry();
+        registry.addAlias(Events.SampleEvent.class, "MyAlias");
+        final Serializer<Event, String> serializer = SerializerFactory.newEventSerializer(String.class,
+                SerializationOptions.USE_TYPE_ALIASES, registry);
+
+        final String serialized = serializer.serialize(new Events.SampleEvent("Sample", UUID.randomUUID()));
+        Assertions.assertTrue(serialized.contains("\"@type\":\"MyAlias\""));
+
+        final Event deserialized = serializer.deserialize(serialized);
+        Assertions.assertEquals(Events.SampleEvent.class, deserialized.getClass());
+    }
 }

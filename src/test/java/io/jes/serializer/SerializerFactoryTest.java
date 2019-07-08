@@ -6,20 +6,20 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static io.jes.serializer.SerializerFactory.newAggregateSerializer;
-import static io.jes.serializer.SerializerFactory.newEventBinarySerializer;
+import static io.jes.serializer.SerializerFactory.newBinarySerializer;
 import static io.jes.serializer.SerializerFactory.newEventSerializer;
-import static io.jes.serializer.SerializerFactory.newEventStringSerializer;
+import static io.jes.serializer.SerializerFactory.newStringSerializer;
 
 class SerializerFactoryTest {
 
     @Test
     void newBinarySerializerShouldReturnNonNullSerializer() {
-        Assertions.assertNotNull(newEventBinarySerializer());
+        Assertions.assertNotNull(newBinarySerializer());
     }
 
     @Test
     void newStringSerializerShouldReturnNonNullSerializer() {
-        Assertions.assertNotNull(newEventStringSerializer());
+        Assertions.assertNotNull(newStringSerializer());
     }
 
     @Test
