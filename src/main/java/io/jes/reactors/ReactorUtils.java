@@ -10,16 +10,16 @@ import io.jes.Event;
 import io.jes.ex.BrokenReactorException;
 import io.jes.util.Check;
 
-class HandlerUtils {
+class ReactorUtils {
 
-    private HandlerUtils() {}
+    private ReactorUtils() {}
 
     @Nonnull
-    static Set<Method> getAllHandlerMethods(@Nonnull Class<?> source) {
+    static Set<Method> getAllReactsOnMethods(@Nonnull Class<?> source) {
         final Set<Method> methods = new HashSet<>();
         final Method[] sourceMethods = source.getDeclaredMethods();
         for (Method sourceMethod : sourceMethods) {
-            if (sourceMethod.isAnnotationPresent(Handler.class)) {
+            if (sourceMethod.isAnnotationPresent(ReactsOn.class) && !sourceMethod.isSynthetic()) {
                 methods.add(sourceMethod);
             }
         }
@@ -27,26 +27,26 @@ class HandlerUtils {
         return methods;
     }
 
-    static void ensureHandlerHasOneParameter(@Nonnull Method method) {
+    static void ensureReactsOnHasOneParameter(@Nonnull Method method) {
         if (method.getParameterCount() != 1 ) {
             throw new BrokenReactorException("Handler method should have only 1 parameter");
         }
     }
 
-    static void ensureHandlerHasVoidReturnType(@Nonnull Method method) {
+    static void ensureReactsOnHasVoidReturnType(@Nonnull Method method) {
         if (!method.getReturnType().equals(Void.TYPE)) {
             throw new BrokenReactorException("Handler method should not have any return value");
         }
     }
 
-    static void ensureHandlerHasEventParameter(@Nonnull Method method) {
+    static void ensureReactsOnHasEventParameter(@Nonnull Method method) {
         if (!Event.class.isAssignableFrom(method.getParameterTypes()[0])) {
             throw new BrokenReactorException("Handler method parameter must be an instance of the Event class. "
                     + "Found type: " + method.getParameterTypes()[0]);
         }
     }
 
-    static void invokeHandler(@Nonnull Method method, @Nonnull Object source, @Nonnull Event event) {
+    static void invokeReactsOn(@Nonnull Method method, @Nonnull Object source, @Nonnull Event event) {
         try {
             method.invoke(source, event);
         } catch (IllegalAccessException | InvocationTargetException e) {

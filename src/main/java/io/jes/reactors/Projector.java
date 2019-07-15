@@ -22,8 +22,15 @@ public abstract class Projector extends Reactor {
     }
 
     public void recreate() {
-        lockManager.doProtectedWrite(key, () -> offset.reset(key));
+        lockManager.doProtectedWrite(key, () -> {
+            offset.reset(key);
+            onRecreate();
+        });
     }
 
-    // todo add recreation callback to clean all state
+    /**
+     * This method used to clean up all state (projection) made by this Projector.
+     * Note: this method MUST NOT use any methods that are protected by {@link #lockManager} instance.
+     */
+    protected abstract void onRecreate();
 }

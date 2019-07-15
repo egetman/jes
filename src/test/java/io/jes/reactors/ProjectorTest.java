@@ -43,8 +43,11 @@ class ProjectorTest {
         final JEventStore store = Mockito.mock(JEventStore.class);
 
         assertThrows(NullPointerException.class, () -> new Projector(store, new InMemoryOffset(), null) {
-            @Handler
+            @ReactsOn
             private void foo(Event event) {}
+
+            @Override
+            protected void onRecreate() {}
         });
     }
 
@@ -97,33 +100,33 @@ class ProjectorTest {
     static class SampleProjector extends Projector {
 
         private Projection projection;
+        private CountDownLatch started = new CountDownLatch(1);
         private CountDownLatch endStreamLatch = new CountDownLatch(1);
-        private final CountDownLatch started = new CountDownLatch(1);
 
         SampleProjector(@Nonnull JEventStore store, @Nonnull Offset offset) {
             super(store, offset, new InMemoryReentrantLockManager());
         }
 
-        @Handler
+        @ReactsOn
         private void handle(@Nonnull ProcessingStarted event) {
             projection = new Projection();
             projection.totalProcessed++;
         }
 
-        @Handler
+        @ReactsOn
         private void handle(@Nonnull SampleEvent event) {
             projection.name = event.getName();
             projection.totalProcessed++;
             projection.uniqueEventStreams.add(event.uuid());
         }
 
-        @Handler
+        @ReactsOn
         private void handle(@Nonnull FancyEvent event) {
             projection.totalProcessed++;
             projection.uniqueEventStreams.add(event.uuid());
         }
 
-        @Handler
+        @ReactsOn
         private void handle(@Nonnull ProcessingTerminated event) {
             projection.totalProcessed++;
             endStreamLatch.countDown();
@@ -139,6 +142,13 @@ class ProjectorTest {
         void tailStore() {
             super.tailStore();
             started.countDown();
+        }
+
+        @Override
+        protected void onRecreate() {
+            projection = null;
+            endStreamLatch = new CountDownLatch(1);
+            started = new CountDownLatch(1);
         }
 
         @SneakyThrows

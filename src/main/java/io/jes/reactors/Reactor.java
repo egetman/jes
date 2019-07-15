@@ -17,11 +17,11 @@ import io.jes.offset.Offset;
 import io.jes.util.DaemonThreadFactory;
 import lombok.extern.slf4j.Slf4j;
 
-import static io.jes.reactors.HandlerUtils.ensureHandlerHasEventParameter;
-import static io.jes.reactors.HandlerUtils.ensureHandlerHasOneParameter;
-import static io.jes.reactors.HandlerUtils.ensureHandlerHasVoidReturnType;
-import static io.jes.reactors.HandlerUtils.getAllHandlerMethods;
-import static io.jes.reactors.HandlerUtils.invokeHandler;
+import static io.jes.reactors.ReactorUtils.ensureReactsOnHasEventParameter;
+import static io.jes.reactors.ReactorUtils.ensureReactsOnHasOneParameter;
+import static io.jes.reactors.ReactorUtils.ensureReactsOnHasVoidReturnType;
+import static io.jes.reactors.ReactorUtils.getAllReactsOnMethods;
+import static io.jes.reactors.ReactorUtils.invokeReactsOn;
 import static java.util.concurrent.Executors.newSingleThreadScheduledExecutor;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -42,26 +42,26 @@ abstract class Reactor implements AutoCloseable {
         this.store = Objects.requireNonNull(store, "Event store must not be null");
         this.offset = Objects.requireNonNull(offset, "Offset must not be null");
 
-        this.handlers.putAll(readHandlers());
+        this.handlers.putAll(readReactors());
         executor.scheduleWithFixedDelay(this::tailStore, DELAY_MS, DELAY_MS, MILLISECONDS);
     }
 
     @Nonnull
-    private Map<Class<? extends Event>, Consumer<? super Event>> readHandlers() {
-        final Set<Method> methods = getAllHandlerMethods(getClass());
+    private Map<Class<? extends Event>, Consumer<? super Event>> readReactors() {
+        final Set<Method> methods = getAllReactsOnMethods(getClass());
         log.debug("Resolved {} handler methods", methods.size());
         final Map<Class<? extends Event>, Consumer<? super Event>> eventToConsumer = new HashMap<>();
         for (Method method : methods) {
             log.debug("Start verification of '{}'", method);
-            ensureHandlerHasOneParameter(method);
-            ensureHandlerHasVoidReturnType(method);
-            ensureHandlerHasEventParameter(method);
+            ensureReactsOnHasOneParameter(method);
+            ensureReactsOnHasVoidReturnType(method);
+            ensureReactsOnHasEventParameter(method);
             log.debug("Verification of '{}' complete", method);
 
             method.setAccessible(true);
             @SuppressWarnings("unchecked")
             final Class<? extends Event> eventType = (Class<? extends Event>) method.getParameterTypes()[0];
-            eventToConsumer.put(eventType, (event -> invokeHandler(method, this, event)));
+            eventToConsumer.put(eventType, (event -> invokeReactsOn(method, this, event)));
         }
 
         return eventToConsumer;

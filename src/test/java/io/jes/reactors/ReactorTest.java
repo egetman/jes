@@ -38,7 +38,7 @@ class ReactorTest {
         assertEquals("Methods with @Handle annotation not found", exception.getMessage());
 
         exception = assertThrows(BrokenReactorException.class, () -> new Reactor(store, new InMemoryOffset()) {
-            @Handler
+            @ReactsOn
             private int handle(Events.SampleEvent event) {
                 return -1;
             }
@@ -47,14 +47,14 @@ class ReactorTest {
         assertEquals("Handler method should not have any return value", exception.getMessage());
 
         exception = assertThrows(BrokenReactorException.class, () -> new Reactor(store, new InMemoryOffset()) {
-            @Handler
+            @ReactsOn
             private void handle(Events.SampleEvent sampleEvent, Events.FancyEvent fancyEvent) {}
         });
 
         assertEquals("Handler method should have only 1 parameter", exception.getMessage());
 
         exception = assertThrows(BrokenReactorException.class, () -> new Reactor(store, new InMemoryOffset()) {
-            @Handler
+            @ReactsOn
             private void handle(Object object) {}
         });
 
@@ -62,7 +62,7 @@ class ReactorTest {
                 + "Found type: " + Object.class, exception.getMessage());
 
         assertDoesNotThrow(() -> new Reactor(store, new InMemoryOffset()) {
-            @Handler
+            @ReactsOn
             private void handle(Events.SampleEvent event) {}
         });
     }
@@ -144,17 +144,17 @@ class ReactorTest {
         }
 
 
-        @Handler
+        @ReactsOn
         private void handle(Events.ProcessingTerminated event) {
             this.terminated = true;
         }
 
-        @Handler
+        @ReactsOn
         private void handle(Events.SampleEvent event) {
             sampleLatch.countDown();
         }
 
-        @Handler
+        @ReactsOn
         private void handle(Events.FancyEvent event) {
             fancyLatch.countDown();
         }
