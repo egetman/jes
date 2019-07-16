@@ -17,7 +17,7 @@ public class AggregateStore {
     final SnapshotProvider snapshotter;
     private final JEventStore eventStore;
 
-    @SuppressWarnings({"unused", "WeakerAccess"})
+    @SuppressWarnings({"unused"})
     public AggregateStore(@Nonnull JEventStore eventStore) {
         this(eventStore, new NoopSnapshotProvider());
     }

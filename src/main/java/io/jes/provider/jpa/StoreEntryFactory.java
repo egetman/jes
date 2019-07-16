@@ -16,6 +16,7 @@ public class StoreEntryFactory {
      * Resolves and return entry type based on provided {@literal payloadClass} type.
      */
     public static Class<? extends StoreEntry> entryTypeOf(@Nonnull Class<?> payloadClass) {
+        Objects.requireNonNull(payloadClass, "Payload class must be specified");
         if (String.class == payloadClass) {
             return StoreEntry.StoreStringEntry.class;
         } else if (byte[].class == payloadClass) {

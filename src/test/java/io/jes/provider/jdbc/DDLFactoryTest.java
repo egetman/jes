@@ -16,6 +16,12 @@ class DDLFactoryTest {
     }
 
     @Test
+    void newSnapshotDDLProducerShouldThrowIllegalArgumentExceptionOnUnknownValue() {
+        Assertions.assertThrows(IllegalArgumentException.class,
+                () -> DDLFactory.newSnapshotDDLProducer("FOO", "FOO"));
+    }
+
+    @Test
     void newDDLProducerShouldThrowIllegalArgumentExceptionOnAnyOtherValue() {
         Assertions.assertThrows(IllegalArgumentException.class,
                 () -> DDLFactory.newDDLProducer("Oracle DB", "FOO"));

@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
 import io.jes.ex.EmptyEventStreamException;
+import io.jes.provider.InMemoryStoreProvider;
 import io.jes.provider.JdbcStoreProvider;
 
 import static io.jes.internal.Events.SampleEvent;
@@ -56,6 +57,17 @@ class JEventStoreImplTest {
     @Test
     void shouldThrowEmptyEventStreamExceptionOnNonExistingStreamUuid() {
         assertThrows(EmptyEventStreamException.class, () -> source.readBy(UUID.randomUUID()));
+    }
+
+    @Test
+    void shouldThrowIllegalArgumentExceptionWhenNegativeSkip() {
+        assertThrows(IllegalArgumentException.class, () -> source.readBy(UUID.randomUUID(), -1));
+    }
+
+    @Test
+    void shouldThrowIllegalStateExceptionWhenStoreCantReadSnapshots() {
+        final JEventStore store = new JEventStore(new InMemoryStoreProvider());
+        assertThrows(IllegalStateException.class, () -> store.readBy(UUID.randomUUID(), 1));
     }
 
     @Test

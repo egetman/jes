@@ -140,7 +140,7 @@ class PostgresDDL implements StoreDDLProducer, SnapshotDDLProducer {
     @Nonnull
     @Override
     public String createSnapshotStore(Class<?> contentType) {
-        if (contentType != String.class ) {
+        if (contentType != String.class) {
             throw new IllegalArgumentException("Illegal type of content column: " + contentType);
         }
 
