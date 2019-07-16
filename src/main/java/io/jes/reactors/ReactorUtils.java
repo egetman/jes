@@ -23,25 +23,25 @@ class ReactorUtils {
                 methods.add(sourceMethod);
             }
         }
-        Check.nonEmpty(methods, () -> new BrokenReactorException("Methods with @Handle annotation not found"));
+        Check.nonEmpty(methods, () -> new BrokenReactorException("Methods with @ReactsOn annotation not found"));
         return methods;
     }
 
     static void ensureReactsOnHasOneParameter(@Nonnull Method method) {
         if (method.getParameterCount() != 1 ) {
-            throw new BrokenReactorException("Handler method should have only 1 parameter");
+            throw new BrokenReactorException("@ReactsOn method should have only 1 parameter");
         }
     }
 
     static void ensureReactsOnHasVoidReturnType(@Nonnull Method method) {
         if (!method.getReturnType().equals(Void.TYPE)) {
-            throw new BrokenReactorException("Handler method should not have any return value");
+            throw new BrokenReactorException("@ReactsOn method should not have any return value");
         }
     }
 
     static void ensureReactsOnHasEventParameter(@Nonnull Method method) {
         if (!Event.class.isAssignableFrom(method.getParameterTypes()[0])) {
-            throw new BrokenReactorException("Handler method parameter must be an instance of the Event class. "
+            throw new BrokenReactorException("@ReactsOn method parameter must be an instance of the Event class. "
                     + "Found type: " + method.getParameterTypes()[0]);
         }
     }

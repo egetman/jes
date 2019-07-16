@@ -4,6 +4,7 @@ import java.util.Objects;
 import javax.annotation.Nonnull;
 
 import io.jes.JEventStore;
+import io.jes.bus.NoopCommandBus;
 import io.jes.lock.LockManager;
 import io.jes.offset.Offset;
 
@@ -12,7 +13,7 @@ public abstract class Projector extends Reactor {
     private final LockManager lockManager;
 
     public Projector(@Nonnull JEventStore store, @Nonnull Offset offset, @Nonnull LockManager lockManager) {
-        super(store, offset);
+        super(store, offset, new NoopCommandBus());
         this.lockManager = Objects.requireNonNull(lockManager, "LockManager must not be null");
     }
 

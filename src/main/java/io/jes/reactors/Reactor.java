@@ -11,8 +11,10 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
+import io.jes.Command;
 import io.jes.Event;
 import io.jes.JEventStore;
+import io.jes.bus.CommandBus;
 import io.jes.offset.Offset;
 import io.jes.util.DaemonThreadFactory;
 import lombok.extern.slf4j.Slf4j;
@@ -33,23 +35,25 @@ abstract class Reactor implements AutoCloseable {
     final Offset offset;
     final String key = getClass().getName();
 
+    private final CommandBus bus;
     private final JEventStore store;
     private final ThreadFactory factory = new DaemonThreadFactory(getClass().getSimpleName());
     private final ScheduledExecutorService executor = newSingleThreadScheduledExecutor(factory);
-    private final Map<Class<? extends Event>, Consumer<? super Event>> handlers = new HashMap<>();
+    private final Map<Class<? extends Event>, Consumer<? super Event>> reactors = new HashMap<>();
 
-    Reactor(@Nonnull JEventStore store, @Nonnull Offset offset) {
-        this.store = Objects.requireNonNull(store, "Event store must not be null");
+    Reactor(@Nonnull JEventStore store, @Nonnull Offset offset, @Nonnull CommandBus bus) {
+        this.bus = Objects.requireNonNull(bus, "CommandBus must not be null");
         this.offset = Objects.requireNonNull(offset, "Offset must not be null");
+        this.store = Objects.requireNonNull(store, "Event store must not be null");
 
-        this.handlers.putAll(readReactors());
+        this.reactors.putAll(readReactors());
         executor.scheduleWithFixedDelay(this::tailStore, DELAY_MS, DELAY_MS, MILLISECONDS);
     }
 
     @Nonnull
     private Map<Class<? extends Event>, Consumer<? super Event>> readReactors() {
         final Set<Method> methods = getAllReactsOnMethods(getClass());
-        log.debug("Resolved {} handler methods", methods.size());
+        log.debug("Resolved {} reactor methods", methods.size());
         final Map<Class<? extends Event>, Consumer<? super Event>> eventToConsumer = new HashMap<>();
         for (Method method : methods) {
             log.debug("Start verification of '{}'", method);
@@ -71,7 +75,7 @@ abstract class Reactor implements AutoCloseable {
     void tailStore() {
         try (Stream<Event> eventStream = store.readFrom(offset.value(key))) {
             eventStream.forEach(event -> {
-                final Consumer<? super Event> consumer = handlers.get(event.getClass());
+                final Consumer<? super Event> consumer = reactors.get(event.getClass());
                 if (consumer != null) {
                     consumer.accept(event);
                     log.trace("Handled {}", event.getClass().getSimpleName());
@@ -88,5 +92,10 @@ abstract class Reactor implements AutoCloseable {
     public void close() {
         executor.shutdown();
         log.debug("{} closed", getClass().getSimpleName());
+    }
+
+    @SuppressWarnings("WeakerAccess")
+    protected void dispatch(@Nonnull Command command) {
+        bus.dispatch(Objects.requireNonNull(command));
     }
 }
