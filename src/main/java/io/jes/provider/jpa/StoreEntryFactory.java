@@ -2,7 +2,6 @@ package io.jes.provider.jpa;
 
 import java.util.Objects;
 import java.util.UUID;
-
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -10,10 +9,14 @@ import io.jes.ex.SerializationException;
 
 public class StoreEntryFactory {
 
-    private StoreEntryFactory() {}
+    private StoreEntryFactory() {
+    }
 
     /**
      * Resolves and return entry type based on provided {@literal payloadClass} type.
+     *
+     * @param payloadClass is type of 'raw' event: string or binary.
+     * @return {@link StoreEntry} child class for working with given {@literal payloadClass}.
      */
     public static Class<? extends StoreEntry> entryTypeOf(@Nonnull Class<?> payloadClass) {
         Objects.requireNonNull(payloadClass, "Payload class must be specified");
@@ -27,6 +30,10 @@ public class StoreEntryFactory {
 
     /**
      * Factory mathod for creatig new {@literal store entry} based on paeload type.
+     *
+     * @param uuid    is uuid of event stream, if present.
+     * @param payload is 'raw' event.
+     * @return constructed and initialized {@link StoreEntry} with given uuid and payload.
      */
     public static StoreEntry newEntry(@Nullable UUID uuid, @Nonnull Object payload) {
         Objects.requireNonNull(payload, "Event payload must not be null");

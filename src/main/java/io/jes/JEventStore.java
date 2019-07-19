@@ -31,12 +31,13 @@ public class JEventStore {
      * <p>A Stream potentially wraps underlying data store-specific resources and must, therefore, be closed after
      * usage. You can either manually close the Stream by using the close() method or by using a Java 7
      * try-with-resources block, as shown in the following example:
-     * <code>
-     *
-     * try (Stream{@code <}Event{@code >} uuid = store.readFrom(0)) {
+     * <pre>
+     * {@code
+     * try (Stream<Event> uuid = store.readFrom(0)) {
      *      uuid.forEach(…);
      * }
-     * </code>
+     * }
+     * </pre>
      *
      * @param offset the offset to read from.
      * @return {@link Stream} of events stored in that {@literal EventStore}.

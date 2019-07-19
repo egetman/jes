@@ -21,7 +21,7 @@ public interface Event {
 
     /**
      * @return expected stream (aggregate) version. Used for optimistic locking in concurrent env's (like user
-     * interaction).
+     *      interaction).
      */
     default long expectedStreamVersion() {
         return -1;

@@ -18,7 +18,8 @@ import static java.util.Arrays.stream;
 @Slf4j
 public class SerializerFactory {
 
-    private SerializerFactory() {}
+    private SerializerFactory() {
+    }
 
     @Nonnull
     @SuppressWarnings({"unused", "unchecked"})
@@ -56,6 +57,11 @@ public class SerializerFactory {
 
     /**
      * Produces and return new {@link Serializer} for events.
+     *
+     * @param serializationType is one of two ({@literal String}, {@literal byte[]}) serialization types.
+     * @param options           are hooks for serizlization/deserialization process.
+     * @param <T>               is serialization format.
+     * @return configured {@link Serializer}.
      */
     @Nonnull
     @SuppressWarnings({"unchecked", "squid:S1905"})
@@ -74,11 +80,16 @@ public class SerializerFactory {
 
     /**
      * Produces and return new {@link Serializer} for aggregates.
+     *
+     * @param serializationType is one of two ({@literal String}, {@literal byte[]}) serialization types.
+     * @param options           are hooks for serizlization/deserialization process.
+     * @param <T>               is serialization format.
+     * @return configured {@link Serializer}.
      */
     @Nonnull
     @SuppressWarnings({"unchecked", "unused", "squid:S2293"})
     public static <T> Serializer<Aggregate, T> newAggregateSerializer(@Nonnull Class<T> serializationType,
-                                                                     SerializationOption... options) {
+                                                                      SerializationOption... options) {
         Objects.requireNonNull(serializationType, "Serialization type must be provided");
         if (serializationType == byte[].class) {
             Serializer<Aggregate, byte[]> serializer = new KryoSerializer<>();

@@ -10,17 +10,22 @@ import javax.annotation.Nonnull;
 public interface Offset {
 
     /**
+     * @param key is an owner identifier, that manages this offset.
      * @return current offset value by specified {@code key}.
      */
     long value(@Nonnull String key);
 
     /**
      * Increment current offset value by specified {@code key}.
+     *
+     * @param key is an owner identifier, that manages this offset.
      */
     void increment(@Nonnull String key);
 
     /**
      * Reset offset value by specified {@code key}.
+     *
+     * @param key is an owner identifier, that manages this offset.
      */
     void reset(@Nonnull String key);
 

@@ -22,6 +22,9 @@ public abstract class Projector extends Reactor {
         lockManager.doProtectedWrite(key, super::tailStore);
     }
 
+    /**
+     * Method used to fully recreate projection.
+     */
     public void recreate() {
         lockManager.doProtectedWrite(key, () -> {
             offset.reset(key);
