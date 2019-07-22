@@ -21,8 +21,10 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
-class AggregateStoreImplTest {
+class AggregateStoreTest {
 
     @Test
     void aggregateStateShouldReactToEventStreamChange() {
@@ -68,4 +70,19 @@ class AggregateStoreImplTest {
 
         assertEquals(NoopSnapshotProvider.class, aggregateStore.snapshotter.getClass());
     }
+
+    @Test
+    void shouldDelegateWritingEventsToUnderlyingStore() {
+        final JEventStore eventStore = mock(JEventStore.class);
+        final AggregateStore aggregateStore = new AggregateStore(eventStore);
+
+        final SampleEvent sampleEvent = new SampleEvent("FOO", UUID.randomUUID());
+        aggregateStore.write(sampleEvent);
+        verify(eventStore, times(1)).write(sampleEvent);
+
+        final Event[] array = {new SampleEvent("BAR", UUID.randomUUID()), new FancyEvent("Fancy", UUID.randomUUID())};
+        aggregateStore.write(array);
+        verify(eventStore, times(1)).write(array);
+    }
+
 }

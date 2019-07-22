@@ -28,12 +28,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.TestInstance.Lifecycle;
 
 @TestInstance(Lifecycle.PER_CLASS)
-class JEventStoreImplTest {
+class JEventStoreTest {
 
     private final JEventStore source;
     private final JEventStore target;
 
-    JEventStoreImplTest() {
+    JEventStoreTest() {
         final DataSource sourceDataSource = newPostgresDataSource("source");
         final DataSource targetDataSource = newPostgresDataSource("target");
 

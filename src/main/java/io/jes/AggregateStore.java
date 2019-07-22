@@ -51,4 +51,24 @@ public class AggregateStore {
         return snapshotter.snapshot(aggregate);
     }
 
+    /**
+     * see {@link JEventStore#write(Event)}.
+     *
+     * @param event is an event to store.
+     * @throws NullPointerException if event is null.
+     */
+    public void write(@Nonnull Event event) {
+        eventStore.write(event);
+    }
+
+    /**
+     * see {@link JEventStore#write(Event...)}.
+     *
+     * @param events are events to store.
+     * @throws NullPointerException if events is null.
+     */
+    public void write(@Nonnull Event... events) {
+        eventStore.write(events);
+    }
+
 }

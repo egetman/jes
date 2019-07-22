@@ -36,7 +36,9 @@ public interface SnapshotProvider {
     }
 
     /**
-     * Resets whole snapshot store from aggregates snapshots.
+     * Resets concreate aggregate snapshot by given {@code uuid}.
+     *
+     * @param uuid is an event stream (aggregate) identifier to remove.
      */
     @SuppressWarnings("unused")
     default void reset(@Nonnull UUID uuid) {
