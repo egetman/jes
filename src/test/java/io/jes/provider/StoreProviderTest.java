@@ -5,11 +5,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
@@ -20,8 +15,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import io.jes.Event;
 import io.jes.ex.VersionMismatchException;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
@@ -32,7 +25,6 @@ import static io.jes.internal.FancyStuff.newPostgresDataSource;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
-import static java.util.stream.IntStream.range;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
@@ -172,84 +164,6 @@ class StoreProviderTest {
         final Collection<Event> actual = provider.readBy(expected.uuid());
         assertEquals(1, actual.size());
         assertEquals(expected, actual.iterator().next());
-    }
-
-    @SneakyThrows
-    @ParameterizedTest
-    @MethodSource("createProviders")
-    void concurrentVersionedWriteShouldBeThreadSafe(@Nonnull StoreProvider provider) {
-        // prepare test data
-        final int expectedErrorsCount = 10;
-        final int versionedDatasetSize = expectedErrorsCount * 10;
-        final UUID uuid = UUID.randomUUID();
-
-        final List<Event> unversionedEvents = generateEvents(expectedErrorsCount, uuid);
-        final List<Event> versionedEvents = generateVersionedEvents(0, versionedDatasetSize, uuid);
-
-        // allow some versioned writes first
-        final CountDownLatch startPoint = new CountDownLatch(expectedErrorsCount);
-
-        final Callable<CallResult> versionedWriter = () -> {
-            int writeCount = 0;
-            int exceptionsCount = 0;
-            for (Event versionedEvent : versionedEvents) {
-                try {
-                    provider.write(versionedEvent);
-                    writeCount++;
-                    startPoint.countDown();
-                } catch (VersionMismatchException e) {
-                    log.error("Caught {} {}", e.getClass(), exceptionsCount);
-                    exceptionsCount++;
-                }
-            }
-            return new CallResult(writeCount, exceptionsCount);
-        };
-
-        final Callable<CallResult> unversionedWriter = () -> {
-            int writeCount = 0;
-            int exceptionsCount = 0;
-            try {
-                startPoint.await();
-                for (Event unversioned : unversionedEvents) {
-                    // unversioned events don't have version check, so every write should be successfull
-                    provider.write(unversioned);
-                    writeCount++;
-                }
-            } catch (VersionMismatchException e) {
-                exceptionsCount++;
-            }
-            return new CallResult(writeCount, exceptionsCount);
-        };
-
-        final ExecutorService executor = Executors.newFixedThreadPool(2);
-        final Future<CallResult> unversionedWrites = executor.submit(unversionedWriter);
-        final Future<CallResult> versionedWrites = executor.submit(versionedWriter);
-
-
-        assertEquals(expectedErrorsCount, unversionedWrites.get().getWriteCount());
-        assertEquals(0, unversionedWrites.get().getExceptionsCount());
-
-        assertEquals(versionedDatasetSize - expectedErrorsCount, versionedWrites.get().getWriteCount());
-        assertEquals(expectedErrorsCount, versionedWrites.get().getExceptionsCount());
-    }
-
-
-    @SuppressWarnings("SameParameterValue")
-    private List<Event> generateEvents(int count, UUID uuid) {
-        return range(0, count).mapToObj(ignored -> new SampleEvent("Sample", uuid)).collect(toList());
-    }
-
-    @SuppressWarnings("SameParameterValue")
-    private List<Event> generateVersionedEvents(int startVersion, int count, UUID uuid) {
-        return range(startVersion, count).mapToObj(idx -> new SampleEvent("Sample", uuid, idx)).collect(toList());
-    }
-
-    @Getter
-    @RequiredArgsConstructor
-    private static class CallResult {
-
-        private final int writeCount;
-        private final int exceptionsCount;
     }
 
     @AfterEach
