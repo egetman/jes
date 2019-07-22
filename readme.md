@@ -78,6 +78,8 @@ public class AggregateStore {
     public AggregateStore(@Nonnull JEventStore eventStore, @Nonnull SnapshotProvider snapshotProvider) {...}
 
     public <T extends Aggregate> T readBy(@Nonnull UUID uuid, @Nonnull Class<T> type) {...}
+    
+    // etc...
 }
 ```
 
@@ -95,7 +97,7 @@ public abstract class Projector extends Reactor {
 
 To make it work - extend it and mark the needed methods as `Handler`:
 ```java
-@Handler
+@ReactsOn
 private void handle(@Nonnull SmthHappend event) {
     ...
 }
