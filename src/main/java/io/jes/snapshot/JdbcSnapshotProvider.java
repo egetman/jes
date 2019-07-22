@@ -80,8 +80,8 @@ public class JdbcSnapshotProvider<T> implements SnapshotProvider, AutoCloseable 
         final String sql = snapshotExists ? ddlProducer.updateAggregate() : ddlProducer.insertAggregate();
         final Integer affectedCount = execute(connection -> {
             try (PreparedStatement statement = connection.prepareStatement(sql)) {
-                statement.setObject(1, aggregate.uuid());
-                statement.setObject(2, serializer.serialize(aggregate));
+                statement.setObject(1, serializer.serialize(aggregate));
+                statement.setObject(2, aggregate.uuid());
                 return statement.executeUpdate();
             }
         });
@@ -91,11 +91,13 @@ public class JdbcSnapshotProvider<T> implements SnapshotProvider, AutoCloseable 
 
     @Override
     @SneakyThrows
-    public void reset() {
+    public void reset(@Nonnull UUID uuid) {
+        Objects.requireNonNull(uuid);
         execute(connection -> {
             try (PreparedStatement statement = connection.prepareStatement(ddlProducer.deleteAggregates())) {
+                statement.setObject(1, uuid);
                 final int deletedRows = statement.executeUpdate();
-                log.debug("Deleted {} snapshots", deletedRows);
+                log.debug("Deleted {} snapshots by uuid {}", deletedRows, uuid);
                 return deletedRows;
             }
         });

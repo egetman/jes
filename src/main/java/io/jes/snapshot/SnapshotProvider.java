@@ -1,5 +1,6 @@
 package io.jes.snapshot;
 
+import java.lang.reflect.Constructor;
 import java.util.Objects;
 import java.util.UUID;
 import javax.annotation.Nonnull;
@@ -20,8 +21,10 @@ public interface SnapshotProvider {
     @Nonnull
     default <T extends Aggregate> T initialStateOf(@Nonnull UUID uuid, @Nonnull Class<T> type) {
         try {
-            return type.newInstance();
-        } catch (InstantiationException | IllegalAccessException e) {
+            final Constructor<T> constructor = type.getDeclaredConstructor();
+            constructor.setAccessible(true);
+            return constructor.newInstance();
+        } catch (ReflectiveOperationException e) {
             throw new AggregateCreationException(type, e);
         }
     }
@@ -29,13 +32,15 @@ public interface SnapshotProvider {
     @Nonnull
     default <T extends Aggregate> T snapshot(@Nonnull T aggregate) {
         return Objects.requireNonNull(aggregate, "Aggregate must not be null");
+        // do nothing - default impl
     }
 
     /**
      * Resets whole snapshot store from aggregates snapshots.
      */
     @SuppressWarnings("unused")
-    default void reset() {
-        // do nothing
+    default void reset(@Nonnull UUID uuid) {
+        Objects.requireNonNull(uuid, "Uuid must not be null");
+        // do nothing - default impl
     }
 }

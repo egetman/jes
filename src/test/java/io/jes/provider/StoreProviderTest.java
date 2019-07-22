@@ -94,6 +94,25 @@ class StoreProviderTest {
 
     @ParameterizedTest
     @MethodSource("createProviders")
+    void shouldReadBatchEventWrites(@Nonnull StoreProvider provider) {
+        final UUID uuid = UUID.randomUUID();
+        final List<Event> expected = asList(
+                new SampleEvent("FOO", uuid),
+                new SampleEvent("BAR", uuid),
+                new SampleEvent("BAZ", uuid)
+        );
+
+        provider.write(expected.toArray(new Event[0]));
+
+        final Collection<Event> actual = provider.readBy(uuid);
+
+        assertNotNull(actual);
+        assertIterableEquals(expected, actual);
+        actual.forEach(event -> log.info("Loaded event {}", event));
+    }
+
+    @ParameterizedTest
+    @MethodSource("createProviders")
     void shouldSuccessfullyWriteVersionedEventStream(@Nonnull StoreProvider provider) {
         final UUID uuid = UUID.randomUUID();
         final List<Event> expected = asList(

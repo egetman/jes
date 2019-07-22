@@ -22,9 +22,13 @@ import static io.jes.internal.FancyStuff.newPostgresDataSource;
 import static io.jes.internal.FancyStuff.newRedissonClient;
 import static java.util.Arrays.asList;
 import static java.util.UUID.randomUUID;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SnapshotProviderTest {
 
@@ -64,6 +68,54 @@ class SnapshotProviderTest {
                 this.uuid = UUID.randomUUID();
         }};
         assertSame(aggregate, provider.snapshot(aggregate));
+    }
+
+    @ParameterizedTest
+    @MethodSource("createSnapshotProviders")
+    void shouldSuccessfullyUpdateSnapshot(@Nonnull SnapshotProvider provider) {
+        final FancyAggregate sample = new FancyAggregate(randomUUID());
+        final FancyAggregate initialStateOf = provider.initialStateOf(sample.uuid(), FancyAggregate.class);
+        assertNotNull(initialStateOf);
+        provider.snapshot(sample);
+
+        sample.setFancyName("Fancy");
+        provider.snapshot(sample);
+
+        sample.setCancelled(true);
+        final FancyAggregate target = provider.snapshot(sample);
+
+        assertEquals("Fancy", target.getFancyName());
+        assertTrue(target.isCancelled());
+        assertEquals(sample.uuid(), target.uuid());
+    }
+
+    @ParameterizedTest
+    @MethodSource("createSnapshotProviders")
+    void resetShouldNotThrowAnyExceptionsIfUuidProvided(@Nonnull SnapshotProvider provider) {
+        final FancyAggregate sample = new FancyAggregate(randomUUID());
+        provider.snapshot(sample);
+        assertDoesNotThrow(() -> provider.reset(sample.uuid()));
+    }
+
+    @ParameterizedTest
+    @MethodSource("createSnapshotProviders")
+    void resetShouldThrowNullPointerExceptionIfUuidMissing(@Nonnull SnapshotProvider provider) {
+        //noinspection ConstantConditions
+        assertThrows(NullPointerException.class, () -> provider.reset(null));
+    }
+
+    @ParameterizedTest
+    @MethodSource("createSnapshotProviders")
+    void initialStateShouldReturnNewInstanceIfSnapshotWasReseted(@Nonnull SnapshotProvider provider) {
+        final FancyAggregate sample = new FancyAggregate(randomUUID());
+        sample.setFancyName("Name");
+        provider.snapshot(sample);
+        final FancyAggregate restored = provider.initialStateOf(sample.uuid(), FancyAggregate.class);
+
+        assertEquals(sample.getFancyName(), restored.getFancyName());
+        assertDoesNotThrow(() -> provider.reset(sample.uuid()));
+        final FancyAggregate target = provider.initialStateOf(sample.uuid(), FancyAggregate.class);
+        assertNull(target.getFancyName());
     }
 
     @ParameterizedTest

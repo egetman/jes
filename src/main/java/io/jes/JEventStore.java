@@ -86,6 +86,17 @@ public class JEventStore {
     }
 
     /**
+     * Write given events into {@literal Event Store}.
+     * {@implNote there is no guarantee that write operation will be performed in sync manner}.
+     *
+     * @param events are events to store.
+     * @throws NullPointerException if events is null.
+     */
+    public void write(@Nonnull Event... events) {
+        provider.write(events);
+    }
+
+    /**
      * Delete a whole stream by it's {@literal uuid} (its a safe operation).
      *
      * @param uuid of stream  to delete.

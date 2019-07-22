@@ -65,6 +65,7 @@ class JacksonSerializer<S> implements Serializer<S, String> {
                 .withGetterVisibility(NONE)
                 .withSetterVisibility(NONE)
                 .withCreatorVisibility(NONE));
+        mapper.findAndRegisterModules();
     }
 
     @Override

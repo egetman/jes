@@ -18,7 +18,6 @@ public class InMemorySnapshotProvider implements SnapshotProvider {
         this(MAX_CACHE_SIZE);
     }
 
-    @SuppressWarnings("WeakerAccess")
     public InMemorySnapshotProvider(int cacheSize) {
         this.cache = new LinkedHashMap<UUID, Aggregate>(cacheSize, .75f, true) {
             @Override
@@ -47,7 +46,8 @@ public class InMemorySnapshotProvider implements SnapshotProvider {
     }
 
     @Override
-    public void reset() {
-        cache.clear();
+    public void reset(@Nonnull UUID uuid) {
+        Objects.requireNonNull(uuid, "Uuid must not be null");
+        cache.remove(uuid);
     }
 }

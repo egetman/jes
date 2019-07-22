@@ -30,13 +30,14 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 @Slf4j
 abstract class Reactor implements AutoCloseable {
 
-    private static final long DELAY_MS = 500;
+    private static final long DELAY_MS = 10;
 
     final Offset offset;
     final String key = getClass().getName();
 
     private final CommandBus bus;
-    private final JEventStore store;
+    protected final JEventStore store;
+
     private final ThreadFactory factory = new DaemonThreadFactory(getClass().getSimpleName());
     private final ScheduledExecutorService executor = newSingleThreadScheduledExecutor(factory);
     private final Map<Class<? extends Event>, Consumer<? super Event>> reactors = new HashMap<>();

@@ -27,8 +27,8 @@ class PostgresDDL implements StoreDDLProducer, SnapshotDDLProducer {
     private static final String WRITE_EVENTS = "INSERT INTO %sevent_store (uuid, data) VALUES (?, ?)";
     private static final String DELETE_EVENTS = "DELETE FROM %sevent_store WHERE uuid = ?";
 
-    private static final String DELETE_AGGREGATES = "DELETE FROM %ssnapshot_store";
-    private static final String WRITE_AGGREGATE = "INSERT INTO %ssnapshot_store (uuid, data) VALUES (?, ?)";
+    private static final String DELETE_AGGREGATES = "DELETE FROM %ssnapshot_store WHERE uuid = ?";
+    private static final String WRITE_AGGREGATE = "INSERT INTO %ssnapshot_store (data, uuid) VALUES (?, ?)";
     private static final String UPDATE_AGGREGATE = "UPDATE %ssnapshot_store SET data = ? WHERE uuid = ?";
     private static final String READ_AGGREGATE_BY_STREAM = "SELECT * FROM %ssnapshot_store WHERE uuid = ?";
 

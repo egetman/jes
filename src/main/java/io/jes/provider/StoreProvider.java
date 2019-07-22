@@ -36,6 +36,17 @@ public interface StoreProvider {
     void write(@Nonnull Event event);
 
     /**
+     * see {@link io.jes.JEventStore#write(Event...)}.
+     *
+     * @param events is an events to store.
+     */
+    default void write(@Nonnull Event... events) {
+        for (Event event : events) {
+            write(event);
+        }
+    }
+
+    /**
      * see {@link io.jes.JEventStore#deleteBy(UUID)}.
      *
      * @param uuid of stream  to delete.

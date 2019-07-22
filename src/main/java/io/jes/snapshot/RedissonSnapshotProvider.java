@@ -50,7 +50,8 @@ public class RedissonSnapshotProvider implements SnapshotProvider {
     }
 
     @Override
-    public void reset() {
-        redisCache.clear();
+    public void reset(@Nonnull UUID uuid) {
+        Objects.requireNonNull(uuid, "Uuid mut not be null");
+        redisCache.remove(uuid);
     }
 }

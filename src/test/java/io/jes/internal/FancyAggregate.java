@@ -1,5 +1,7 @@
 package io.jes.internal;
 
+import java.util.UUID;
+
 import io.jes.Aggregate;
 import io.jes.internal.Events.FancyEvent;
 import io.jes.internal.Events.ProcessingTerminated;
@@ -14,9 +16,12 @@ public class FancyAggregate extends Aggregate {
     private String fancyName;
     private boolean cancelled;
 
+    public FancyAggregate(UUID uuid) {
+        this();
+        this.uuid = uuid;
+    }
 
-    @SuppressWarnings("WeakerAccess")
-    public FancyAggregate() {
+    protected FancyAggregate() {
         registerApplier(SampleEvent.class, this::handle);
         registerApplier(FancyEvent.class, this::handle);
         registerApplier(ProcessingTerminated.class, this::handle);
