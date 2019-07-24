@@ -17,7 +17,7 @@ it's DB table.
 
 Check that ports: `8080, 8081, 54320` are free.
 
-Stock will be available at `http://localhost:8080`
+Stock will be available at `http://localhost:8080/stock`
 
 You can interact with it: add new items to stock, order some items from stock and so on.
 
