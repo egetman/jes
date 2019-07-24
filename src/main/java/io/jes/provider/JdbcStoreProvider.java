@@ -41,6 +41,8 @@ import static java.util.stream.Collectors.toList;
 @Slf4j
 public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, AutoCloseable {
 
+    private static final String DEFAULT_SCHEMA_NAME = "es";
+
     private final DataSource dataSource;
     private final StoreDDLProducer ddlProducer;
     private final Serializer<Event, T> serializer;
@@ -53,7 +55,7 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
 
             try (final Connection connection = dataSource.getConnection()) {
 
-                final String schema = requireNonNull(connection.getSchema(), "Schema must not be null");
+                final String schema = connection.getSchema() != null ? connection.getSchema() : DEFAULT_SCHEMA_NAME;
                 final DatabaseMetaData metaData = connection.getMetaData();
                 final String databaseName = metaData.getDatabaseProductName();
                 this.ddlProducer = DDLFactory.newDDLProducer(requireNonNull(databaseName), schema);

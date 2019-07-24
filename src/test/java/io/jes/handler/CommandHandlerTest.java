@@ -1,12 +1,16 @@
 package io.jes.handler;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import io.jes.Command;
 import io.jes.JEventStore;
 import io.jes.bus.CommandBus;
+import io.jes.bus.SyncCommandBus;
 import io.jes.ex.BrokenHandlerException;
+import io.jes.internal.Commands;
+import io.jes.provider.InMemoryStoreProvider;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -58,5 +62,25 @@ class CommandHandlerTest {
         });
     }
 
+    @Test
+    void shouldPropagateErrorMessageToClient() {
+        final SyncCommandBus bus = new SyncCommandBus();
+        final JEventStore store = new JEventStore(new InMemoryStoreProvider());
+
+        @SuppressWarnings("unused")
+        final CommandHandler handler = new CommandHandler(store, bus) {
+
+            @Handle
+            @SuppressWarnings("unused")
+            void handle(Commands.SampleCommand command) {
+                throw new IllegalStateException("Test: " + command.getName());
+            }
+        };
+
+        final BrokenHandlerException exception = assertThrows(BrokenHandlerException.class,
+                () -> bus.dispatch(new Commands.SampleCommand("Bar")));
+
+        Assertions.assertEquals("Test: Bar", exception.getMessage());
+    }
 
 }

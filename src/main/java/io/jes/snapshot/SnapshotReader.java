@@ -15,7 +15,7 @@ public interface SnapshotReader {
      * @param uuid identifier of event uuid to read.
      * @param skip events count to skip.
      * @return {@link Collection} of events stored in that {@literal EventStore}, grouped by {@literal uuid}.
-     * @throws NullPointerException if uuid is null.
+     * @throws NullPointerException                if uuid is null.
      * @throws io.jes.ex.EmptyEventStreamException if event stream with given {@code uuid} not found.
      */
     Collection<Event> readBy(@Nonnull UUID uuid, long skip);

@@ -50,7 +50,11 @@ class ReactorUtils {
         try {
             method.invoke(source, event);
         } catch (IllegalAccessException | InvocationTargetException e) {
-            throw new BrokenReactorException("Reactor failure: " + e.getMessage(), e);
+            Throwable cause = e.getCause();
+            while (cause.getCause() != null) {
+                cause = cause.getCause();
+            }
+            throw new BrokenReactorException(cause.getMessage(), e);
         }
     }
 

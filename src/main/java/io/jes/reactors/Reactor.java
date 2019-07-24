@@ -17,6 +17,8 @@ import io.jes.JEventStore;
 import io.jes.bus.CommandBus;
 import io.jes.offset.Offset;
 import io.jes.util.DaemonThreadFactory;
+import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import static io.jes.reactors.ReactorUtils.ensureReactsOnHasEventParameter;
@@ -30,10 +32,11 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 @Slf4j
 abstract class Reactor implements AutoCloseable {
 
-    private static final long DELAY_MS = 10;
+    private static final long DELAY_MS = 100;
 
     final Offset offset;
-    final String key = getClass().getName();
+    @Getter(value = AccessLevel.PROTECTED)
+    private final String key = getClass().getName();
 
     private final CommandBus bus;
     protected final JEventStore store;

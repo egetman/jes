@@ -25,6 +25,8 @@ import static java.util.Objects.requireNonNull;
 @Slf4j
 public class JdbcSnapshotProvider<T> implements SnapshotProvider, AutoCloseable {
 
+    private static final String DEFAULT_SCHEMA_NAME = "es";
+
     private final DataSource dataSource;
     private final SnapshotDDLProducer ddlProducer;
     private final Serializer<Aggregate, T> serializer;
@@ -37,7 +39,7 @@ public class JdbcSnapshotProvider<T> implements SnapshotProvider, AutoCloseable 
 
             try (final Connection connection = dataSource.getConnection()) {
 
-                final String schema = requireNonNull(connection.getSchema(), "Schema must not be null");
+                final String schema = connection.getSchema() != null ? connection.getSchema() : DEFAULT_SCHEMA_NAME;
                 final DatabaseMetaData metaData = connection.getMetaData();
                 final String databaseName = metaData.getDatabaseProductName();
                 this.ddlProducer = DDLFactory.newSnapshotDDLProducer(requireNonNull(databaseName), schema);

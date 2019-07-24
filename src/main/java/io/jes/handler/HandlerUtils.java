@@ -50,7 +50,11 @@ class HandlerUtils {
         try {
             method.invoke(source, command);
         } catch (IllegalAccessException | InvocationTargetException e) {
-            throw new BrokenHandlerException("Handler failure: " + e.getMessage(), e);
+            Throwable cause = e.getCause();
+            while (cause.getCause() != null) {
+                cause = cause.getCause();
+            }
+            throw new BrokenHandlerException(cause.getMessage(), cause);
         }
     }
 
