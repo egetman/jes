@@ -2,7 +2,7 @@
 
 This app demonstrates basic components used by <b>Jes</b>.
 
-#####To run:
+#### To run:
 1. finish [Getting started](../readme.md#getting-started)
 2. ```cd ./demo```
 3. ```./run-demo.sh```
