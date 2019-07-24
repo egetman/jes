@@ -36,6 +36,8 @@ Then you can use library as:
 </dependency>
 ```
 
+[Try out Jes demo](demo/readme.md)
+
 ## Jes basics
 Central library element is `JEventStore`. It provides basic functionality for managing events in your system:
 
@@ -175,7 +177,7 @@ public class JesConfig {
  - ~~verify serialization/deserialization of abstract classes/interface references~~
  - ~~don't fail on unknown events~~ done via common event type for unregistered events
  - make reactors pull-mechanism customisable (for db CDC?)
- - add demo app
+ - ~~add demo app~~
  - ~~add InMemoryStoreProvider (H2 or just collections?) for testing && H2 support~~ 
  
  ###### PRs are welcome
