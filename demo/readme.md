@@ -2,7 +2,7 @@
 
 This app demonstrates basic components used by <b>Jes</b>.
 
-#####To run:
+#### To run:
 1. finish [Getting started](../readme.md#getting-started)
 2. ```cd ./demo```
 3. ```./run-demo.sh```
@@ -17,7 +17,7 @@ it's DB table.
 
 Check that ports: `8080, 8081, 54320` are free.
 
-Stock will be available at `http://localhost:8080`
+Stock will be available at `http://localhost:8080/stock`
 
 You can interact with it: add new items to stock, order some items from stock and so on.
 
