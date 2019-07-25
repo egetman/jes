@@ -32,11 +32,9 @@ public class Aggregate {
     }
 
     void handleEventStream(@Nonnull Collection<Event> stream) {
-        Objects.requireNonNull(stream, "Event stream must not be null");
+        requireNonNull(stream, "Event stream must not be null");
         for (Event event : stream) {
-            final Class<? extends Event> type = event.getClass();
-            @SuppressWarnings({"unchecked", "RedundantCast"})
-            final Consumer<Event> applier = (Consumer<Event>) applierFor(type);
+            final Consumer<Event> applier = applierFor(event.getClass());
             if (applier != null) {
                 applier.accept(event);
             }
@@ -45,9 +43,10 @@ public class Aggregate {
     }
 
     @Nullable
-    private <T extends Event> Consumer<T> applierFor(@Nonnull Class<T> type) {
+    private Consumer<Event> applierFor(@Nonnull Class<? extends Event> type) {
+        requireNonNull(type, "Event type must not be null");
         @SuppressWarnings("unchecked")
-        final Consumer<T> consumer = (Consumer<T>) appliers.get(requireNonNull(type, "Event type must not be null"));
+        final Consumer<Event> consumer = (Consumer<Event>) appliers.get(type);
         if (consumer == null) {
             log.trace("Aggregate {} doesn't have a registered {} applier", getClass().getName(), type.getName());
         }
