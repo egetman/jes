@@ -8,7 +8,7 @@
 * [The dark side of event sourcing: Managing data conversion](https://ieeexplore.ieee.org/document/7884621) by Michiel Overeem, Marten Spoor & Slinger Jansen 
 
 ---
-Jes is a library for those who wanted to try Event Sourcing but did not know how to approach this. 
+Jes is a library for those who wanted to try Event Sourcing but did not know how to approach it. 
 It demonstrates well the basic principles inherent in approach and does not limit the methods of use.
 How to use the library - everyone decides for himself, in accordance with his understanding of the concept of Event 
 Sourcing.
@@ -52,7 +52,7 @@ public class JEventStore {
     // etc...
 }
 ```
-`StoreProvider` is actual component that incapsulates all interaction with concrete store.  
+`StoreProvider` is an actual component that incapsulates all interaction with concrete store.  
 Currently `StoreProvider` can be built on top of the database.  
 There are 2 implementations of `StoreProvider` to use: `JdbcStoreProvider` & `JpaStoreProvider`:
 
@@ -97,7 +97,7 @@ public abstract class Projector extends Reactor {
 }
 ```
 
-To make it work - extend it and mark the needed methods as `Handler`:
+To make it work - extend it and mark the needed methods with `@ReactsOn` annotation:
 ```java
 @ReactsOn
 private void handle(@Nonnull SmthHappend event) {
