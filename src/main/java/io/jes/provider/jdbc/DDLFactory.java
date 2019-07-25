@@ -1,6 +1,9 @@
 package io.jes.provider.jdbc;
 
+import java.sql.Connection;
 import javax.annotation.Nonnull;
+
+import io.jes.util.JdbcUtils;
 
 import static java.lang.String.format;
 
@@ -9,23 +12,24 @@ import static java.lang.String.format;
  */
 public class DDLFactory {
 
-    private DDLFactory() {}
+    private DDLFactory() {
+    }
 
     private static final String UNSUPPORTED_TYPE = "%s for %s type not supported";
 
     /**
      * Constructs new DDL producer based on DB vendor name and provided schema.
      *
-     * @param databaseName vendor name of db product. Obtained through
-     *                     {@code connection.getMetaData()..getDatabaseProductName()}.
-     * @param schema schema name to use.
+     * @param connection is an active connection to underlying database.
      * @return {@link StoreDDLProducer} for event store.
      */
-    public static StoreDDLProducer newDDLProducer(@Nonnull String databaseName, @Nonnull String schema) {
+    public static StoreDDLProducer newDDLProducer(@Nonnull Connection connection) {
+        final String databaseName = JdbcUtils.getDatabaseName(connection);
+        final String schemaName = JdbcUtils.getSchemaName(connection);
         if ("PostgreSQL".equals(databaseName)) {
-            return new PostgresDDL(schema);
+            return new PostgresDDL(schemaName);
         } else if ("H2".equals(databaseName)) {
-           return new H2DDL(schema);
+            return new H2DDL(schemaName);
         } else {
             throw new IllegalArgumentException(format(UNSUPPORTED_TYPE, StoreDDLProducer.class, databaseName));
         }
@@ -34,14 +38,15 @@ public class DDLFactory {
     /**
      * Constructs new DDL producer based on DB vendor name and provided schema.
      *
-     * @param databaseName vendor name of db product. Obtained through
-     *                     {@code connection.getMetaData()..getDatabaseProductName()}.
-     * @param schema schema name to use.
+     * @param connection is an active connection to underlying database.
      * @return {@link SnapshotDDLProducer} for snapshot store.
      */
-    public static SnapshotDDLProducer newSnapshotDDLProducer(@Nonnull String databaseName, @Nonnull String schema) {
+    public static SnapshotDDLProducer newSnapshotDDLProducer(@Nonnull Connection connection) {
+        final String databaseName = JdbcUtils.getDatabaseName(connection);
+        final String schemaName = JdbcUtils.getSchemaName(connection);
+
         if ("PostgreSQL".equals(databaseName)) {
-            return new PostgresDDL(schema);
+            return new PostgresDDL(schemaName);
         } else {
             throw new IllegalArgumentException(format(UNSUPPORTED_TYPE, SnapshotDDLProducer.class, databaseName));
         }

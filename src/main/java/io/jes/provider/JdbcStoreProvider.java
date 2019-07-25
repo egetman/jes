@@ -1,9 +1,6 @@
 package io.jes.provider;
 
-import java.sql.Blob;
-import java.sql.Clob;
 import java.sql.Connection;
-import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -28,6 +25,7 @@ import io.jes.snapshot.SnapshotReader;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
+import static io.jes.util.JdbcUtils.unwrapJdbcType;
 import static java.lang.Long.MAX_VALUE;
 import static java.util.Objects.requireNonNull;
 import static java.util.Spliterator.ORDERED;
@@ -41,8 +39,6 @@ import static java.util.stream.Collectors.toList;
 @Slf4j
 public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, AutoCloseable {
 
-    private static final String DEFAULT_SCHEMA_NAME = "es";
-
     private final DataSource dataSource;
     private final StoreDDLProducer ddlProducer;
     private final Serializer<Event, T> serializer;
@@ -54,11 +50,7 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
             this.serializer = SerializerFactory.newEventSerializer(serializationType, options);
 
             try (final Connection connection = dataSource.getConnection()) {
-
-                final String schema = connection.getSchema() != null ? connection.getSchema() : DEFAULT_SCHEMA_NAME;
-                final DatabaseMetaData metaData = connection.getMetaData();
-                final String databaseName = metaData.getDatabaseProductName();
-                this.ddlProducer = DDLFactory.newDDLProducer(requireNonNull(databaseName), schema);
+                this.ddlProducer = DDLFactory.newDDLProducer(connection);
                 createEventStore(connection, ddlProducer.createStore(serializationType));
             }
         } catch (Exception e) {
@@ -201,19 +193,6 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
                 }
             }
         }
-    }
-
-    @SneakyThrows
-    @SuppressWarnings("unchecked")
-    private T unwrapJdbcType(@Nonnull Object jdbcType) {
-        if (jdbcType instanceof String || jdbcType instanceof byte[]) {
-            return (T) jdbcType;
-        } else if (jdbcType instanceof Clob) {
-            return (T) ((Clob) jdbcType).getSubString(1, (int) ((Clob) jdbcType).length());
-        } else if (jdbcType instanceof Blob) {
-            return (T) ((Blob) jdbcType).getBytes(1, (int) ((Blob) jdbcType).length());
-        }
-        throw new IllegalArgumentException("Unsupported jdbc type: " + jdbcType.getClass());
     }
 
     @Override

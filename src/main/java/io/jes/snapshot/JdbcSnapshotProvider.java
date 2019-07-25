@@ -1,7 +1,6 @@
 package io.jes.snapshot;
 
 import java.sql.Connection;
-import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.Objects;
@@ -20,12 +19,11 @@ import io.jes.serializer.SerializerFactory;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
+import static io.jes.util.JdbcUtils.unwrapJdbcType;
 import static java.util.Objects.requireNonNull;
 
 @Slf4j
 public class JdbcSnapshotProvider<T> implements SnapshotProvider, AutoCloseable {
-
-    private static final String DEFAULT_SCHEMA_NAME = "es";
 
     private final DataSource dataSource;
     private final SnapshotDDLProducer ddlProducer;
@@ -38,11 +36,7 @@ public class JdbcSnapshotProvider<T> implements SnapshotProvider, AutoCloseable 
             this.serializer = SerializerFactory.newAggregateSerializer(serializationType, options);
 
             try (final Connection connection = dataSource.getConnection()) {
-
-                final String schema = connection.getSchema() != null ? connection.getSchema() : DEFAULT_SCHEMA_NAME;
-                final DatabaseMetaData metaData = connection.getMetaData();
-                final String databaseName = metaData.getDatabaseProductName();
-                this.ddlProducer = DDLFactory.newSnapshotDDLProducer(requireNonNull(databaseName), schema);
+                this.ddlProducer = DDLFactory.newSnapshotDDLProducer(connection);
                 createSnapshotStore(connection, ddlProducer.createSnapshotStore(serializationType));
             }
         } catch (Exception e) {
@@ -115,8 +109,7 @@ public class JdbcSnapshotProvider<T> implements SnapshotProvider, AutoCloseable 
                 if (!set.next()) {
                     return null;
                 }
-                //noinspection unchecked
-                return serializer.deserialize((T) set.getObject(ddlProducer.contentName()));
+                return serializer.deserialize(unwrapJdbcType(set.getObject(ddlProducer.contentName())));
             }
         });
     }

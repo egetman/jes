@@ -12,7 +12,6 @@ import static java.util.Objects.requireNonNull;
 
 @Slf4j
 @NoArgsConstructor
-@SuppressWarnings("WeakerAccess")
 public class TypeRegistry implements SerializationOption {
 
     private final Map<Class<?>, String> aliases = new ConcurrentHashMap<>();
