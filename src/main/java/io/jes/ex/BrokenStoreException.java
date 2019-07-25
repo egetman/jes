@@ -9,4 +9,8 @@ public class BrokenStoreException extends RuntimeException {
     public BrokenStoreException(Exception cause) {
         super(cause);
     }
+
+    public BrokenStoreException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

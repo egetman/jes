@@ -47,6 +47,7 @@ public final class JdbcUtils {
      * Unwraps the returned from {@link java.sql.ResultSet#getObject(String)} type to appropriate java type.
      *
      * @param jdbcType type to unwrap.
+     * @param <T>      is one of appropriate java types.
      * @return unwrapped type from result set.
      * @throws IllegalArgumentException if type is not supported or null.
      */

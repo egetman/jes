@@ -5,7 +5,7 @@ import javax.annotation.Nonnull;
 
 import static java.lang.String.format;
 
-public class H2DDL implements StoreDDLProducer {
+public class H2DDL implements StoreDDLProducer, OffsetDDLProducer {
 
     private static final String READ_EVENTS = "SELECT * FROM %sevent_store WHERE id > ? ORDER BY id";
     private static final String READ_EVENTS_BY_STREAM = "SELECT * FROM %sevent_store WHERE uuid = ? ORDER BY id";
@@ -20,13 +20,29 @@ public class H2DDL implements StoreDDLProducer {
             + "(id BIGSERIAL PRIMARY KEY, uuid UUID, " + CONTENT_NAME + " %s NOT NULL);";
     private static final String CREATE_INDEX = "CREATE INDEX IF NOT EXISTS uuid_idx ON %sevent_store (uuid);";
 
+    /* Offsets part */
+    private static final String CREATE_OFFSET_TABLE = "CREATE TABLE IF NOT EXISTS %soffsets "
+            + "(id BIGSERIAL PRIMARY KEY, key VARCHAR(256) UNIQUE NOT NULL, value BIGINT DEFAULT 0 NOT NULL);";
+    private static final String CREATE_OFFSET_INDEX = "CREATE INDEX IF NOT EXISTS offset_key_idx ON %soffsets (key);";
+
+    private static final String CREATE_OFFSET_BY_KEY = "INSERT INTO %soffsets (key) VALUES (?)";
+    private static final String INCREMENT_OFFSET_BY_KEY = "UPDATE %soffsets SET value = value + 1 WHERE key = ?";
+    private static final String READ_OFFSET_BY_KEY = "SELECT value FROM %soffsets WHERE key = ?";
+    private static final String RESET_OFFSET_BY_KEY = "UPDATE %soffsets SET value = 0 WHERE key = ?";
+
     @Nonnull
     private final String schema;
+
     private String queryEvents;
     private String queryEventsByStream;
     private String queryEventsStreamVersion;
     private String insertEvents;
     private String deleteEvents;
+
+    private String createOffsetByKey;
+    private String incrementOffsetByKey;
+    private String readOffsetByKey;
+    private String resetOffsetByKey;
 
     H2DDL(@Nonnull String schema) {
         this.schema = Objects.requireNonNull(schema);
@@ -96,6 +112,52 @@ public class H2DDL implements StoreDDLProducer {
             queryEventsStreamVersion = format(READ_EVENTS_STREAM_VERSION, formatSchema());
         }
         return queryEventsStreamVersion;
+    }
+
+    @Nonnull
+    @Override
+    public String createOffsetTable() {
+        final StringBuilder ddl = new StringBuilder();
+        ddl.append(String.format(CREATE_SCHEMA, schema));
+        ddl.append(String.format(CREATE_OFFSET_TABLE, formatSchema()));
+        ddl.append(String.format(CREATE_OFFSET_INDEX, formatSchema()));
+        return ddl.toString();
+    }
+
+    @Nonnull
+    @Override
+    public String createOffset() {
+        if (createOffsetByKey == null) {
+            createOffsetByKey = String.format(CREATE_OFFSET_BY_KEY, formatSchema());
+        }
+        return createOffsetByKey;
+    }
+
+    @Nonnull
+    @Override
+    public String increment() {
+        if (incrementOffsetByKey == null) {
+            incrementOffsetByKey = String.format(INCREMENT_OFFSET_BY_KEY, formatSchema());
+        }
+        return incrementOffsetByKey;
+    }
+
+    @Nonnull
+    @Override
+    public String value() {
+        if (readOffsetByKey == null) {
+            readOffsetByKey = String.format(READ_OFFSET_BY_KEY, formatSchema());
+        }
+        return readOffsetByKey;
+    }
+
+    @Nonnull
+    @Override
+    public String reset() {
+        if (resetOffsetByKey == null) {
+            resetOffsetByKey = String.format(RESET_OFFSET_BY_KEY, formatSchema());
+        }
+        return resetOffsetByKey;
     }
 
     @Nonnull

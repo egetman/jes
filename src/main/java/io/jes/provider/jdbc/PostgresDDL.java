@@ -3,7 +3,7 @@ package io.jes.provider.jdbc;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-class PostgresDDL implements StoreDDLProducer, SnapshotDDLProducer {
+class PostgresDDL implements StoreDDLProducer, SnapshotDDLProducer, OffsetDDLProducer {
 
     /**
      * Provided ddl statements (assumed schema name 'foo')
@@ -45,6 +45,17 @@ class PostgresDDL implements StoreDDLProducer, SnapshotDDLProducer {
     private static final String CREATE_SNAPSHOT_INDEX = "CREATE INDEX CONCURRENTLY IF NOT EXISTS snapshot_uuid_idx "
             + "ON %ssnapshot_store (uuid NULLS LAST);";
 
+    /* Offsets part */
+    private static final String CREATE_OFFSET_TABLE = "CREATE TABLE IF NOT EXISTS %soffsets "
+            + "(id BIGSERIAL PRIMARY KEY, key VARCHAR(256) UNIQUE NOT NULL, value BIGINT DEFAULT 0 NOT NULL);";
+    private static final String CREATE_OFFSET_INDEX = "CREATE INDEX CONCURRENTLY IF NOT EXISTS offset_key_idx "
+            + "ON %soffsets (key);";
+
+    private static final String CREATE_OFFSET_BY_KEY = "INSERT INTO %soffsets (key) VALUES (?)";
+    private static final String INCREMENT_OFFSET_BY_KEY = "UPDATE %soffsets SET value = value + 1 WHERE key = ?";
+    private static final String READ_OFFSET_BY_KEY = "SELECT value FROM %soffsets WHERE key = ?";
+    private static final String RESET_OFFSET_BY_KEY = "UPDATE %soffsets SET value = 0 WHERE key = ?";
+
     private final String schema;
     private String queryEvents;
     private String queryEventsByStream;
@@ -57,6 +68,11 @@ class PostgresDDL implements StoreDDLProducer, SnapshotDDLProducer {
     private String updateAggregate;
     private String deleteAggregates;
     private String queryAggregateByStream;
+
+    private String createOffsetByKey;
+    private String incrementOffsetByKey;
+    private String readOffsetByKey;
+    private String resetOffsetByKey;
 
     PostgresDDL(@Nonnull String schema) {
         this.schema = schema;
@@ -189,5 +205,51 @@ class PostgresDDL implements StoreDDLProducer, SnapshotDDLProducer {
     @Nonnull
     private String formatSchema() {
         return schema + ".";
+    }
+
+    @Nonnull
+    @Override
+    public String createOffsetTable() {
+        final StringBuilder ddl = new StringBuilder();
+        ddl.append(String.format(CREATE_SCHEMA, schema));
+        ddl.append(String.format(CREATE_OFFSET_TABLE, formatSchema()));
+        ddl.append(String.format(CREATE_OFFSET_INDEX, formatSchema()));
+        return ddl.toString();
+    }
+
+    @Nonnull
+    @Override
+    public String createOffset() {
+        if (createOffsetByKey == null) {
+            createOffsetByKey = String.format(CREATE_OFFSET_BY_KEY, formatSchema());
+        }
+        return createOffsetByKey;
+    }
+
+    @Nonnull
+    @Override
+    public String increment() {
+        if (incrementOffsetByKey == null) {
+            incrementOffsetByKey = String.format(INCREMENT_OFFSET_BY_KEY, formatSchema());
+        }
+        return incrementOffsetByKey;
+    }
+
+    @Nonnull
+    @Override
+    public String value() {
+        if (readOffsetByKey == null) {
+            readOffsetByKey = String.format(READ_OFFSET_BY_KEY, formatSchema());
+        }
+        return readOffsetByKey;
+    }
+
+    @Nonnull
+    @Override
+    public String reset() {
+        if (resetOffsetByKey == null) {
+            resetOffsetByKey = String.format(RESET_OFFSET_BY_KEY, formatSchema());
+        }
+        return resetOffsetByKey;
     }
 }
