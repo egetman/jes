@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 import io.jes.AggregateStore;
 import io.jes.JEventStore;
 import io.jes.bus.CommandBus;
-import io.jes.lock.LockManager;
+import io.jes.lock.Lock;
 import io.jes.offset.Offset;
 import io.jes.reactors.ReactsOn;
 import io.jes.reactors.Saga;
@@ -21,8 +21,8 @@ public class OrderSaga extends Saga {
     private final AggregateStore aggregateStore;
 
     public OrderSaga(@Nonnull JEventStore store, @Nonnull Offset offset, @Nonnull CommandBus bus,
-                     @Nonnull LockManager lockManager, @Nonnull AggregateStore aggregateStore) {
-        super(store, offset, bus, lockManager);
+                     @Nonnull Lock lock, @Nonnull AggregateStore aggregateStore) {
+        super(store, offset, bus, lock);
         this.aggregateStore = aggregateStore;
     }
 

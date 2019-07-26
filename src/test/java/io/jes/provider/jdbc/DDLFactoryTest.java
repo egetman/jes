@@ -15,6 +15,8 @@ import static org.mockito.Mockito.when;
 
 class DDLFactoryTest {
 
+    private static final String POSTGRE_SQL = "PostgreSQL";
+
     @SneakyThrows
     private Connection newConnectionMock(String databaseName, String schema) {
         final Connection connection = mock(Connection.class);
@@ -28,7 +30,7 @@ class DDLFactoryTest {
 
     @Test
     void newDDLProducerShouldReturnPostgreSQLDDLProducerOnCorrectValue() {
-        assertEquals(PostgresDDL.class, newDDLProducer(newConnectionMock("PostgreSQL", "FOO")).getClass());
+        assertEquals(PostgresDDL.class, newDDLProducer(newConnectionMock(POSTGRE_SQL, "FOO")).getClass());
     }
 
     @Test
@@ -37,13 +39,13 @@ class DDLFactoryTest {
     }
 
     @Test
-    void newDDLOffsetProducerShouldReturnH2DDLProducerOnCorrectValue() {
+    void newOffsetDDLProducerShouldReturnH2DDLProducerOnCorrectValue() {
         assertEquals(H2DDL.class, newOffsetDDLProducer(newConnectionMock("H2", "FOO")).getClass());
     }
 
     @Test
-    void newDDLOffsetProducerShouldReturnPostgresDDLProducerOnCorrectValue() {
-        assertEquals(PostgresDDL.class, newOffsetDDLProducer(newConnectionMock("PostgreSQL", "FOO")).getClass());
+    void newOffsetDDLProducerShouldReturnPostgresDDLProducerOnCorrectValue() {
+        assertEquals(PostgresDDL.class, newOffsetDDLProducer(newConnectionMock(POSTGRE_SQL, "FOO")).getClass());
     }
 
     @Test
@@ -61,6 +63,16 @@ class DDLFactoryTest {
     @Test
     void newOffsetDDLProducerShouldThrowIllegalArgumentExceptionOnUnknownValue() {
         assertThrows(IllegalArgumentException.class, () -> newOffsetDDLProducer(newConnectionMock("FOO", "FOO")));
+    }
+
+    @Test
+    void newLockDDLProducerShouldThrowIllegalArgumentExceptionOnUnknownValue() {
+        assertThrows(IllegalArgumentException.class, () -> newLockDDLProducer(newConnectionMock("FOO", "FOO")));
+    }
+
+    @Test
+    void newLockDDLProducerShouldReturnPostgresDDLProducerOnCorrectValue() {
+        assertEquals(PostgresDDL.class, newOffsetDDLProducer(newConnectionMock(POSTGRE_SQL, "FOO")).getClass());
     }
 
 }

@@ -12,7 +12,7 @@ import org.mockito.Mockito;
 
 import io.jes.Event;
 import io.jes.JEventStore;
-import io.jes.lock.InMemoryReentrantLockManager;
+import io.jes.lock.InMemoryReentrantLock;
 import io.jes.offset.InMemoryOffset;
 import io.jes.offset.Offset;
 import io.jes.provider.JdbcStoreProvider;
@@ -104,7 +104,7 @@ class ProjectorTest {
         private CountDownLatch endStreamLatch = new CountDownLatch(1);
 
         SampleProjector(@Nonnull JEventStore store, @Nonnull Offset offset) {
-            super(store, offset, new InMemoryReentrantLockManager());
+            super(store, offset, new InMemoryReentrantLock());
         }
 
         @ReactsOn

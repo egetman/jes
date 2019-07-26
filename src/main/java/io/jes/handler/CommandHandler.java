@@ -24,7 +24,6 @@ public abstract class CommandHandler {
 
     protected final JEventStore store;
 
-    @SuppressWarnings("WeakerAccess")
     public CommandHandler(@Nonnull JEventStore store, @Nonnull CommandBus bus) {
         Objects.requireNonNull(bus, "Command bus must not be null");
         this.store = Objects.requireNonNull(store, "Event store must not be null");

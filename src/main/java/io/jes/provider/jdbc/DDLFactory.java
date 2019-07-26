@@ -74,4 +74,13 @@ public class DDLFactory {
         }
     }
 
+    public static LockDDLProducer newLockDDLProducer(@Nonnull Connection connection) {
+        final String databaseName = JdbcUtils.getDatabaseName(connection);
+        final String schemaName = JdbcUtils.getSchemaName(connection);
+        if (DB_NAME_POSTGRE_SQL.equals(databaseName)) {
+            return new PostgresDDL(schemaName);
+        } else {
+            throw new IllegalArgumentException(format(UNSUPPORTED_TYPE, LockDDLProducer.class, databaseName));
+        }
+    }
 }

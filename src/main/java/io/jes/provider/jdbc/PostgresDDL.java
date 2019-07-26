@@ -3,7 +3,7 @@ package io.jes.provider.jdbc;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-class PostgresDDL implements StoreDDLProducer, SnapshotDDLProducer, OffsetDDLProducer {
+class PostgresDDL implements StoreDDLProducer, SnapshotDDLProducer, OffsetDDLProducer, LockDDLProducer {
 
     /**
      * Provided ddl statements (assumed schema name 'foo')
@@ -48,13 +48,23 @@ class PostgresDDL implements StoreDDLProducer, SnapshotDDLProducer, OffsetDDLPro
     /* Offsets part */
     private static final String CREATE_OFFSET_TABLE = "CREATE TABLE IF NOT EXISTS %soffsets "
             + "(id BIGSERIAL PRIMARY KEY, key VARCHAR(256) UNIQUE NOT NULL, value BIGINT DEFAULT 0 NOT NULL);";
-    private static final String CREATE_OFFSET_INDEX = "CREATE INDEX CONCURRENTLY IF NOT EXISTS offset_key_idx "
+    private static final String CREATE_OFFSET_INDEX = "CREATE INDEX CONCURRENTLY IF NOT EXISTS offsets_key_idx "
             + "ON %soffsets (key);";
 
     private static final String CREATE_OFFSET_BY_KEY = "INSERT INTO %soffsets (key) VALUES (?)";
     private static final String INCREMENT_OFFSET_BY_KEY = "UPDATE %soffsets SET value = value + 1 WHERE key = ?";
     private static final String READ_OFFSET_BY_KEY = "SELECT value FROM %soffsets WHERE key = ?";
     private static final String RESET_OFFSET_BY_KEY = "UPDATE %soffsets SET value = 0 WHERE key = ?";
+
+    /* Locks part */
+    private static final String CREATE_LOCKS_TABLE = "CREATE TABLE IF NOT EXISTS %slocks "
+            + "(id BIGSERIAL PRIMARY KEY, key VARCHAR(256) UNIQUE NOT NULL, locked_at TIMESTAMP DEFAULT NOW() NOT "
+            + "NULL);";
+    private static final String CREATE_LOCKS_INDEX = "CREATE INDEX CONCURRENTLY IF NOT EXISTS locks_key_idx "
+            + "ON %slocks (key);";
+
+    private static final String INSERT_LOCK = "INSERT INTO %slocks (key) VALUES (?)";
+    private static final String DELETE_LOCK = "DELETE FROM %slocks WHERE key = ?";
 
     private final String schema;
     private String queryEvents;
@@ -73,6 +83,9 @@ class PostgresDDL implements StoreDDLProducer, SnapshotDDLProducer, OffsetDDLPro
     private String incrementOffsetByKey;
     private String readOffsetByKey;
     private String resetOffsetByKey;
+
+    private String insertLock;
+    private String deleteLock;
 
     PostgresDDL(@Nonnull String schema) {
         this.schema = schema;
@@ -251,5 +264,33 @@ class PostgresDDL implements StoreDDLProducer, SnapshotDDLProducer, OffsetDDLPro
             resetOffsetByKey = String.format(RESET_OFFSET_BY_KEY, formatSchema());
         }
         return resetOffsetByKey;
+    }
+
+    @Nonnull
+    @Override
+    public String createLockTable() {
+        final StringBuilder ddl = new StringBuilder();
+        ddl.append(String.format(CREATE_SCHEMA, schema));
+        ddl.append(String.format(CREATE_LOCKS_TABLE, formatSchema()));
+        ddl.append(String.format(CREATE_LOCKS_INDEX, formatSchema()));
+        return ddl.toString();
+    }
+
+    @Nonnull
+    @Override
+    public String lock() {
+        if (insertLock == null) {
+            insertLock = String.format(INSERT_LOCK, formatSchema());
+        }
+        return insertLock;
+    }
+
+    @Nonnull
+    @Override
+    public String unlock() {
+        if (deleteLock == null) {
+            deleteLock = String.format(DELETE_LOCK, formatSchema());
+        }
+        return deleteLock;
     }
 }

@@ -5,7 +5,7 @@ import javax.annotation.Nonnull;
 import org.springframework.stereotype.Service;
 
 import io.jes.JEventStore;
-import io.jes.lock.LockManager;
+import io.jes.lock.Lock;
 import io.jes.offset.Offset;
 import io.jes.reactors.Projector;
 import io.jes.reactors.ReactsOn;
@@ -22,9 +22,9 @@ public class StockProjector extends Projector {
 
     private final ItemRepository itemRepository;
 
-    public StockProjector(@Nonnull JEventStore store, @Nonnull Offset offset, @Nonnull LockManager lockManager,
+    public StockProjector(@Nonnull JEventStore store, @Nonnull Offset offset, @Nonnull Lock lock,
                           @Nonnull ItemRepository itemRepository) {
-        super(store, offset, lockManager);
+        super(store, offset, lock);
         this.itemRepository = itemRepository;
     }
 

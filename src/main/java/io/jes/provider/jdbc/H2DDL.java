@@ -23,7 +23,7 @@ public class H2DDL implements StoreDDLProducer, OffsetDDLProducer {
     /* Offsets part */
     private static final String CREATE_OFFSET_TABLE = "CREATE TABLE IF NOT EXISTS %soffsets "
             + "(id BIGSERIAL PRIMARY KEY, key VARCHAR(256) UNIQUE NOT NULL, value BIGINT DEFAULT 0 NOT NULL);";
-    private static final String CREATE_OFFSET_INDEX = "CREATE INDEX IF NOT EXISTS offset_key_idx ON %soffsets (key);";
+    private static final String CREATE_OFFSET_INDEX = "CREATE INDEX IF NOT EXISTS offsets_key_idx ON %soffsets (key);";
 
     private static final String CREATE_OFFSET_BY_KEY = "INSERT INTO %soffsets (key) VALUES (?)";
     private static final String INCREMENT_OFFSET_BY_KEY = "UPDATE %soffsets SET value = value + 1 WHERE key = ?";

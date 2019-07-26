@@ -13,12 +13,13 @@ import lombok.extern.slf4j.Slf4j;
 import static java.util.Objects.requireNonNull;
 
 @Slf4j
-public class RedissonReentrantLockManager extends AbstractReadWriteLockManager {
+public class RedissonReentrantLock extends AbstractReadWriteLock {
 
     private final RedissonClient redissonClient;
     private final Map<String, ReadWriteLock> locks = new ConcurrentHashMap<>();
 
-    public RedissonReentrantLockManager(@Nonnull RedissonClient redissonClient) {
+    @SuppressWarnings("WeakerAccess")
+    public RedissonReentrantLock(@Nonnull RedissonClient redissonClient) {
         this.redissonClient = Objects.requireNonNull(redissonClient);
     }
 

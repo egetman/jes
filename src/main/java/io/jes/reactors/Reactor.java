@@ -39,7 +39,7 @@ abstract class Reactor implements AutoCloseable {
     private final String key = getClass().getName();
 
     private final CommandBus bus;
-    protected final JEventStore store;
+    private final JEventStore store;
 
     private final ThreadFactory factory = new DaemonThreadFactory(getClass().getSimpleName());
     private final ScheduledExecutorService executor = newSingleThreadScheduledExecutor(factory);
@@ -98,7 +98,6 @@ abstract class Reactor implements AutoCloseable {
         log.debug("{} closed", getClass().getSimpleName());
     }
 
-    @SuppressWarnings("WeakerAccess")
     protected void dispatch(@Nonnull Command command) {
         bus.dispatch(Objects.requireNonNull(command));
     }

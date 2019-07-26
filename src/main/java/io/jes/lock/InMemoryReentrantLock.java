@@ -11,7 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import static java.util.Objects.requireNonNull;
 
 @Slf4j
-public class InMemoryReentrantLockManager extends AbstractReadWriteLockManager {
+public class InMemoryReentrantLock extends AbstractReadWriteLock {
 
     private final Map<String, ReadWriteLock> locks = new ConcurrentHashMap<>();
 

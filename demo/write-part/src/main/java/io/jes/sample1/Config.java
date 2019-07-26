@@ -10,8 +10,8 @@ import io.jes.AggregateStore;
 import io.jes.JEventStore;
 import io.jes.bus.CommandBus;
 import io.jes.bus.SyncCommandBus;
-import io.jes.lock.InMemoryReentrantLockManager;
-import io.jes.lock.LockManager;
+import io.jes.lock.InMemoryReentrantLock;
+import io.jes.lock.Lock;
 import io.jes.offset.InMemoryOffset;
 import io.jes.offset.Offset;
 import io.jes.provider.JdbcStoreProvider;
@@ -48,8 +48,8 @@ public class Config {
     }
 
     @Bean
-    public LockManager lockManager() {
-        return new InMemoryReentrantLockManager();
+    public Lock lockManager() {
+        return new InMemoryReentrantLock();
     }
 
     @Bean

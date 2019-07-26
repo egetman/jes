@@ -19,6 +19,7 @@ public class JdbcOffset implements Offset {
     private final DataSource dataSource;
     private final OffsetDDLProducer ddlProducer;
 
+    @SuppressWarnings("WeakerAccess")
     public JdbcOffset(@Nonnull DataSource dataSource) {
         this.dataSource = Objects.requireNonNull(dataSource, "Datasource must not be null");
 
