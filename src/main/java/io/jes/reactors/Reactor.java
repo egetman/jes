@@ -77,14 +77,14 @@ abstract class Reactor implements AutoCloseable {
 
     // think of better solution for tailing. mb CDC (https://github.com/debezium/debezium) for db backed stores?
     void tailStore() {
-        try (Stream<Event> eventStream = store.readFrom(offset.value(key))) {
+        try (Stream<Event> eventStream = store.readFrom(offset.value(getKey()))) {
             eventStream.forEach(event -> {
                 final Consumer<? super Event> consumer = reactors.get(event.getClass());
                 if (consumer != null) {
                     consumer.accept(event);
                     log.trace("Handled {}", event.getClass().getSimpleName());
                 }
-                offset.increment(key);
+                offset.increment(getKey());
             });
         } catch (Exception e) {
             // we must not stop to try read store, if any exception happens
