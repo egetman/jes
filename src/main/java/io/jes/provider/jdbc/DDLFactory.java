@@ -1,6 +1,6 @@
 package io.jes.provider.jdbc;
 
-import java.net.URL;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import javax.annotation.Nonnull;
@@ -11,8 +11,6 @@ import lombok.SneakyThrows;
 import static io.jes.util.JdbcUtils.getSchemaName;
 import static io.jes.util.JdbcUtils.getSqlTypeByClassAndDatabaseName;
 import static java.lang.String.format;
-import static java.nio.file.Files.readAllBytes;
-import static java.nio.file.Paths.get;
 
 /**
  * Factory for vendor specific database dialects.
@@ -114,9 +112,15 @@ public class DDLFactory {
     @SneakyThrows
     private static String readDDL(@Nonnull String location) {
         final ClassLoader classLoader = DDLFactory.class.getClassLoader();
-        final URL resource = classLoader.getResource(location);
-        if (resource != null) {
-            return new String(readAllBytes(get(resource.toURI())), StandardCharsets.UTF_8);
+        try (final InputStream inputStream = classLoader.getResourceAsStream(location)) {
+            if (inputStream != null) {
+                final byte[] content = new byte[inputStream.available()];
+                final int read = inputStream.read(content);
+                if (read != content.length) {
+                    throw new IllegalStateException("Can't read ddl: " + location);
+                }
+                return new String(content, StandardCharsets.UTF_8);
+            }
         }
         throw new IllegalStateException("Can't find script: " + location);
     }

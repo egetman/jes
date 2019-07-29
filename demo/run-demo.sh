@@ -12,7 +12,7 @@ echo Complete
 
 # run apps
 echo Runnins apps. Output available in 'nohup.out'
-nohup java -jar write-part/target/write-part-1.0.jar > nohup.write-part.out 2>&1 &
+nohup java -jar write-part/target/write-part-1.0.jar >nohup.write-part.out 2>&1 &
 
-nohup java -jar read-part/target/read-part-1.0.jar > nohup.read-part.out 2>&1 &
+nohup java -jar read-part/target/read-part-1.0.jar >nohup.read-part.out 2>&1 &
 echo Applications started. Check out http://localhost:8080/stock
