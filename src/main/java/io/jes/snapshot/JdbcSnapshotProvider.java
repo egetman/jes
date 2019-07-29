@@ -12,21 +12,21 @@ import javax.sql.DataSource;
 import io.jes.Aggregate;
 import io.jes.ex.BrokenStoreException;
 import io.jes.provider.jdbc.DDLFactory;
-import io.jes.provider.jdbc.SnapshotDDLProducer;
 import io.jes.serializer.SerializationOption;
 import io.jes.serializer.Serializer;
 import io.jes.serializer.SerializerFactory;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
+import static io.jes.util.JdbcUtils.createConnection;
 import static io.jes.util.JdbcUtils.unwrapJdbcType;
+import static io.jes.util.PropsReader.getPropety;
 import static java.util.Objects.requireNonNull;
 
 @Slf4j
 public class JdbcSnapshotProvider<T> implements SnapshotProvider, AutoCloseable {
 
     private final DataSource dataSource;
-    private final SnapshotDDLProducer ddlProducer;
     private final Serializer<Aggregate, T> serializer;
 
     public JdbcSnapshotProvider(@Nonnull DataSource dataSource, @Nonnull Class<T> serializationType,
@@ -35,9 +35,8 @@ public class JdbcSnapshotProvider<T> implements SnapshotProvider, AutoCloseable 
             this.dataSource = requireNonNull(dataSource);
             this.serializer = SerializerFactory.newAggregateSerializer(serializationType, options);
 
-            try (final Connection connection = dataSource.getConnection()) {
-                this.ddlProducer = DDLFactory.newSnapshotDDLProducer(connection);
-                createSnapshotStore(connection, ddlProducer.createSnapshotStore(serializationType));
+            try (final Connection connection = createConnection(this.dataSource)) {
+                createSnapshotStore(connection, DDLFactory.getAggregateStoreDDL(connection));
             }
         } catch (Exception e) {
             throw new BrokenStoreException(e);
@@ -73,7 +72,9 @@ public class JdbcSnapshotProvider<T> implements SnapshotProvider, AutoCloseable 
     public <A extends Aggregate> A snapshot(@Nonnull A aggregate) {
         // check if we already have a snapshot for that aggregate
         final boolean snapshotExists = findAggregateByUuid(aggregate.uuid()) != null;
-        final String sql = snapshotExists ? ddlProducer.updateAggregate() : ddlProducer.insertAggregate();
+        final String sql = snapshotExists ? getPropety("jes.jdbc.statement.update-aggregate")
+                : getPropety("jes.jdbc.statement.insert-aggregate");
+
         final Integer affectedCount = execute(connection -> {
             try (PreparedStatement statement = connection.prepareStatement(sql)) {
                 statement.setObject(1, serializer.serialize(aggregate));
@@ -90,7 +91,8 @@ public class JdbcSnapshotProvider<T> implements SnapshotProvider, AutoCloseable 
     public void reset(@Nonnull UUID uuid) {
         Objects.requireNonNull(uuid);
         execute(connection -> {
-            try (PreparedStatement statement = connection.prepareStatement(ddlProducer.deleteAggregates())) {
+            final String query = getPropety("jes.jdbc.statement.delete-aggregate");
+            try (PreparedStatement statement = connection.prepareStatement(query)) {
                 statement.setObject(1, uuid);
                 final int deletedRows = statement.executeUpdate();
                 log.debug("Deleted {} snapshots by uuid {}", deletedRows, uuid);
@@ -103,20 +105,21 @@ public class JdbcSnapshotProvider<T> implements SnapshotProvider, AutoCloseable 
     @SneakyThrows
     private Aggregate findAggregateByUuid(@Nonnull UUID uuid) {
         return execute(connection -> {
-            try (PreparedStatement statement = connection.prepareStatement(ddlProducer.queryAggregateByUuid())) {
+            final String query = getPropety("jes.jdbc.statement.select-aggregate");
+            try (PreparedStatement statement = connection.prepareStatement(query)) {
                 statement.setObject(1, Objects.requireNonNull(uuid, "Aggregate uuid must not be null"));
                 final ResultSet set = statement.executeQuery();
                 if (!set.next()) {
                     return null;
                 }
-                return serializer.deserialize(unwrapJdbcType(set.getObject(ddlProducer.contentName())));
+                return serializer.deserialize(unwrapJdbcType(set.getObject("data")));
             }
         });
     }
 
     @SneakyThrows
     private <Y> Y execute(@Nonnull ThrowableFunction<Connection, Y> consumer) {
-        try (Connection connection = dataSource.getConnection()) {
+        try (Connection connection = createConnection(dataSource)) {
             return Objects.requireNonNull(consumer, "Consumer must not be null").apply(connection);
         } catch (Exception e) {
             throw new BrokenStoreException(e);

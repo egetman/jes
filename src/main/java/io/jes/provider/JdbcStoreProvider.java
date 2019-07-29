@@ -17,7 +17,6 @@ import io.jes.Event;
 import io.jes.ex.BrokenStoreException;
 import io.jes.ex.VersionMismatchException;
 import io.jes.provider.jdbc.DDLFactory;
-import io.jes.provider.jdbc.StoreDDLProducer;
 import io.jes.serializer.SerializationOption;
 import io.jes.serializer.Serializer;
 import io.jes.serializer.SerializerFactory;
@@ -25,7 +24,9 @@ import io.jes.snapshot.SnapshotReader;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
+import static io.jes.util.JdbcUtils.createConnection;
 import static io.jes.util.JdbcUtils.unwrapJdbcType;
+import static io.jes.util.PropsReader.getPropety;
 import static java.lang.Long.MAX_VALUE;
 import static java.util.Objects.requireNonNull;
 import static java.util.Spliterator.ORDERED;
@@ -40,7 +41,6 @@ import static java.util.stream.Collectors.toList;
 public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, AutoCloseable {
 
     private final DataSource dataSource;
-    private final StoreDDLProducer ddlProducer;
     private final Serializer<Event, T> serializer;
 
     public JdbcStoreProvider(@Nonnull DataSource dataSource, @Nonnull Class<T> serializationType,
@@ -49,9 +49,9 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
             this.dataSource = requireNonNull(dataSource);
             this.serializer = SerializerFactory.newEventSerializer(serializationType, options);
 
-            try (final Connection connection = dataSource.getConnection()) {
-                this.ddlProducer = DDLFactory.newDDLProducer(connection);
-                createEventStore(connection, ddlProducer.createStore(serializationType));
+            try (final Connection connection = createConnection(this.dataSource)) {
+                final String ddl = DDLFactory.getEventStoreDDL(connection, serializationType);
+                createEventStore(connection, ddl);
             }
         } catch (Exception e) {
             throw new BrokenStoreException(e);
@@ -70,26 +70,27 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
 
     @Override
     public Stream<Event> readFrom(long offset) {
-        return readBy(ddlProducer.queryEvents(), offset);
+        return readBy(getPropety("jes.jdbc.statement.select-events"), offset);
     }
 
     @Override
     public Collection<Event> readBy(@Nonnull UUID uuid) {
-        try (final Stream<Event> stream = readBy(ddlProducer.queryEventsByUuid(), uuid)) {
+        try (final Stream<Event> stream = readBy(getPropety("jes.jdbc.statement.select-events-by-uuid"), uuid)) {
             return stream.collect(toList());
         }
     }
 
     @Override
     public Collection<Event> readBy(@Nonnull UUID uuid, long skip) {
-        try (final Stream<Event> stream = readBy(requireNonNull(ddlProducer.queryEventsByUuidWithSkip()), uuid, skip)) {
+        final String statement = getPropety("jes.jdbc.statement.select-events-by-uuid-with-skip");
+        try (final Stream<Event> stream = readBy(requireNonNull(statement), uuid, skip)) {
             return stream.collect(toList());
         }
     }
 
     private Stream<Event> readBy(@Nonnull String from, @Nonnull Object... values) {
         try {
-            final Connection connection = dataSource.getConnection();
+            final Connection connection = createConnection(dataSource);
             final PreparedStatement statement = connection.prepareStatement(from);
 
             int index = 1;
@@ -114,7 +115,7 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
                     if (!set.next()) {
                         return false;
                     }
-                    T data = unwrapJdbcType(set.getObject(ddlProducer.contentName()));
+                    T data = unwrapJdbcType(set.getObject("data"));
                     action.accept(serializer.deserialize(data));
                 } catch (Exception e) {
                     throw new BrokenStoreException(e);
@@ -126,11 +127,11 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
 
     @Override
     public void write(@Nonnull Event event) {
-        writeTo(event, ddlProducer.insertEvents());
+        writeTo(event, getPropety("jes.jdbc.statement.insert-events"));
     }
 
     private void writeTo(Event event, String where) {
-        try (final Connection connection = dataSource.getConnection();
+        try (final Connection connection = createConnection(dataSource);
              final PreparedStatement statement = connection.prepareStatement(where)) {
 
             final UUID uuid = event.uuid();
@@ -154,7 +155,8 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
         final UUID uuid = event.uuid();
         final long expectedVersion = event.expectedStreamVersion();
         if (uuid != null && expectedVersion != -1) {
-            try (PreparedStatement statement = connection.prepareStatement(ddlProducer.queryEventsStreamVersion())) {
+            final String select = getPropety("jes.jdbc.statement.select-events-version");
+            try (PreparedStatement statement = connection.prepareStatement(select)) {
                 statement.setObject(1, uuid);
                 try (final ResultSet query = statement.executeQuery()) {
                     if (!query.next()) {
@@ -173,8 +175,10 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
     @Override
     public void deleteBy(@Nonnull UUID uuid) {
         log.warn("Prepare to remove {} event stream", uuid);
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(ddlProducer.deleteEvents())) {
+        final String query = getPropety("jes.jdbc.statement.delete-events");
+        try (Connection connection = createConnection(dataSource);
+             PreparedStatement statement = connection.prepareStatement(query)) {
+
             statement.setObject(1, uuid);
             final int affectedEvents = statement.executeUpdate();
             log.warn("{} events successfully removed", affectedEvents);

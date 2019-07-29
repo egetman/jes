@@ -8,9 +8,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 import io.jes.JEventStore;
-import io.jes.lock.InMemoryReentrantLock;
+import io.jes.lock.JdbcLock;
 import io.jes.lock.Lock;
-import io.jes.offset.InMemoryOffset;
+import io.jes.offset.JdbcOffset;
 import io.jes.offset.Offset;
 import io.jes.provider.JdbcStoreProvider;
 import io.jes.provider.StoreProvider;
@@ -37,13 +37,13 @@ public class Config {
     }
 
     @Bean
-    public Offset offset() {
-        return new InMemoryOffset();
+    public Offset offset(DataSource dataSource) {
+        return new JdbcOffset(dataSource);
     }
 
     @Bean
-    public Lock lockManager() {
-        return new InMemoryReentrantLock();
+    public Lock lock(DataSource dataSource) {
+        return new JdbcLock(dataSource);
     }
 
     // U can use any aliases for events. So u don't need to hardcode serialized class name of event.

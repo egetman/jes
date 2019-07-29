@@ -7,8 +7,11 @@ import org.junit.jupiter.api.Test;
 
 import lombok.SneakyThrows;
 
-import static io.jes.provider.jdbc.DDLFactory.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static io.jes.provider.jdbc.DDLFactory.getAggregateStoreDDL;
+import static io.jes.provider.jdbc.DDLFactory.getEventStoreDDL;
+import static io.jes.provider.jdbc.DDLFactory.getLockDDL;
+import static io.jes.provider.jdbc.DDLFactory.getOffsetsDDL;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -29,50 +32,47 @@ class DDLFactoryTest {
     }
 
     @Test
-    void newDDLProducerShouldReturnPostgreSQLDDLProducerOnCorrectValue() {
-        assertEquals(PostgresDDL.class, newDDLProducer(newConnectionMock(POSTGRE_SQL, "FOO")).getClass());
+    void getEventStoreDDLShouldReturnScriptOnCorrectValue() {
+        assertNotNull(getEventStoreDDL(newConnectionMock(POSTGRE_SQL, "FOO"), byte[].class));
+        assertNotNull(getEventStoreDDL(newConnectionMock("H2", "FOO"), String.class));
     }
 
     @Test
-    void newDDLProducerShouldReturnH2DDLProducerOnCorrectValue() {
-        assertEquals(H2DDL.class, newDDLProducer(newConnectionMock("H2", "FOO")).getClass());
+    void getOffsetDDLShouldReturnStriptOnCorrectValue() {
+        assertNotNull(getOffsetsDDL(newConnectionMock("H2", "FOO")));
+        assertNotNull(getOffsetsDDL(newConnectionMock(POSTGRE_SQL, "FOO")).getClass());
     }
 
     @Test
-    void newOffsetDDLProducerShouldReturnH2DDLProducerOnCorrectValue() {
-        assertEquals(H2DDL.class, newOffsetDDLProducer(newConnectionMock("H2", "FOO")).getClass());
+    void getAggregateStoreDDLShouldThrowIllegalArgumentExceptionOnUnknownValue() {
+        assertThrows(IllegalArgumentException.class, () -> getAggregateStoreDDL(newConnectionMock("FOO", "FOO")));
     }
 
     @Test
-    void newOffsetDDLProducerShouldReturnPostgresDDLProducerOnCorrectValue() {
-        assertEquals(PostgresDDL.class, newOffsetDDLProducer(newConnectionMock(POSTGRE_SQL, "FOO")).getClass());
+    void getEventStoreDDLShouldThrowIllegalArgumentExceptionOnAnyOtherValue() {
+        assertThrows(IllegalArgumentException.class,
+                () -> getEventStoreDDL(newConnectionMock("Oracle DB", "BAR"), String.class));
+        assertThrows(IllegalArgumentException.class,
+                () -> getEventStoreDDL(newConnectionMock("MySQL", "FOO"), byte[].class));
+        assertThrows(IllegalArgumentException.class,
+                () -> getEventStoreDDL(newConnectionMock("DB2", "BAZ"), String.class));
+        assertThrows(IllegalArgumentException.class,
+                () -> getEventStoreDDL(newConnectionMock("H2", "BAZ"), byte.class));
     }
 
     @Test
-    void newSnapshotDDLProducerShouldThrowIllegalArgumentExceptionOnUnknownValue() {
-        assertThrows(IllegalArgumentException.class, () -> newSnapshotDDLProducer(newConnectionMock("FOO", "FOO")));
+    void getOffsetsDDLShouldThrowIllegalArgumentExceptionOnUnknownValue() {
+        assertThrows(IllegalArgumentException.class, () -> getOffsetsDDL(newConnectionMock("FOO", "FOO")));
     }
 
     @Test
-    void newDDLProducerShouldThrowIllegalArgumentExceptionOnAnyOtherValue() {
-        assertThrows(IllegalArgumentException.class, () -> newDDLProducer(newConnectionMock("Oracle DB", "BAR")));
-        assertThrows(IllegalArgumentException.class, () -> newDDLProducer(newConnectionMock("MySQL", "FOO")));
-        assertThrows(IllegalArgumentException.class, () -> newDDLProducer(newConnectionMock("DB2", "BAZ")));
+    void getLockDDLShouldThrowIllegalArgumentExceptionOnUnknownValue() {
+        assertThrows(IllegalArgumentException.class, () -> getLockDDL(newConnectionMock("FOO", "FOO")));
     }
 
     @Test
-    void newOffsetDDLProducerShouldThrowIllegalArgumentExceptionOnUnknownValue() {
-        assertThrows(IllegalArgumentException.class, () -> newOffsetDDLProducer(newConnectionMock("FOO", "FOO")));
-    }
-
-    @Test
-    void newLockDDLProducerShouldThrowIllegalArgumentExceptionOnUnknownValue() {
-        assertThrows(IllegalArgumentException.class, () -> newLockDDLProducer(newConnectionMock("FOO", "FOO")));
-    }
-
-    @Test
-    void newLockDDLProducerShouldReturnPostgresDDLProducerOnCorrectValue() {
-        assertEquals(PostgresDDL.class, newOffsetDDLProducer(newConnectionMock(POSTGRE_SQL, "FOO")).getClass());
+    void getLockDDLShouldReturnScriptOnCorrectValue() {
+        assertNotNull(getOffsetsDDL(newConnectionMock(POSTGRE_SQL, "FOO")));
     }
 
 }

@@ -9,23 +9,22 @@ import javax.sql.DataSource;
 
 import io.jes.ex.BrokenStoreException;
 import io.jes.provider.jdbc.DDLFactory;
-import io.jes.provider.jdbc.OffsetDDLProducer;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+
+import static io.jes.util.JdbcUtils.createConnection;
+import static io.jes.util.PropsReader.getPropety;
 
 @Slf4j
 public class JdbcOffset implements Offset {
 
     private final DataSource dataSource;
-    private final OffsetDDLProducer ddlProducer;
 
-    @SuppressWarnings("WeakerAccess")
     public JdbcOffset(@Nonnull DataSource dataSource) {
         this.dataSource = Objects.requireNonNull(dataSource, "Datasource must not be null");
 
-        try (final Connection connection = dataSource.getConnection()) {
-            this.ddlProducer = DDLFactory.newOffsetDDLProducer(connection);
-            createOffsetTable(connection, ddlProducer.createOffsetTable());
+        try (final Connection connection = createConnection(dataSource)) {
+            createOffsetTable(connection, DDLFactory.getOffsetsDDL(connection));
         } catch (Exception e) {
             throw new BrokenStoreException("Failed to create " + getClass().getSimpleName(), e);
         }
@@ -44,8 +43,9 @@ public class JdbcOffset implements Offset {
     @Override
     public long value(@Nonnull String key) {
         Objects.requireNonNull(key);
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement statement = connection.prepareStatement(ddlProducer.value())) {
+        final String query = getPropety("jes.jdbc.statement.select-offset");
+        try (final Connection connection = createConnection(dataSource);
+             final PreparedStatement statement = connection.prepareStatement(query)) {
             statement.setString(1, key);
             try (final ResultSet resultSet = statement.executeQuery()) {
                 if (!resultSet.next()) {
@@ -74,8 +74,9 @@ public class JdbcOffset implements Offset {
     @Override
     public void reset(@Nonnull String key) {
         Objects.requireNonNull(key);
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement statement = connection.prepareStatement(ddlProducer.reset())) {
+        final String query = getPropety("jes.jdbc.statement.update-offset-and-reset");
+        try (final Connection connection = createConnection(dataSource);
+             final PreparedStatement statement = connection.prepareStatement(query)) {
 
             statement.setString(1, key);
             final int code = statement.executeUpdate();
@@ -89,8 +90,9 @@ public class JdbcOffset implements Offset {
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     private boolean incrementOffsetByKey(@Nonnull String key) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement statement = connection.prepareStatement(ddlProducer.increment())) {
+        final String query = getPropety("jes.jdbc.statement.update-offset-and-increment");
+        try (final Connection connection = createConnection(dataSource);
+             final PreparedStatement statement = connection.prepareStatement(query)) {
 
             statement.setString(1, key);
             return statement.executeUpdate() == 1;
@@ -100,8 +102,9 @@ public class JdbcOffset implements Offset {
     }
 
     private void createOffset(@Nonnull String key) {
-        try (final Connection connection = dataSource.getConnection();
-             final PreparedStatement statement = connection.prepareStatement(ddlProducer.createOffset())) {
+        final String query = getPropety("jes.jdbc.statement.insert-offset");
+        try (final Connection connection = createConnection(dataSource);
+             final PreparedStatement statement = connection.prepareStatement(query)) {
 
             statement.setString(1, key);
             final int count = statement.executeUpdate();

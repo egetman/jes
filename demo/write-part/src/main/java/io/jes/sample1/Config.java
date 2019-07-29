@@ -10,9 +10,9 @@ import io.jes.AggregateStore;
 import io.jes.JEventStore;
 import io.jes.bus.CommandBus;
 import io.jes.bus.SyncCommandBus;
-import io.jes.lock.InMemoryReentrantLock;
+import io.jes.lock.JdbcLock;
 import io.jes.lock.Lock;
-import io.jes.offset.InMemoryOffset;
+import io.jes.offset.JdbcOffset;
 import io.jes.offset.Offset;
 import io.jes.provider.JdbcStoreProvider;
 import io.jes.provider.StoreProvider;
@@ -43,13 +43,13 @@ public class Config {
     }
 
     @Bean
-    public Offset offset() {
-        return new InMemoryOffset();
+    public Offset offset(DataSource dataSource) {
+        return new JdbcOffset(dataSource);
     }
 
     @Bean
-    public Lock lockManager() {
-        return new InMemoryReentrantLock();
+    public Lock lock(DataSource dataSource) {
+        return new JdbcLock(dataSource);
     }
 
     @Bean

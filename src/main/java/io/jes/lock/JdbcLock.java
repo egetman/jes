@@ -9,24 +9,23 @@ import javax.sql.DataSource;
 
 import io.jes.ex.BrokenStoreException;
 import io.jes.provider.jdbc.DDLFactory;
-import io.jes.provider.jdbc.LockDDLProducer;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
-import static java.sql.Connection.*;
+import static io.jes.util.JdbcUtils.createConnection;
+import static io.jes.util.PropsReader.getPropety;
+import static java.sql.Connection.TRANSACTION_READ_COMMITTED;
 
 @Slf4j
 public class JdbcLock implements Lock {
 
     private final DataSource dataSource;
-    private final LockDDLProducer ddlProducer;
 
-    @SuppressWarnings("WeakerAccess")
     public JdbcLock(@Nonnull DataSource dataSource) {
         this.dataSource = Objects.requireNonNull(dataSource, "DataSouce must not be null");
-        try (Connection connection = dataSource.getConnection()) {
-            this.ddlProducer = DDLFactory.newLockDDLProducer(connection);
-            createLocks(connection, ddlProducer.createLockTable());
+
+        try (Connection connection = createConnection(this.dataSource)) {
+            createLocks(connection, DDLFactory.getLockDDL(connection));
         } catch (Exception e) {
             throw new BrokenStoreException(e);
         }
@@ -48,12 +47,14 @@ public class JdbcLock implements Lock {
         Objects.requireNonNull(key, "Key must not be null");
         Objects.requireNonNull(action, "Action must not be null");
 
-        try (Connection connection = dataSource.getConnection()) {
+        try (Connection connection = createConnection(dataSource)) {
             try {
                 connection.setAutoCommit(false);
                 connection.setTransactionIsolation(TRANSACTION_READ_COMMITTED);
-                try (final PreparedStatement lockStatement = connection.prepareStatement(ddlProducer.lock());
-                     final PreparedStatement unlockStatement = connection.prepareStatement(ddlProducer.unlock())) {
+                final String lockQuery = getPropety("jes.jdbc.statement.insert-lock");
+                final String unlockQuery = getPropety("jes.jdbc.statement.delete-lock");
+                try (final PreparedStatement lockStatement = connection.prepareStatement(lockQuery);
+                     final PreparedStatement unlockStatement = connection.prepareStatement(unlockQuery)) {
 
                     lockStatement.setString(1, key);
                     lockStatement.executeUpdate();

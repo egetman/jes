@@ -10,7 +10,6 @@ import javax.annotation.Nonnull;
 import io.jes.ex.PropertyNotFoundException;
 import lombok.SneakyThrows;
 
-@SuppressWarnings("WeakerAccess")
 public final class PropsReader {
 
     private static final Map<String, String> CACHE = new ConcurrentHashMap<>();
