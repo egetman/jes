@@ -20,6 +20,7 @@ import io.jes.provider.jdbc.DDLFactory;
 import io.jes.serializer.SerializationOption;
 import io.jes.serializer.Serializer;
 import io.jes.serializer.SerializerFactory;
+import io.jes.serializer.upcaster.Upcaster;
 import io.jes.snapshot.SnapshotReader;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -42,6 +43,7 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
 
     private final DataSource dataSource;
     private final Serializer<Event, T> serializer;
+    private final UpcasterRegistry<T> upcasterRegistry = new UpcasterRegistry<>();
 
     public JdbcStoreProvider(@Nonnull DataSource dataSource, @Nonnull Class<T> serializationType,
                              @Nonnull SerializationOption... options) {
@@ -115,7 +117,11 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
                     if (!set.next()) {
                         return false;
                     }
-                    T data = unwrapJdbcType(set.getObject("data"));
+                    // get values by index a bit more efficient
+                    final long offset = set.getLong(1);
+                    T data = unwrapJdbcType(set.getObject(2));
+                    data = upcasterRegistry.tryUpcast(offset, data);
+
                     action.accept(serializer.deserialize(data));
                 } catch (Exception e) {
                     throw new BrokenStoreException(e);
@@ -127,12 +133,9 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
 
     @Override
     public void write(@Nonnull Event event) {
-        writeTo(event, getPropety("jes.jdbc.statement.insert-events"));
-    }
-
-    private void writeTo(Event event, String where) {
+        final String query = getPropety("jes.jdbc.statement.insert-events");
         try (final Connection connection = createConnection(dataSource);
-             final PreparedStatement statement = connection.prepareStatement(where)) {
+             final PreparedStatement statement = connection.prepareStatement(query)) {
 
             final UUID uuid = event.uuid();
             verifyStreamVersion(event, connection);
@@ -150,19 +153,54 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
         }
     }
 
+    @Override
+    public void write(@Nonnull Event... events) {
+        try (final Connection connection = createConnection(dataSource)) {
+            final boolean supportsBatches = connection.getMetaData().supportsBatchUpdates();
+            // first check if we can use batch
+            if (!supportsBatches) {
+                log.warn("Current db doesn't support batch updates. Separate updates will be used");
+                for (Event event : events) {
+                    write(event);
+                }
+                return;
+            }
+            // ok, we can use it
+            connection.setAutoCommit(false);
+            final String query = getPropety("jes.jdbc.statement.insert-events");
+            try (final PreparedStatement statement = connection.prepareStatement(query)) {
+                for (Event event : events) {
+                    final UUID uuid = event.uuid();
+                    verifyStreamVersion(event, connection);
+                    final T data = serializer.serialize(event);
+
+                    statement.setObject(1, uuid);
+                    statement.setObject(2, data);
+                    statement.addBatch();
+                }
+                statement.executeBatch();
+                connection.commit();
+            }
+        } catch (BrokenStoreException | VersionMismatchException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new BrokenStoreException(e);
+        }
+    }
+
     @SneakyThrows
     private void verifyStreamVersion(Event event, Connection connection) {
         final UUID uuid = event.uuid();
         final long expectedVersion = event.expectedStreamVersion();
         if (uuid != null && expectedVersion != -1) {
-            final String select = getPropety("jes.jdbc.statement.select-events-version");
-            try (PreparedStatement statement = connection.prepareStatement(select)) {
+            final String query = getPropety("jes.jdbc.statement.select-events-version");
+            try (PreparedStatement statement = connection.prepareStatement(query)) {
                 statement.setObject(1, uuid);
-                try (final ResultSet query = statement.executeQuery()) {
-                    if (!query.next()) {
+                try (final ResultSet resultSet = statement.executeQuery()) {
+                    if (!resultSet.next()) {
                         throw new BrokenStoreException("Can't read uuid [" + uuid + "] version");
                     }
-                    final long actualVersion = query.getLong(1);
+                    final long actualVersion = resultSet.getLong(1);
                     if (expectedVersion != actualVersion) {
                         log.error("Version mismatch detected for {}", event);
                         throw new VersionMismatchException(expectedVersion, actualVersion);
@@ -208,5 +246,10 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
                 log.error("Failed to close resource:", e);
             }
         }
+    }
+
+    @SuppressWarnings("unused")
+    public void addUpcaster(@Nonnull Upcaster<T> upcaster) {
+        upcasterRegistry.addUpcaster(upcaster);
     }
 }

@@ -63,7 +63,7 @@ public class JdbcOffset implements Offset {
     public void increment(@Nonnull String key) {
         Objects.requireNonNull(key);
         if (!incrementOffsetByKey(key)) {
-            log.warn("Offset [" + key + "] not found. Creating new one...");
+            log.trace("Offset [" + key + "] not found. Creating new one...");
             createOffset(key);
             if (!incrementOffsetByKey(key)) {
                 throw new BrokenStoreException("Can't increment offset by key " + key);

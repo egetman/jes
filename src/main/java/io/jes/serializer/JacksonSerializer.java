@@ -19,10 +19,14 @@ import io.jes.ex.SerializationException;
 
 import static com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.ANY;
 import static com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.NONE;
+import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.As;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
+import static com.fasterxml.jackson.databind.ObjectMapper.DefaultTypeResolverBuilder;
+import static com.fasterxml.jackson.databind.ObjectMapper.DefaultTyping;
 import static com.fasterxml.jackson.databind.SerializationFeature.FAIL_ON_EMPTY_BEANS;
+import static com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS;
 
 class JacksonSerializer<S> implements Serializer<S, String> {
 
@@ -48,6 +52,8 @@ class JacksonSerializer<S> implements Serializer<S, String> {
     private void configureMapper(@Nonnull ObjectMapper mapper, @Nullable Map<Class<?>, String> aliases) {
         mapper.disable(FAIL_ON_EMPTY_BEANS);
         mapper.disable(FAIL_ON_UNKNOWN_PROPERTIES);
+        mapper.disable(WRITE_DATES_AS_TIMESTAMPS);
+        mapper.setSerializationInclusion(NON_NULL);
 
         final Map<String, Class<?>> reversed = new HashMap<>();
         if (aliases != null) {
@@ -56,7 +62,7 @@ class JacksonSerializer<S> implements Serializer<S, String> {
             }
         }
 
-        mapper.setDefaultTyping(new ObjectMapper.DefaultTypeResolverBuilder(ObjectMapper.DefaultTyping.NON_FINAL)
+        mapper.setDefaultTyping(new DefaultTypeResolverBuilder(DefaultTyping.NON_FINAL)
                 .init(Id.CUSTOM, new TypeIdWithClassNameFallbackResolver(aliases, reversed))
                 .inclusion(As.PROPERTY)
                 .typeProperty("@type"));

@@ -8,7 +8,9 @@ import io.jes.bus.CommandBus;
 import io.jes.lock.Lock;
 import io.jes.offset.Offset;
 
-@SuppressWarnings("unused")
+/**
+ * Note: Sagas are WIP.
+ */
 public class Saga extends Reactor {
 
     private final Lock lock;

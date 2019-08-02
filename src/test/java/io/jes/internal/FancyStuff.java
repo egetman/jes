@@ -71,7 +71,7 @@ public final class FancyStuff {
     private static PostgreSQLContainer<?> newPostgreSQLContainer() {
         final String user = "user";
         final String password = "password";
-        final PostgreSQLContainer container = new PostgreSQLContainer()
+        final PostgreSQLContainer container = new PostgreSQLContainer("postgres:latest")
                 .withDatabaseName("jes")
                 .withUsername(user)
                 .withPassword(password);
