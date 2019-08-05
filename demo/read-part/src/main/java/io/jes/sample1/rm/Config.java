@@ -26,7 +26,8 @@ import io.jes.serializer.TypeRegistry;
 @EnableAutoConfiguration
 public class Config {
 
-    @Bean
+    @Bean(destroyMethod = "close")
+    @SuppressWarnings("ContextJavaBeanUnresolvedMethodsInspection")
     public StoreProvider jdbcStoreProvider(DataSource dataSource, SerializationOption[] options) {
         return new JdbcStoreProvider<>(dataSource, String.class, options);
     }

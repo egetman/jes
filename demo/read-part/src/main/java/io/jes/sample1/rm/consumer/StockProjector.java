@@ -2,6 +2,8 @@ package io.jes.sample1.rm.consumer;
 
 import javax.annotation.Nonnull;
 
+import org.springframework.context.event.ContextClosedEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 import io.jes.JEventStore;
@@ -57,15 +59,15 @@ public class StockProjector extends Projector {
     }
 
     @Override
-    protected void onRecreate() {
+    protected void cleanUp() {
         log.info("Recreating current projection");
         itemRepository.deleteAll();
         log.info("Projection recreated");
     }
 
     @Override
+    @EventListener(ContextClosedEvent.class)
     public void close() {
         super.close();
-        recreate();
     }
 }

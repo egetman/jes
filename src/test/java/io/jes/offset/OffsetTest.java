@@ -3,13 +3,11 @@ package io.jes.offset;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
-
 import javax.annotation.Nonnull;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import static io.jes.internal.FancyStuff.newH2DataSource;
 import static io.jes.internal.FancyStuff.newPostgresDataSource;
 import static io.jes.internal.FancyStuff.newRedissonClient;
 import static java.util.Arrays.asList;
@@ -21,7 +19,6 @@ class OffsetTest {
     private static final List<Offset> OFFSETS = asList(
             new InMemoryOffset(),
             new RedissonOffset(newRedissonClient()),
-            new JdbcOffset(newH2DataSource()),
             new JdbcOffset(newPostgresDataSource())
     );
 

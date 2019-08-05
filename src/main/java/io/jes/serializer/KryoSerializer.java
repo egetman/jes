@@ -16,17 +16,17 @@ import io.jes.ex.SerializationException;
 class KryoSerializer<S> implements Serializer<S, byte[]> {
 
     private static final String NO_CLASS_KRYO_MESSAGE = "Unable to find class: ";
-    private final Kryo kryo = new Kryo();
-
-    KryoSerializer() {
-        kryo.setRegistrationRequired(false);
-        kryo.setInstantiatorStrategy(new DefaultInstantiatorStrategy(new StdInstantiatorStrategy()));
-    }
+    private final ThreadLocal<Kryo> kryo = ThreadLocal.withInitial(() -> {
+        final Kryo serializer = new Kryo();
+        serializer.setRegistrationRequired(false);
+        serializer.setInstantiatorStrategy(new DefaultInstantiatorStrategy(new StdInstantiatorStrategy()));
+        return serializer;
+    });
 
     @Override
     public byte[] serialize(S toSerialize) {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream(); Output output = new Output(baos)) {
-            kryo.writeClassAndObject(output, toSerialize);
+            kryo.get().writeClassAndObject(output, toSerialize);
             output.flush();
             return baos.toByteArray();
         } catch (Exception e) {
@@ -43,7 +43,7 @@ class KryoSerializer<S> implements Serializer<S, byte[]> {
              final Input input = new Input(bais, toDeserialize.length)) {
 
             //noinspection unchecked
-            return (S) kryo.readClassAndObject(input);
+            return (S) kryo.get().readClassAndObject(input);
         } catch (KryoException e) {
             final String message = e.getMessage();
             if (message != null && message.contains(NO_CLASS_KRYO_MESSAGE)) {

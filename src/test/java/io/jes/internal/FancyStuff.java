@@ -129,8 +129,8 @@ public final class FancyStuff {
         final Map<String, Object> properties = new HashMap<>();
         properties.put(DIALECT, PostgreSQL95Dialect.class);
         properties.put(USE_QUERY_CACHE, false);
-        properties.put(SHOW_SQL, true);
-        properties.put(FORMAT_SQL, true);
+        properties.put(SHOW_SQL, false);
+        properties.put(FORMAT_SQL, false);
         properties.put(USE_STRUCTURED_CACHE, false);
         properties.put(STATEMENT_BATCH_SIZE, 20);
         properties.put(HBM2DDL_AUTO, "create");

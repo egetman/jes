@@ -212,14 +212,14 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
 
     @Override
     public void deleteBy(@Nonnull UUID uuid) {
-        log.warn("Prepare to remove {} event stream", uuid);
+        log.trace("Prepare to remove {} event stream", uuid);
         final String query = getPropety("jes.jdbc.statement.delete-events");
         try (Connection connection = createConnection(dataSource);
              PreparedStatement statement = connection.prepareStatement(query)) {
 
             statement.setObject(1, uuid);
             final int affectedEvents = statement.executeUpdate();
-            log.warn("{} events successfully removed", affectedEvents);
+            log.trace("{} events successfully removed", affectedEvents);
         } catch (Exception e) {
             throw new BrokenStoreException(e);
         }

@@ -30,24 +30,23 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ReactorTest {
 
     @Test
-    @SuppressWarnings({"ConstantConditions", "unused", "DuplicateExpressions"})
+    @SuppressWarnings({"ConstantConditions", "unused"})
     void shouldHandleItsInvariants() {
         final InMemoryOffset offset = new InMemoryOffset();
         final CommandBus bus = Mockito.mock(CommandBus.class);
         final JEventStore store = Mockito.mock(JEventStore.class);
 
         // verify all parameters protected
-        assertThrows(NullPointerException.class, () -> new Reactor(null, offset, bus) {});
-        assertThrows(NullPointerException.class, () -> new Reactor(store, null, bus) {});
+        assertThrows(NullPointerException.class, () -> new Reactor(null, offset) {});
+        assertThrows(NullPointerException.class, () -> new Reactor(store, null) {});
         assertThrows(NullPointerException.class, () -> new Reactor(store, offset, null) {});
 
-        //noinspection DuplicateExpressions
         BrokenReactorException exception = assertThrows(BrokenReactorException.class,
-                () -> new Reactor(store, offset, bus) {});
+                () -> new Reactor(store, offset) {});
 
         assertEquals("Methods with @ReactsOn annotation not found", exception.getMessage());
 
-        exception = assertThrows(BrokenReactorException.class, () -> new Reactor(store, offset, bus) {
+        exception = assertThrows(BrokenReactorException.class, () -> new Reactor(store, offset) {
             @ReactsOn
             private int handle(Events.SampleEvent event) {
                 return -1;
@@ -56,14 +55,14 @@ class ReactorTest {
 
         assertEquals("@ReactsOn method should not have any return value", exception.getMessage());
 
-        exception = assertThrows(BrokenReactorException.class, () -> new Reactor(store, offset, bus) {
+        exception = assertThrows(BrokenReactorException.class, () -> new Reactor(store, offset) {
             @ReactsOn
             private void handle(Events.SampleEvent sampleEvent, Events.FancyEvent fancyEvent) {}
         });
 
         assertEquals("@ReactsOn method should have only 1 parameter", exception.getMessage());
 
-        exception = assertThrows(BrokenReactorException.class, () -> new Reactor(store, offset, bus) {
+        exception = assertThrows(BrokenReactorException.class, () -> new Reactor(store, offset) {
             @ReactsOn
             private void handle(Object object) {}
         });
@@ -71,7 +70,7 @@ class ReactorTest {
         assertEquals("@ReactsOn method parameter must be an instance of the Event class. Found type: "
                 + Object.class, exception.getMessage());
 
-        assertDoesNotThrow(() -> new Reactor(store, offset, bus) {
+        assertDoesNotThrow(() -> new Reactor(store, offset) {
             @ReactsOn
             private void handle(Events.SampleEvent event) {}
         });
@@ -88,14 +87,12 @@ class ReactorTest {
         final String key = SampleReactor.class.getName();
 
         final Offset offset = new InMemoryOffset();
-        final SyncCommandBus bus = new SyncCommandBus();
         final JdbcStoreProvider<byte[]> provider = new JdbcStoreProvider<>(newPostgresDataSource(), byte[].class);
         final JEventStore store = new JEventStore(provider);
 
         // after creation reactor start listening event store and handle written events
         // noinspection unused
-        try (final Reactor reactor = new SampleReactor(store, offset, bus,
-                endLatch, startLatch, fancyLatch, sampleLatch)) {
+        try (final Reactor reactor = new SampleReactor(store, offset, endLatch, startLatch, fancyLatch, sampleLatch)) {
 
             // verify reactor launch listening
             assertTrue(startLatch.await(1, TimeUnit.SECONDS));
@@ -143,13 +140,13 @@ class ReactorTest {
 
         private volatile boolean terminated;
 
-        SampleReactor(@Nonnull JEventStore store, @Nonnull Offset offset, @Nonnull CommandBus bus,
+        SampleReactor(@Nonnull JEventStore store, @Nonnull Offset offset,
                       @Nonnull CountDownLatch endLatch,
                       @Nonnull CountDownLatch startLatch,
                       @Nonnull CountDownLatch fancyLatch,
                       @Nonnull CountDownLatch sampleLatch) {
 
-            super(store, offset, bus);
+            super(store, offset);
             this.startLatch = startLatch;
             this.endLatch = endLatch;
             this.fancyLatch = fancyLatch;
@@ -194,12 +191,12 @@ class ReactorTest {
         final JEventStore store = new JEventStore(new InMemoryStoreProvider());
 
         @SuppressWarnings("unused")
-        final Reactor reactor = new Reactor(store, new InMemoryOffset(), bus) {
+        final Reactor reactor = new Reactor(store, new InMemoryOffset()) {
 
             @ReactsOn
             @SuppressWarnings("unused")
             public void handle(Events.SampleEvent event) {
-                dispatch(command);
+                bus.dispatch(command);
             }
         };
 

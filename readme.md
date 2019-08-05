@@ -93,7 +93,7 @@ If `SnapshotProvider` specified, aggregate fetching is snapshotted.
 There is also basic support for projectors via:
 ```java
 public abstract class Projector extends Reactor { 
-    public Projector(@Nonnull JEventStore store, @Nonnull Offset offset, @Nonnull LockManager lockManager) {...}
+    public Projector(@Nonnull JEventStore store, @Nonnull Offset offset, @Nonnull Lock lock) {...}
 }
 ```
 
@@ -139,14 +139,14 @@ public class JesConfig {
     }
 
     @Bean
-    public LockManager lockManager() {
-        // you can use RedissonReentrantLockManager if you use Redisson
-        return new InMemoryReentrantLockManager();
+    public Lock lock() {
+        // you can use RedissonReentrantLock if you use Redisson
+        return new InMemoryReentrantLock();
     }
 
     @Bean
-    public Projector userProjector(JEventStore eventStore, Offset offset, LockManager lockManager) {
-        return new UserProjector(eventStore, offset, lockManager);
+    public Projector userProjector(JEventStore eventStore, Offset offset, Lock lock) {
+        return new UserProjector(eventStore, offset, lock);
     }
 }
 

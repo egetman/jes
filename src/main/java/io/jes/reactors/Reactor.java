@@ -5,20 +5,16 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
-import io.jes.Command;
 import io.jes.Event;
 import io.jes.JEventStore;
-import io.jes.bus.CommandBus;
 import io.jes.offset.Offset;
-import io.jes.util.DaemonThreadFactory;
 import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 import static io.jes.reactors.ReactorUtils.ensureReactsOnHasEventParameter;
@@ -26,32 +22,30 @@ import static io.jes.reactors.ReactorUtils.ensureReactsOnHasOneParameter;
 import static io.jes.reactors.ReactorUtils.ensureReactsOnHasVoidReturnType;
 import static io.jes.reactors.ReactorUtils.getAllReactsOnMethods;
 import static io.jes.reactors.ReactorUtils.invokeReactsOn;
-import static java.util.concurrent.Executors.newSingleThreadScheduledExecutor;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 @Slf4j
 abstract class Reactor implements AutoCloseable {
 
-    private static final long DELAY_MS = 100;
-
     final Offset offset;
+    final JEventStore store;
+    private final Trigger trigger;
+
     @Getter(value = AccessLevel.PROTECTED)
     private final String key = getClass().getName();
-
-    private final CommandBus bus;
-    private final JEventStore store;
-
-    private final ThreadFactory factory = new DaemonThreadFactory(getClass().getSimpleName());
-    private final ScheduledExecutorService executor = newSingleThreadScheduledExecutor(factory);
     private final Map<Class<? extends Event>, Consumer<? super Event>> reactors = new HashMap<>();
 
-    Reactor(@Nonnull JEventStore store, @Nonnull Offset offset, @Nonnull CommandBus bus) {
-        this.bus = Objects.requireNonNull(bus, "CommandBus must not be null");
-        this.offset = Objects.requireNonNull(offset, "Offset must not be null");
-        this.store = Objects.requireNonNull(store, "Event store must not be null");
+    protected Reactor(@Nonnull JEventStore store, @Nonnull Offset offset) {
+        this(store, offset, new PollingTrigger());
+    }
 
+    protected Reactor(@Nonnull JEventStore store, @Nonnull Offset offset, @Nonnull Trigger trigger) {
+        this.store = Objects.requireNonNull(store, "Event store must not be null");
+        this.offset = Objects.requireNonNull(offset, "Offset must not be null");
+
+        this.trigger = Objects.requireNonNull(trigger, "Trigger must not be null");
         this.reactors.putAll(readReactors());
-        executor.scheduleWithFixedDelay(this::tailStore, DELAY_MS, DELAY_MS, MILLISECONDS);
+
+        trigger.onChange(this::tailStore);
     }
 
     @Nonnull
@@ -81,8 +75,7 @@ abstract class Reactor implements AutoCloseable {
             eventStream.forEach(event -> {
                 final Consumer<? super Event> consumer = reactors.get(event.getClass());
                 if (consumer != null) {
-                    consumer.accept(event);
-                    log.trace("Handled {}", event.getClass().getSimpleName());
+                    accept(offset.value(getKey()), event, consumer);
                 }
                 offset.increment(getKey());
             });
@@ -92,13 +85,16 @@ abstract class Reactor implements AutoCloseable {
         }
     }
 
-    @Override
-    public void close() {
-        executor.shutdown();
-        log.debug("{} closed", getClass().getSimpleName());
+    @SuppressWarnings({"unused"})
+    protected void accept(long offset, @Nonnull Event event, @Nonnull Consumer<? super Event> consumer) {
+        consumer.accept(event);
+        log.trace("Handled {}", event.getClass().getSimpleName());
     }
 
-    protected void dispatch(@Nonnull Command command) {
-        bus.dispatch(Objects.requireNonNull(command));
+    @Override
+    @SneakyThrows
+    public void close() {
+        trigger.close();
+        log.debug("{} closed", getClass().getSimpleName());
     }
 }
