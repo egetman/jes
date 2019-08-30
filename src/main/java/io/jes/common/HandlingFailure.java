@@ -5,7 +5,6 @@ import java.util.Objects;
 import java.util.UUID;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.annotation.concurrent.Immutable;
 
 import io.jes.Event;
 import lombok.Getter;
@@ -13,7 +12,6 @@ import lombok.Getter;
 /**
  * Common system event that indicates saga handling failure.
  */
-@Immutable
 public class HandlingFailure implements Event {
 
     private final UUID uuid;
@@ -22,6 +20,8 @@ public class HandlingFailure implements Event {
     @Getter
     private final Event source;
     @Getter
+    private final String byWhom;
+    @Getter
     private final LocalDateTime when;
 
     /**
@@ -29,12 +29,13 @@ public class HandlingFailure implements Event {
      *
      * @param source is a failed to process event.
      * @param when   is a date-time of the incident.
+     * @param byWhom client (saga) identifier (key).
      * @param offset is an offset number of {@literal source} event.
      */
-    public HandlingFailure(@Nonnull Event source, @Nonnull LocalDateTime when, long offset) {
+    public HandlingFailure(@Nonnull Event source, @Nonnull LocalDateTime when, @Nonnull String byWhom, long offset) {
         this.when = Objects.requireNonNull(when, "Failure time must not be null");
         this.source = Objects.requireNonNull(source, "Failed source must not be null");
-
+        this.byWhom = Objects.requireNonNull(byWhom, "Client (saga) identifier must not be null");
         this.offset = offset;
         this.uuid = source.uuid();
     }

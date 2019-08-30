@@ -60,6 +60,22 @@ public class JdbcOffset implements Offset {
     }
 
     @Override
+    public void add(@Nonnull String key, long value) {
+        Objects.requireNonNull(key);
+        if (!addToOffsetByKey(key, value)) {
+            log.trace("Offset [" + key + "] not found. Creating new one...");
+            synchronized (this) {
+                if (!addToOffsetByKey(key, value)) {
+                    createOffset(key);
+                }
+            }
+            if (!addToOffsetByKey(key, value)) {
+                throw new BrokenStoreException("Can't add value to offset by key " + key);
+            }
+        }
+    }
+
+    @Override
     public void increment(@Nonnull String key) {
         Objects.requireNonNull(key);
         if (!incrementOffsetByKey(key)) {
@@ -99,6 +115,20 @@ public class JdbcOffset implements Offset {
              final PreparedStatement statement = connection.prepareStatement(query)) {
 
             statement.setString(1, key);
+            return statement.executeUpdate() == 1;
+        } catch (Exception e) {
+            throw new BrokenStoreException(e);
+        }
+    }
+
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
+    private boolean addToOffsetByKey(@Nonnull String key, long value) {
+        final String query = getPropety("jes.jdbc.statement.update-offset-and-add");
+        try (final Connection connection = createConnection(dataSource);
+             final PreparedStatement statement = connection.prepareStatement(query)) {
+
+            statement.setString(2, key);
+            statement.setLong(1, value);
             return statement.executeUpdate() == 1;
         } catch (Exception e) {
             throw new BrokenStoreException(e);

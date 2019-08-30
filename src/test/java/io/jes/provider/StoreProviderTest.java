@@ -122,7 +122,7 @@ class StoreProviderTest {
                 new SampleEvent("BAZ", uuid, 2)
         );
 
-        expected.forEach(provider::write);
+        assertDoesNotThrow(() -> expected.forEach(provider::write));
     }
 
     @ParameterizedTest
@@ -191,8 +191,11 @@ class StoreProviderTest {
                     latch.countDown();
                 });
             }
-            assertTrue(latch.await(5, TimeUnit.SECONDS));
-            assertEquals(workersCount * streamSize, provider.readFrom(0).count());
+            assertTrue(latch.await(5, TimeUnit.SECONDS), "Dataset wasn't written in 5 sec");
+
+            try (Stream<Event> stream = provider.readFrom(0)) {
+                assertEquals(workersCount * streamSize, stream.count(), "Written events count wrong");
+            }
         } finally {
             executor.shutdown();
         }

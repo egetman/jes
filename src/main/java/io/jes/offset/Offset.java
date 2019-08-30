@@ -10,6 +10,18 @@ import javax.annotation.Nonnull;
 public interface Offset {
 
     /**
+     * Add given value to current offset by specified {@code key}.
+     *
+     * @param key is an owner identifier, that manages this offset.
+     * @param value is a value to add.
+     */
+    default void add(@Nonnull String key, long value) {
+        for (long i = 0; i < value; i++) {
+            increment(key);
+        }
+    }
+
+    /**
      * @param key is an owner identifier, that manages this offset.
      * @return current offset value by specified {@code key}.
      */

@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
@@ -71,18 +72,25 @@ abstract class Reactor implements AutoCloseable {
 
     // think of better solution for tailing. mb CDC (https://github.com/debezium/debezium) for db backed stores?
     void tailStore() {
-        try (Stream<Event> eventStream = store.readFrom(offset.value(getKey()))) {
+        final LongAdder counter = new LongAdder();
+        final long offsetValue = offset.value(getKey());
+        log.trace("Current offset value: {} for {}", offsetValue, getKey());
+
+        try (Stream<Event> eventStream = store.readFrom(offsetValue)) {
             eventStream.forEach(event -> {
                 final Consumer<? super Event> consumer = reactors.get(event.getClass());
                 if (consumer != null) {
-                    accept(offset.value(getKey()), event, consumer);
+                    accept(offsetValue + counter.longValue(), event, consumer);
                 }
-                offset.increment(getKey());
+                counter.increment();
             });
         } catch (Exception e) {
             // we must not stop to try read store, if any exception happens
             log.error("Exception during event store tailing:", e);
         }
+        final long processedCount = counter.longValue();
+        offset.add(getKey(), processedCount);
+        log.trace("Offset increased for: {} by {}", processedCount, getKey());
     }
 
     @SuppressWarnings({"unused"})
@@ -95,6 +103,6 @@ abstract class Reactor implements AutoCloseable {
     @SneakyThrows
     public void close() {
         trigger.close();
-        log.debug("{} closed", getClass().getSimpleName());
+        log.debug("{} closed", getKey());
     }
 }

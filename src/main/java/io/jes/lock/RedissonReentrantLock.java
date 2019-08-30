@@ -18,7 +18,6 @@ public class RedissonReentrantLock extends AbstractReadWriteLock {
     private final RedissonClient redissonClient;
     private final Map<String, ReadWriteLock> locks = new ConcurrentHashMap<>();
 
-    @SuppressWarnings("WeakerAccess")
     public RedissonReentrantLock(@Nonnull RedissonClient redissonClient) {
         this.redissonClient = Objects.requireNonNull(redissonClient);
     }

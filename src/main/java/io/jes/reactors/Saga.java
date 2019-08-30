@@ -11,6 +11,7 @@ import io.jes.common.HandlingFailure;
 import io.jes.lock.Lock;
 import io.jes.offset.Offset;
 import io.jes.util.DaemonThreadFactory;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 import static java.lang.Runtime.getRuntime;
@@ -35,19 +36,25 @@ public class Saga extends Reactor {
         this.lock = Objects.requireNonNull(lock, "Lock must not be null");
     }
 
+    public Saga(@Nonnull JEventStore store, @Nonnull Offset offset, @Nonnull Lock lock, @Nonnull Trigger trigger) {
+        super(store, offset, trigger);
+        this.lock = Objects.requireNonNull(lock, "Lock must not be null");
+    }
+
     @Override
     void tailStore() {
         lock.doProtectedWrite(getKey(), super::tailStore);
     }
 
     @Override
+    @SneakyThrows
     protected void accept(long offset, @Nonnull Event event, @Nonnull Consumer<? super Event> consumer) {
         workers.execute(() -> {
             try {
                 super.accept(offset, event, consumer);
             } catch (Exception e) {
                 log.error("Failed to handle event {}", event, e);
-                store.write(new HandlingFailure(event, now(), offset));
+                store.write(new HandlingFailure(event, now(), getKey(), offset));
             }
         });
     }
