@@ -403,7 +403,8 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
                 /*
                 If we have gap there possible 2 situations:
                 1. some transactions are slow, and they just not commited yet
-                2. some transaction rollback and increment sequence in db. (in that case it's ok to skip it)
+                2. some transaction rollback and increment sequence in db or stream deletion was performed. (in that
+                case it's ok to skip it)
                 case 1 should be avoided with MAX_RETRIES read retries.
                  */
                 beforeLastOffset++;
