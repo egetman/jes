@@ -47,7 +47,7 @@ class ProjectorTest {
             private void foo(Event event) {}
 
             @Override
-            protected void onRecreate() {}
+            protected void cleanUp() {}
         });
     }
 
@@ -145,7 +145,7 @@ class ProjectorTest {
         }
 
         @Override
-        protected void onRecreate() {
+        protected void cleanUp() {
             projection = null;
             endStreamLatch = new CountDownLatch(1);
             started = new CountDownLatch(1);

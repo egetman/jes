@@ -35,7 +35,7 @@ class SnapshotProviderTest {
     private static final Collection<SnapshotProvider> SNAPSHOT_PROVIDERS = asList(
             new InMemorySnapshotProvider(),
             new JdbcSnapshotProvider<>(newPostgresDataSource(), String.class),
-            new RedissonSnapshotProvider(newRedissonClient())
+            new RedisSnapshotProvider(newRedissonClient())
     );
 
     private static Collection<SnapshotProvider> createSnapshotProviders() {

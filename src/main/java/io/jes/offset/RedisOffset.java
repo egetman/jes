@@ -8,14 +8,15 @@ import javax.annotation.Nonnull;
 import org.redisson.api.RLongAdder;
 import org.redisson.api.RedissonClient;
 
-public class RedissonOffset implements Offset {
+public class RedisOffset implements Offset, AutoCloseable {
 
     private static final String MISSING_KEY = "Key must not be null";
 
     private final RedissonClient redissonClient;
     private final Map<String, RLongAdder> offsets = new ConcurrentHashMap<>();
 
-    public RedissonOffset(@Nonnull RedissonClient redissonClient) {
+    @SuppressWarnings("WeakerAccess")
+    public RedisOffset(@Nonnull RedissonClient redissonClient) {
         this.redissonClient = Objects.requireNonNull(redissonClient);
     }
 
@@ -39,4 +40,8 @@ public class RedissonOffset implements Offset {
         return offsets.computeIfAbsent(Objects.requireNonNull(key, MISSING_KEY), redissonClient::getLongAdder);
     }
 
+    @Override
+    public void close() {
+        redissonClient.shutdown();
+    }
 }

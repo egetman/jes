@@ -24,7 +24,7 @@ public class InMemoryStoreProvider implements StoreProvider {
 
     @Override
     public Stream<Event> readFrom(long offset) {
-        return events.subList((int) offset, events.size()).stream();
+        return events.stream().skip(offset);
     }
 
     // search for O(n)

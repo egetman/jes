@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # start Postgres on 54320 port. --rm for remove container after stop
 echo Starting Postgres...
-docker run --rm --name postgres-store -e POSTGRES_PASSWORD=postgres -d -p 54320:5432 postgres:9.6
+docker run --rm --name postgres-store -e POSTGRES_PASSWORD=postgres -d -p 54320:5432 postgres:11.4
 echo Postgres started on 54320 port, user/password postgres/postgres
 
 # build apps

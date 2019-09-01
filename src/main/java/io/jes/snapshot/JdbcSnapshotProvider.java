@@ -71,7 +71,7 @@ public class JdbcSnapshotProvider<T> implements SnapshotProvider, AutoCloseable 
     @SuppressWarnings("squid:S2077")
     public <A extends Aggregate> A snapshot(@Nonnull A aggregate) {
         // check if we already have a snapshot for that aggregate
-        final boolean snapshotExists = findAggregateByUuid(aggregate.uuid()) != null;
+        final boolean snapshotExists = existsAggregateByUuid(aggregate.uuid());
         final String sql = snapshotExists ? getPropety("jes.jdbc.statement.update-aggregate")
                 : getPropety("jes.jdbc.statement.insert-aggregate");
 
@@ -112,7 +112,22 @@ public class JdbcSnapshotProvider<T> implements SnapshotProvider, AutoCloseable 
                 if (!set.next()) {
                     return null;
                 }
-                return serializer.deserialize(unwrapJdbcType(set.getObject("data")));
+                return serializer.deserialize(unwrapJdbcType(set.getObject(1)));
+            }
+        });
+    }
+
+    @SneakyThrows
+    private boolean existsAggregateByUuid(@Nonnull UUID uuid) {
+        return execute(connection -> {
+            final String query = getPropety("jes.jdbc.statement.exists-aggregate");
+            try (PreparedStatement statement = connection.prepareStatement(query)) {
+                statement.setObject(1, Objects.requireNonNull(uuid, "Aggregate uuid must not be null"));
+                final ResultSet set = statement.executeQuery();
+                if (!set.next()) {
+                    return false;
+                }
+                return set.getBoolean(1);
             }
         });
     }

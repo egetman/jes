@@ -5,6 +5,11 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
@@ -18,11 +23,14 @@ import io.jes.ex.VersionMismatchException;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
+import static io.jes.internal.Events.FancyEvent;
 import static io.jes.internal.Events.SampleEvent;
 import static io.jes.internal.FancyStuff.newEntityManagerFactory;
 import static io.jes.internal.FancyStuff.newH2DataSource;
 import static io.jes.internal.FancyStuff.newPostgresDataSource;
+import static java.lang.Runtime.getRuntime;
 import static java.util.Arrays.asList;
+import static java.util.UUID.randomUUID;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -30,6 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Slf4j
 class StoreProviderTest {
@@ -68,7 +77,7 @@ class StoreProviderTest {
     @ParameterizedTest
     @MethodSource("createProviders")
     void shouldReadEventStreamByUuid(@Nonnull StoreProvider provider) {
-        final UUID uuid = UUID.randomUUID();
+        final UUID uuid = randomUUID();
         final List<Event> expected = asList(
                 new SampleEvent("FOO", uuid),
                 new SampleEvent("BAR", uuid),
@@ -87,7 +96,7 @@ class StoreProviderTest {
     @ParameterizedTest
     @MethodSource("createProviders")
     void shouldReadBatchEventWrites(@Nonnull StoreProvider provider) {
-        final UUID uuid = UUID.randomUUID();
+        final UUID uuid = randomUUID();
         final List<Event> expected = asList(
                 new SampleEvent("FOO", uuid),
                 new SampleEvent("BAR", uuid),
@@ -106,20 +115,20 @@ class StoreProviderTest {
     @ParameterizedTest
     @MethodSource("createProviders")
     void shouldSuccessfullyWriteVersionedEventStream(@Nonnull StoreProvider provider) {
-        final UUID uuid = UUID.randomUUID();
+        final UUID uuid = randomUUID();
         final List<Event> expected = asList(
                 new SampleEvent("FOO", uuid, 0),
                 new SampleEvent("BAR", uuid, 1),
                 new SampleEvent("BAZ", uuid, 2)
         );
 
-        expected.forEach(provider::write);
+        assertDoesNotThrow(() -> expected.forEach(provider::write));
     }
 
     @ParameterizedTest
     @MethodSource("createProviders")
     void shouldThrowVersionMismatchException(@Nonnull StoreProvider provider) {
-        final UUID uuid = UUID.randomUUID();
+        final UUID uuid = randomUUID();
         final List<Event> expected = asList(
                 new SampleEvent("FOO", uuid, 0),
                 new SampleEvent("BAR", uuid, 1),
@@ -133,8 +142,8 @@ class StoreProviderTest {
     @ParameterizedTest
     @MethodSource("createProviders")
     void shouldDeleteFullStreamByUuid(@Nonnull StoreProvider provider) {
-        final UUID uuid = UUID.randomUUID();
-        final UUID anotherUuid = UUID.randomUUID();
+        final UUID uuid = randomUUID();
+        final UUID anotherUuid = randomUUID();
         final List<Event> events = asList(
                 new SampleEvent("FOO", uuid),
                 new SampleEvent("BAR", uuid),
@@ -156,14 +165,45 @@ class StoreProviderTest {
     @ParameterizedTest
     @MethodSource("createProviders")
     void deletingNonExistingEventStreamByUuidShouldNotFail(@Nonnull StoreProvider provider) {
-        final SampleEvent expected = new SampleEvent("FOO", UUID.randomUUID());
+        final SampleEvent expected = new SampleEvent("FOO", randomUUID());
 
         provider.write(expected);
-        provider.deleteBy(UUID.randomUUID());
+        provider.deleteBy(randomUUID());
 
         final Collection<Event> actual = provider.readBy(expected.uuid());
         assertEquals(1, actual.size());
         assertEquals(expected, actual.iterator().next());
+    }
+
+    @SneakyThrows
+    @ParameterizedTest
+    @MethodSource("createProviders")
+    void providersShouldWriteAllEventsInConcurrentEnvironment(@Nonnull StoreProvider provider) {
+        final int workersCount = getRuntime().availableProcessors();
+        final int streamSize = 100;
+        log.info("Prepare to verify dataset with size {}", workersCount * streamSize);
+        final ExecutorService executor = Executors.newFixedThreadPool(workersCount);
+        try {
+            final CountDownLatch latch = new CountDownLatch(workersCount);
+            for (int i = 0; i < workersCount; i++) {
+                executor.execute(() -> {
+                    newParallelEventStream(streamSize).forEach(provider::write);
+                    latch.countDown();
+                });
+            }
+            assertTrue(latch.await(5, TimeUnit.SECONDS), "Dataset wasn't written in 5 sec");
+
+            try (Stream<Event> stream = provider.readFrom(0)) {
+                assertEquals(workersCount * streamSize, stream.count(), "Written events count wrong");
+            }
+        } finally {
+            executor.shutdown();
+        }
+    }
+
+    @SuppressWarnings("SameParameterValue")
+    private Stream<? extends Event> newParallelEventStream(int count) {
+        return IntStream.range(0, count).mapToObj(val -> new FancyEvent("name " + val, randomUUID())).parallel();
     }
 
     @AfterEach
@@ -181,7 +221,9 @@ class StoreProviderTest {
     static void closeResources() {
         for (StoreProvider provider : PROVIDERS) {
             if (provider instanceof AutoCloseable) {
-                ((AutoCloseable) provider).close();
+                try {
+                    ((AutoCloseable) provider).close();
+                } catch (Exception ignored) {}
             }
         }
     }

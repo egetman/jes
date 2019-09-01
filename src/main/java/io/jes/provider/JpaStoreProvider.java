@@ -140,7 +140,7 @@ public class JpaStoreProvider<T> implements StoreProvider, SnapshotReader, AutoC
 
     @Override
     public void deleteBy(@Nonnull UUID uuid) {
-        log.warn("Prepare to remove {} event stream", uuid);
+        log.trace("Prepare to remove {} event stream", uuid);
 
         final int affectedEvents = doInTransaction(entityManager -> {
             final Query query = entityManager.createQuery(format(DELETE_BY_UUID, entryType.getName()));
@@ -148,7 +148,7 @@ public class JpaStoreProvider<T> implements StoreProvider, SnapshotReader, AutoC
 
             return query.executeUpdate();
         });
-        log.warn("{} events successfully removed", affectedEvents);
+        log.trace("{} events successfully removed", affectedEvents);
     }
 
     private <R> R doInTransaction(@Nonnull Function<EntityManager, R> action) {

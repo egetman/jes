@@ -12,17 +12,20 @@ import org.redisson.codec.JsonJacksonCodec;
 
 import io.jes.Aggregate;
 
-public class RedissonSnapshotProvider implements SnapshotProvider {
+public class RedisSnapshotProvider implements SnapshotProvider, AutoCloseable {
 
     private static final int MAX_CACHE_SIZE = 5000;
     private final ConcurrentMap<UUID, Aggregate> redisCache;
+    private final RedissonClient redissonClient;
 
-    public RedissonSnapshotProvider(@Nonnull RedissonClient redissonClient) {
+    @SuppressWarnings("WeakerAccess")
+    public RedisSnapshotProvider(@Nonnull RedissonClient redissonClient) {
         this(redissonClient, new JsonJacksonCodec(), MAX_CACHE_SIZE);
     }
 
-    public RedissonSnapshotProvider(@Nonnull RedissonClient redissonClient, @Nonnull Codec codec, int cacheSize) {
-        Objects.requireNonNull(redissonClient, "Redisson client must not be null");
+    @SuppressWarnings("WeakerAccess")
+    public RedisSnapshotProvider(@Nonnull RedissonClient redissonClient, @Nonnull Codec codec, int cacheSize) {
+        this.redissonClient = Objects.requireNonNull(redissonClient, "Redisson client must not be null");
         final LocalCachedMapOptions<UUID, Aggregate> options = LocalCachedMapOptions.<UUID, Aggregate>defaults()
                 .cacheSize(cacheSize)
                 .evictionPolicy(LocalCachedMapOptions.EvictionPolicy.LRU)
@@ -53,5 +56,10 @@ public class RedissonSnapshotProvider implements SnapshotProvider {
     public void reset(@Nonnull UUID uuid) {
         Objects.requireNonNull(uuid, "Uuid mut not be null");
         redisCache.remove(uuid);
+    }
+
+    @Override
+    public void close() {
+        redissonClient.shutdown();
     }
 }

@@ -9,6 +9,7 @@ import java.util.concurrent.TimeUnit;
 import javax.annotation.Nonnull;
 import javax.sql.DataSource;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -29,12 +30,12 @@ class LockTest {
 
     private static final Collection<Lock> REENTRANT_LOCK_MANAGERS = asList(
             new InMemoryReentrantLock(),
-            new RedissonReentrantLock(newRedissonClient())
+            new RedisReentrantLock(newRedissonClient())
     );
 
     private static final Collection<Lock> ALL_LOCKS = asList(
             new InMemoryReentrantLock(),
-            new RedissonReentrantLock(newRedissonClient()),
+            new RedisReentrantLock(newRedissonClient()),
             new JdbcLock(newPostgresDataSource())
     );
 
@@ -111,6 +112,23 @@ class LockTest {
 
         assertFalse(latch.await(2, TimeUnit.SECONDS));
         threadPool.shutdown();
+    }
+
+    @AfterAll
+    @SneakyThrows
+    static void closeResources() {
+        closeAll(ALL_LOCKS);
+        closeAll(REENTRANT_LOCK_MANAGERS);
+    }
+
+    private static void closeAll(Collection<Lock> locks) {
+        for (Lock lock : locks) {
+            if (lock instanceof AutoCloseable) {
+                try {
+                    ((AutoCloseable) lock).close();
+                } catch (Exception ignored) {}
+            }
+        }
     }
 
 }
