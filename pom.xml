@@ -29,6 +29,9 @@
         <junit-jupiter.version>5.5.1</junit-jupiter.version>
         <testcontainers.version>1.11.3</testcontainers.version>
 
+        <!-- for performance experiments dependencies -->
+        <jmh.version>1.21</jmh.version>
+
         <!-- plugin versions -->
         <maven-jar-plugin.version>3.1.0</maven-jar-plugin.version>
         <maven-source-plugin.version>3.0.1</maven-source-plugin.version>
@@ -228,6 +231,19 @@
             <scope>test</scope>
         </dependency>
 
+        <dependency>
+            <groupId>org.openjdk.jmh</groupId>
+            <artifactId>jmh-core</artifactId>
+            <version>${jmh.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.openjdk.jmh</groupId>
+            <artifactId>jmh-generator-annprocess</artifactId>
+            <version>${jmh.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
