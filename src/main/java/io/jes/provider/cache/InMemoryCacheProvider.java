@@ -2,6 +2,7 @@ package io.jes.provider.cache;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -48,7 +49,7 @@ public class InMemoryCacheProvider implements CacheProvider {
         }
         try {
             readWriteLock.writeLock().lock();
-            cache.put(offset, event);
+            cache.put(offset, Objects.requireNonNull(event, "Event must not be null"));
         } finally {
             readWriteLock.writeLock().unlock();
         }

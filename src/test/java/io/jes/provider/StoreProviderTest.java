@@ -221,7 +221,9 @@ class StoreProviderTest {
     static void closeResources() {
         for (StoreProvider provider : PROVIDERS) {
             if (provider instanceof AutoCloseable) {
-                ((AutoCloseable) provider).close();
+                try {
+                    ((AutoCloseable) provider).close();
+                } catch (Exception ignored) {}
             }
         }
     }

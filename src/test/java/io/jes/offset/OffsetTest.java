@@ -5,8 +5,11 @@ import java.util.List;
 import java.util.UUID;
 import javax.annotation.Nonnull;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+
+import lombok.SneakyThrows;
 
 import static io.jes.internal.FancyStuff.newPostgresDataSource;
 import static io.jes.internal.FancyStuff.newRedissonClient;
@@ -18,7 +21,7 @@ class OffsetTest {
 
     private static final List<Offset> OFFSETS = asList(
             new InMemoryOffset(),
-            new RedissonOffset(newRedissonClient()),
+            new RedisOffset(newRedissonClient()),
             new JdbcOffset(newPostgresDataSource())
     );
 
@@ -66,4 +69,17 @@ class OffsetTest {
         assertEquals(0, offset.value(first));
         assertEquals(1, offset.value(second));
     }
+
+    @AfterAll
+    @SneakyThrows
+    static void closeResources() {
+        for (Offset offset : OFFSETS) {
+            if (offset instanceof AutoCloseable) {
+                try {
+                    ((AutoCloseable) offset).close();
+                } catch (Exception ignored) {}
+            }
+        }
+    }
+
 }

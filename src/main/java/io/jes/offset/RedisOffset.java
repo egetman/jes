@@ -8,7 +8,7 @@ import javax.annotation.Nonnull;
 import org.redisson.api.RLongAdder;
 import org.redisson.api.RedissonClient;
 
-public class RedisOffset implements Offset {
+public class RedisOffset implements Offset, AutoCloseable {
 
     private static final String MISSING_KEY = "Key must not be null";
 
@@ -40,4 +40,8 @@ public class RedisOffset implements Offset {
         return offsets.computeIfAbsent(Objects.requireNonNull(key, MISSING_KEY), redissonClient::getLongAdder);
     }
 
+    @Override
+    public void close() {
+        redissonClient.shutdown();
+    }
 }

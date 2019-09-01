@@ -12,10 +12,11 @@ import org.redisson.codec.JsonJacksonCodec;
 
 import io.jes.Event;
 
-public class RedisCacheProvider implements CacheProvider {
+public class RedisCacheProvider implements CacheProvider, AutoCloseable {
 
     private static final int DEFAULT_CACHE_SIZE = 5000;
     private final ConcurrentMap<Long, Event> cache;
+    private final RedissonClient redissonClient;
 
     /**
      * Constructor for {@link RedisCacheProvider}.
@@ -23,6 +24,7 @@ public class RedisCacheProvider implements CacheProvider {
      * @param redissonClient is a reddison client used to build cache provider instance.
      * @throws NullPointerException if {@literal redissonClient} is null.
      */
+    @SuppressWarnings("WeakerAccess")
     public RedisCacheProvider(@Nonnull RedissonClient redissonClient) {
         this(redissonClient, new JsonJacksonCodec(), DEFAULT_CACHE_SIZE);
     }
@@ -36,12 +38,11 @@ public class RedisCacheProvider implements CacheProvider {
      * @throws NullPointerException     if {@literal redissonClient} or {@literal codec} is null.
      * @throws IllegalArgumentException if cache size is 0 or below.
      */
-    @SuppressWarnings("WeakerAccess")
     public RedisCacheProvider(@Nonnull RedissonClient redissonClient, @Nonnull Codec codec, int cacheSize) {
         if (cacheSize <= 0) {
             throw new IllegalArgumentException("Cache size must be greater than 0: " + cacheSize);
         }
-        Objects.requireNonNull(redissonClient, "RedissonClient must not be null");
+        this.redissonClient = Objects.requireNonNull(redissonClient, "RedissonClient must not be null");
 
         final LocalCachedMapOptions<Long, Event> options = LocalCachedMapOptions.<Long, Event>defaults()
                 .cacheSize(cacheSize)
@@ -72,5 +73,10 @@ public class RedisCacheProvider implements CacheProvider {
     @Override
     public void invalidate() {
         cache.clear();
+    }
+
+    @Override
+    public void close() {
+        redissonClient.shutdown();
     }
 }
