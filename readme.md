@@ -1,5 +1,5 @@
 ![apache licanse](https://img.shields.io/hexpm/l/plug.svg)
-![version](https://img.shields.io/badge/version-0.0.1-green.svg)
+![version](https://img.shields.io/badge/version-0.1.1-green.svg)
 [![build status](https://travis-ci.org/egetman/jes.svg?branch=master)](https://travis-ci.org/egetman/jes)
 ![code coverage](https://codecov.io/gh/egetman/jes/branch/master/graph/badge.svg)
 # Jes 
@@ -88,7 +88,7 @@ public class AggregateStore {
 If `SnapshotProvider` specified, aggregate fetching is snapshotted.
 
 `SnapshotProvider` can be any of `NoopSnapshotProvider`, `InMemorySnapshotProvider`, `JdbcSnapshotProvider`, 
-`RedissonSnapshotProvider`.
+`RedisSnapshotProvider`.
 
 There is also basic support for projectors via:
 ```java
@@ -134,13 +134,13 @@ public class JesConfig {
 
     @Bean
     public Offset offset() {
-        // you can use RedissonOffset if you use Redisson
+        // you can use RedisOffset if you use Redis
         return new InMemoryOffset();
     }
 
     @Bean
     public Lock lock() {
-        // you can use RedissonReentrantLock if you use Redisson
+        // you can use RedisReentrantLock if you use Redis
         return new InMemoryReentrantLock();
     }
 
