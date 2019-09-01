@@ -19,6 +19,7 @@ public class InMemoryCacheProvider implements CacheProvider {
     /**
      * Constructor for {@link InMemoryCacheProvider}.
      *
+     * @param cacheSize is the number of entries to keep.
      * @throws IllegalArgumentException if {@literal cacheSize} is less than or equal 0.
      */
     public InMemoryCacheProvider(int cacheSize) {
@@ -80,8 +81,8 @@ public class InMemoryCacheProvider implements CacheProvider {
         }
 
         @Override
-        public boolean equals(Object o) {
-            return super.equals(o) && (o instanceof LocalCache && ((LocalCache) o).cacheSize == cacheSize);
+        public boolean equals(Object other) {
+            return super.equals(other) && (other instanceof LocalCache && ((LocalCache) other).cacheSize == cacheSize);
         }
 
         @Override

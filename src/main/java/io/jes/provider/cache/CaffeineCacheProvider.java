@@ -21,6 +21,7 @@ public class CaffeineCacheProvider implements CacheProvider {
     /**
      * Constructor for {@link CaffeineCacheProvider}.
      *
+     * @param cacheSize is the number of entries to keep.
      * @throws IllegalArgumentException if {@literal cacheSize} is less than or equal 0.
      */
     public CaffeineCacheProvider(int cacheSize) {
