@@ -18,6 +18,11 @@ public class CaffeineCacheProvider implements CacheProvider {
 
     private final Cache<Long, Event> cache;
 
+    /**
+     * Constructor for {@link CaffeineCacheProvider}.
+     *
+     * @throws IllegalArgumentException if {@literal cacheSize} is less than or equal 0.
+     */
     public CaffeineCacheProvider(int cacheSize) {
         if (cacheSize <= 0) {
             throw new IllegalArgumentException("Cache size must be greater than 0: " + cacheSize);
