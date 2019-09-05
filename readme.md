@@ -1,6 +1,6 @@
 ![apache licanse](https://img.shields.io/hexpm/l/plug.svg)
 ![version](https://img.shields.io/badge/version-0.1.1-green.svg)
-[![actions status](https://github.com/egetman/jes/workflows/jes-build/badge.svg)](https://github.com/egetman/jes/actions)
+[![build status](https://travis-ci.org/egetman/jes.svg?branch=master)](https://travis-ci.org/egetman/jes)
 ![code coverage](https://codecov.io/gh/egetman/jes/branch/master/graph/badge.svg)
 # Jes 
 ###### Strongly inspired by:
