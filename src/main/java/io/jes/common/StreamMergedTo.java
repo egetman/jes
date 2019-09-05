@@ -1,5 +1,6 @@
 package io.jes.common;
 
+import java.beans.ConstructorProperties;
 import java.util.Objects;
 import java.util.UUID;
 import javax.annotation.Nonnull;
@@ -20,6 +21,7 @@ public class StreamMergedTo implements Event {
     @Getter
     private final UUID mergedTo;
 
+    @ConstructorProperties({"uuid", "mergedTo"})
     public StreamMergedTo(@Nonnull UUID uuid, @Nonnull UUID mergedTo) {
         this.uuid = Objects.requireNonNull(uuid, "Source uuid must not be null");
         this.mergedTo = Objects.requireNonNull(mergedTo, "Target uuid must not be null");

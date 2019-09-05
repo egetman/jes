@@ -1,5 +1,6 @@
 package io.jes.common;
 
+import java.beans.ConstructorProperties;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -20,6 +21,7 @@ public final class StreamSplittedTo implements Event {
     private final UUID uuid;
     private final Set<UUID> splittedTo;
 
+    @ConstructorProperties({"uuid", "splittedTo"})
     public StreamSplittedTo(@Nonnull UUID uuid, @Nonnull Set<UUID> splittedTo) {
         this.uuid = Objects.requireNonNull(uuid, "Source uuid must not be null");
         this.splittedTo = new HashSet<>(Objects.requireNonNull(splittedTo, "Target uuids must not be null"));

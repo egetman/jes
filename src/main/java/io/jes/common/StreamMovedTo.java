@@ -1,5 +1,6 @@
 package io.jes.common;
 
+import java.beans.ConstructorProperties;
 import java.util.Objects;
 import java.util.UUID;
 import javax.annotation.Nonnull;
@@ -20,6 +21,7 @@ public final class StreamMovedTo implements Event {
     @Getter
     private final UUID movedTo;
 
+    @ConstructorProperties({"uuid", "movedTo"})
     public StreamMovedTo(@Nonnull UUID uuid, @Nonnull UUID movedTo) {
         this.uuid = Objects.requireNonNull(uuid, "Source uuid must not be null");
         this.movedTo = Objects.requireNonNull(movedTo, "Target uuid must not be null");

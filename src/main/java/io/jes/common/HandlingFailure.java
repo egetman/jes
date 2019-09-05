@@ -1,5 +1,6 @@
 package io.jes.common;
 
+import java.beans.ConstructorProperties;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.UUID;
@@ -7,11 +8,14 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import io.jes.Event;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 /**
  * Common system event that indicates saga handling failure.
  */
+@NoArgsConstructor(force = true, access = AccessLevel.PACKAGE)
 public class HandlingFailure implements Event {
 
     private final UUID uuid;
@@ -32,6 +36,7 @@ public class HandlingFailure implements Event {
      * @param byWhom client (saga) identifier (key).
      * @param offset is an offset number of {@literal source} event.
      */
+    @ConstructorProperties({"source", "when", "byWhom", "offset"})
     public HandlingFailure(@Nonnull Event source, @Nonnull LocalDateTime when, @Nonnull String byWhom, long offset) {
         this.when = Objects.requireNonNull(when, "Failure time must not be null");
         this.source = Objects.requireNonNull(source, "Failed source must not be null");

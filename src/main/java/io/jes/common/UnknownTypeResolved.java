@@ -1,5 +1,6 @@
 package io.jes.common;
 
+import java.beans.ConstructorProperties;
 import java.util.Objects;
 import javax.annotation.Nonnull;
 
@@ -12,6 +13,7 @@ public class UnknownTypeResolved implements Event {
     private final String type;
     private final Object raw;
 
+    @ConstructorProperties({"type", "raw"})
     public UnknownTypeResolved(@Nonnull String type, @Nonnull Object raw) {
         this.type = Objects.requireNonNull(type);
         this.raw = Objects.requireNonNull(raw);

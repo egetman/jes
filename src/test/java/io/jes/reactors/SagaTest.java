@@ -28,9 +28,7 @@ import io.jes.lock.Lock;
 import io.jes.offset.InMemoryOffset;
 import io.jes.offset.JdbcOffset;
 import io.jes.offset.Offset;
-import io.jes.provider.CachingStoreProvider;
 import io.jes.provider.JdbcStoreProvider;
-import io.jes.provider.cache.InMemoryCacheProvider;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
@@ -79,7 +77,7 @@ class SagaTest {
     void sagaShouldNotLoseAnyEventsOnConcurrentReadWrite() {
         final JdbcStoreProvider<String> provider = new JdbcStoreProvider<>(newPostgresDataSource(), String.class);
 
-        final JEventStore store = new JEventStore(new CachingStoreProvider(provider, new InMemoryCacheProvider(5000)));
+        final JEventStore store = new JEventStore(provider);
         final Lock lock = new InMemoryReentrantLock();
         final Offset offset = new InMemoryOffset();
 
