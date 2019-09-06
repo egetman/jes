@@ -1,7 +1,9 @@
-![apache licanse](https://img.shields.io/hexpm/l/plug.svg)
+![apache license](https://img.shields.io/hexpm/l/plug.svg)
 ![version](https://img.shields.io/badge/version-0.1.1-green.svg)
 [![build status](https://travis-ci.org/egetman/jes.svg?branch=master)](https://travis-ci.org/egetman/jes)
 ![code coverage](https://codecov.io/gh/egetman/jes/branch/master/graph/badge.svg)
+[![actions status](https://github.com/egetman/jes/workflows/Jes%20Build/badge.svg)](https://github.com/egetman/jes/actions)
+
 # Jes 
 ###### Strongly inspired by:
 * [Versioning in an Event Sourced System](https://leanpub.com/esversioning) by Greg Young
