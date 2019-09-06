@@ -1,4 +1,4 @@
-name: Jes Build
+name: Jes build
 # Trigger the workflow on push or pull request
 on: [push, pull_request]
 jobs:
