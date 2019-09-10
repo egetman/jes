@@ -31,7 +31,7 @@ $ mvn clean install
 Then you can use library as:
 ```xml
 <dependency>
-    <groupId>io.jes</groupId>
+    <groupId>store.jesframework</groupId>
     <artifactId>jes-core</artifactId>
     <version>${jes.version}</version>
 </dependency>

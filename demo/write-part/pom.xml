@@ -8,8 +8,9 @@
         <version>2.1.6.RELEASE</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
-    <groupId>io.jes.demo</groupId>
-    <artifactId>write-part</artifactId>
+
+    <groupId>store.jesframework</groupId>
+    <artifactId>demo1-write-part</artifactId>
     <version>1.0</version>
     <name>write part</name>
 
@@ -40,7 +41,7 @@
         </dependency>
 
         <dependency>
-            <groupId>io.jes</groupId>
+            <groupId>store.jesframework</groupId>
             <artifactId>jes-core</artifactId>
             <version>0.1.1</version>
         </dependency>

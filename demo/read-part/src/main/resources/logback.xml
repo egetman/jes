@@ -7,7 +7,7 @@
         </encoder>
     </appender>
 
-    <logger name="io.jes" level="all" additivity="false">
+    <logger name="store.jesframework" level="all" additivity="false">
         <appender-ref ref="stdout"/>
     </logger>
 
