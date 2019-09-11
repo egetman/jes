@@ -11,7 +11,8 @@
 
     <name>Jes</name>
     <description>Jes is a library for those who wanted to try Event Sourcing but did not
-        know how to approach it.</description>
+        know how to approach it.
+    </description>
     <url>https://jesframework.store</url>
 
     <licenses>
@@ -33,6 +34,13 @@
         <connection>scm:git:git://github.com/egetman/jes.git</connection>
         <url>https://github.com/egetman/jes/tree/master</url>
     </scm>
+
+    <distributionManagement>
+        <snapshotRepository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+    </distributionManagement>
 
     <properties>
         <gson.version>2.8.5</gson.version>
@@ -59,6 +67,7 @@
         <jmh.version>1.21</jmh.version>
 
         <!-- plugin versions -->
+        <maven-gpg-plugin.version>1.6</maven-gpg-plugin.version>
         <maven-jar-plugin.version>3.1.0</maven-jar-plugin.version>
         <maven-source-plugin.version>3.0.1</maven-source-plugin.version>
         <jacoco-maven-plugin.version>0.8.3</jacoco-maven-plugin.version>
@@ -66,6 +75,7 @@
         <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
         <maven-checkstyle-plugin.version>2.17</maven-checkstyle-plugin.version>
         <maven-surefire-plugin.version>3.0.0-M3</maven-surefire-plugin.version>
+        <nexus-staging-maven-plugin.version>1.6.7</nexus-staging-maven-plugin.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -385,6 +395,43 @@
                 </executions>
             </plugin>
 
+            <!--
+            Howto: If your version is a release version (does not end in -SNAPSHOT) and with this setup in place,
+                    you can run a deployment to OSSRH and an automated release to the Central Repository with the
+                    usual: mvn clean deploy
+
+                    With the property autoReleaseAfterClose set to false you can manually inspect the staging
+                    repository in the Nexus Repository Manager and trigger a release of the staging repository later
+                    with: mvn nexus-staging:release
+
+                    If you find something went wrong you can drop the staging repository with: mvn nexus-staging:drop
+            -->
+            <plugin>
+                <groupId>org.sonatype.plugins</groupId>
+                <artifactId>nexus-staging-maven-plugin</artifactId>
+                <version>${nexus-staging-maven-plugin.version}</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <serverId>ossrh</serverId>
+                    <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                    <autoReleaseAfterClose>false</autoReleaseAfterClose>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <version>${maven-gpg-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>sign-artifacts</id>
+                        <phase>deploy</phase>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
