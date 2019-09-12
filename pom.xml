@@ -40,6 +40,10 @@
             <id>ossrh</id>
             <url>https://oss.sonatype.org/content/repositories/snapshots</url>
         </snapshotRepository>
+        <repository>
+            <id>release</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
     </distributionManagement>
 
     <properties>
@@ -75,7 +79,7 @@
         <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
         <maven-checkstyle-plugin.version>2.17</maven-checkstyle-plugin.version>
         <maven-surefire-plugin.version>3.0.0-M3</maven-surefire-plugin.version>
-        <nexus-staging-maven-plugin.version>1.6.7</nexus-staging-maven-plugin.version>
+        <nexus-staging-maven-plugin.version>1.6.8</nexus-staging-maven-plugin.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -298,13 +302,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
                 <version>${maven-jar-plugin.version}</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>test-jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
 
             <plugin>
@@ -315,8 +312,7 @@
                     <execution>
                         <id>attach-sources</id>
                         <goals>
-                            <goal>jar</goal>
-                            <goal>test-jar</goal>
+                            <goal>jar-no-fork</goal>
                         </goals>
                         <phase>package</phase>
                     </execution>
@@ -402,7 +398,7 @@
                 <executions>
                     <execution>
                         <id>sign-artifacts</id>
-                        <phase>site</phase>
+                        <phase>deploy</phase>
                         <goals>
                             <goal>sign</goal>
                         </goals>
@@ -426,6 +422,12 @@
                 <artifactId>nexus-staging-maven-plugin</artifactId>
                 <version>${nexus-staging-maven-plugin.version}</version>
                 <extensions>true</extensions>
+                <executions>
+                    <execution>
+                        <id>oss-deploy</id>
+                        <phase>deploy</phase>
+                    </execution>
+                </executions>
                 <configuration>
                     <serverId>ossrh</serverId>
                     <nexusUrl>https://oss.sonatype.org/</nexusUrl>

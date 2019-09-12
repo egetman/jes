@@ -2,7 +2,7 @@
 ![version](https://img.shields.io/badge/version-0.1.1-green.svg)
 ![code coverage](https://codecov.io/gh/egetman/jes/branch/master/graph/badge.svg)
 ![apache license](https://img.shields.io/hexpm/l/plug.svg)
-
+[![maven central](https://img.shields.io/maven-central/v/store.jesframework/jes-core.svg?label=maven%20central)](https://search.maven.org/search?q=g:%22store.jesframework%22%20AND%20a:%22jes-core%22)
 # Jes 
 ###### Strongly inspired by:
 * [Versioning in an Event Sourced System](https://leanpub.com/esversioning) by Greg Young
@@ -18,17 +18,8 @@ Jes provides several abstractions, that helps organize workflow of your applicat
  
 ---
 ## Getting started
-Get the code by cloning the Git repository:
-```sh
-$ git clone https://github.com/egetman/jes.git
-$ cd jes
-```
-Then build the code using Maven:
-```
-$ mvn clean install
-```
 
-Then you can use library as:
+Simply add the dependency to your project:
 ```xml
 <dependency>
     <groupId>store.jesframework</groupId>
