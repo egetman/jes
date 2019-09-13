@@ -7,6 +7,8 @@ import org.junit.jupiter.api.Test;
 
 import lombok.SneakyThrows;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static store.jesframework.provider.jdbc.DDLFactory.*;
 import static store.jesframework.provider.jdbc.DDLFactory.getAggregateStoreDDL;
 import static store.jesframework.provider.jdbc.DDLFactory.getEventStoreDDL;
 import static store.jesframework.provider.jdbc.DDLFactory.getLockDDL;
@@ -73,6 +75,13 @@ class DDLFactoryTest {
     @Test
     void getLockDDLShouldReturnScriptOnCorrectValue() {
         assertNotNull(getOffsetsDDL(newConnectionMock(POSTGRE_SQL, "FOO")));
+    }
+
+    @Test
+    void readNonExistingLocationShouldResultInIllegalStateException() {
+        final Exception exception = assertThrows(IllegalStateException.class, () -> readDDL("foo/bar/baz/boo"));
+        // verify message contains needed info
+        assertEquals("Can't find script: foo/bar/baz/boo", exception.getMessage());
     }
 
 }

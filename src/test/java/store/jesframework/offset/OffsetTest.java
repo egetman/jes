@@ -1,16 +1,26 @@
 package store.jesframework.offset;
 
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import javax.annotation.Nonnull;
+import javax.sql.DataSource;
 
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import lombok.SneakyThrows;
+import store.jesframework.ex.BrokenStoreException;
 
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static store.jesframework.internal.FancyStuff.newPostgresDataSource;
 import static store.jesframework.internal.FancyStuff.newRedissonClient;
 import static java.util.Arrays.asList;
@@ -68,6 +78,32 @@ class OffsetTest {
 
         assertEquals(0, offset.value(first));
         assertEquals(1, offset.value(second));
+    }
+
+    @Test
+    @SneakyThrows
+    void sqlExceptionsInJdbcOffsetShouldBeWrappedInBrokenStoreException() {
+        final DataSource dataSource = mock(DataSource.class);
+        final Connection connection = mock(Connection.class);
+        when(dataSource.getConnection()).thenReturn(connection);
+
+        // first verify creation
+        assertThrows(BrokenStoreException.class, () -> new JdbcOffset(dataSource));
+
+        final DatabaseMetaData metadata = mock(DatabaseMetaData.class);
+        when(connection.getMetaData()).thenReturn(metadata);
+        when(metadata.getDatabaseProductName()).thenReturn("PostgreSQL");
+        final PreparedStatement statement = mock(PreparedStatement.class);
+        when(connection.prepareStatement(anyString())).thenReturn(statement);
+
+        // ok, create new one, try all other methods
+        final JdbcOffset offset = new JdbcOffset(dataSource);
+        when(statement.executeUpdate()).thenThrow(SQLException.class);
+
+        assertThrows(BrokenStoreException.class, () -> offset.add("", 1));
+        assertThrows(BrokenStoreException.class, () -> offset.increment(""));
+        assertThrows(BrokenStoreException.class, () -> offset.reset(""));
+        assertThrows(BrokenStoreException.class, () -> offset.value(""));
     }
 
     @AfterAll

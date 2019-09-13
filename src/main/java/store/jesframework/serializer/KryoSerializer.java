@@ -3,6 +3,8 @@ package store.jesframework.serializer;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 
+import javax.annotation.Nonnull;
+
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.KryoException;
 import com.esotericsoftware.kryo.io.Input;
@@ -12,10 +14,12 @@ import com.esotericsoftware.kryo.util.DefaultInstantiatorStrategy;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 
 import store.jesframework.ex.SerializationException;
+import store.jesframework.serializer.api.Serializer;
 
 class KryoSerializer<S> implements Serializer<S, byte[]> {
 
     private static final String NO_CLASS_KRYO_MESSAGE = "Unable to find class: ";
+    @SuppressWarnings("squid:S5164")
     private final ThreadLocal<Kryo> kryo = ThreadLocal.withInitial(() -> {
         final Kryo serializer = new Kryo();
         serializer.setRegistrationRequired(false);
@@ -23,8 +27,9 @@ class KryoSerializer<S> implements Serializer<S, byte[]> {
         return serializer;
     });
 
+    @Nonnull
     @Override
-    public byte[] serialize(S toSerialize) {
+    public byte[] serialize(@Nonnull S toSerialize) {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream(); Output output = new Output(baos)) {
             kryo.get().writeClassAndObject(output, toSerialize);
             output.flush();
@@ -34,8 +39,10 @@ class KryoSerializer<S> implements Serializer<S, byte[]> {
         }
     }
 
+    @Nonnull
     @Override
-    public S deserialize(byte[] toDeserialize) {
+    @SuppressWarnings({"squid:S2589", "ConstantConditions"})
+    public S deserialize(@Nonnull byte[] toDeserialize) {
         if (toDeserialize == null || toDeserialize.length == 0) {
             throw new SerializationException("Can't deserialize event from 0 length binary uuid");
         }

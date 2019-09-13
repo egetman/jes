@@ -1,4 +1,4 @@
-package store.jesframework.provider;
+package store.jesframework.serializer;
 
 import java.util.function.UnaryOperator;
 import javax.annotation.Nonnull;
@@ -6,10 +6,12 @@ import javax.annotation.Nullable;
 
 import org.junit.jupiter.api.Test;
 
-import store.jesframework.serializer.upcaster.Upcaster;
+import store.jesframework.serializer.api.Upcaster;
 
 import static java.util.function.UnaryOperator.identity;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class UpcasterRegistryTest {
@@ -26,8 +28,16 @@ class UpcasterRegistryTest {
     void upcasterRegisrtyShouldReturnRawTypeIfNoUpcastersRegistered() {
         final String event = "{\"@type\":\"ItemCreated\",\"itemName\":\"Dog\",\"quantity\":9}";
         final UpcasterRegistry<String> registry = new UpcasterRegistry<>();
-        final String actual = registry.tryUpcast(1, event);
-        assertEquals(event, actual);
+        final String actual = registry.tryUpcast(event, "ItemCreated");
+        assertSame(event, actual);
+    }
+
+    @Test
+    void upcasterRegisrtyShouldReturnRawTypeIfNoEventTypeNameProvided() {
+        final String event = "{\"@type\":\"ItemCreated\",\"itemName\":\"Dog\",\"quantity\":9}";
+        final UpcasterRegistry<String> registry = new UpcasterRegistry<>();
+        final String actual = registry.tryUpcast(event, null);
+        assertSame(event, actual);
     }
 
     @Test
@@ -35,8 +45,8 @@ class UpcasterRegistryTest {
         final String event = "{\"@type\":\"ItemCreated\",\"itemName\":\"Dog\",\"quantity\":9}";
         final UpcasterRegistry<String> registry = new UpcasterRegistry<>();
         registry.addUpcaster(new SampleUpcaster("Bar", str -> "foo"));
-        final String actual = registry.tryUpcast(1, event);
-        assertEquals(event, actual);
+        final String actual = registry.tryUpcast(event, "ItemCreated");
+        assertSame(event, actual);
     }
 
     @Test
@@ -44,7 +54,9 @@ class UpcasterRegistryTest {
         final String event = "{\"@type\":\"Sample\",\"itemName\":\"Dog\",\"quantity\":9}";
         final UpcasterRegistry<String> registry = new UpcasterRegistry<>();
         registry.addUpcaster(new SampleUpcaster("Sample", str -> null));
-        assertThrows(NullPointerException.class, () -> registry.tryUpcast(1, event));
+        assertDoesNotThrow(() -> registry.tryUpcast(event, "Sample"));
+        // instead of null the source returned
+        assertSame(event, registry.tryUpcast(event, "Sample"));
     }
 
     @Test
@@ -56,7 +68,7 @@ class UpcasterRegistryTest {
             String updated = input.replace("itemName", "name");
             return updated.replace("}", ",\"type\":\"Dog\"}");
         }));
-        final String actual = registry.tryUpcast(1, event);
+        final String actual = registry.tryUpcast(event, "ItemCreated");
         assertEquals(expected, actual);
     }
 
@@ -72,7 +84,7 @@ class UpcasterRegistryTest {
 
         @Nonnull
         @Override
-        public String upcast(long offset, String raw) {
+        public String upcast(@Nonnull String raw) {
             return transformation.apply(raw);
         }
 

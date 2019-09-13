@@ -19,8 +19,8 @@ import store.jesframework.ex.BrokenStoreException;
 import store.jesframework.ex.VersionMismatchException;
 import store.jesframework.provider.jpa.StoreEntry;
 import store.jesframework.provider.jpa.StoreEntryFactory;
-import store.jesframework.serializer.SerializationOption;
-import store.jesframework.serializer.Serializer;
+import store.jesframework.serializer.api.SerializationOption;
+import store.jesframework.serializer.api.Serializer;
 import store.jesframework.serializer.SerializerFactory;
 import store.jesframework.snapshot.SnapshotReader;
 import lombok.extern.slf4j.Slf4j;
@@ -39,7 +39,7 @@ import static java.util.Objects.requireNonNull;
 @Slf4j
 public class JpaStoreProvider<T> implements StoreProvider, SnapshotReader, AutoCloseable {
 
-    private static final int FETCH_SIZE = 100;
+    private static final int FETCH_SIZE = 1000;
     private static final String READ_ONLY_HINT = "org.hibernate.readOnly";
     private static final String FETCH_SIZE_HINT = "org.hibernate.fetchSize";
 
@@ -55,10 +55,13 @@ public class JpaStoreProvider<T> implements StoreProvider, SnapshotReader, AutoC
 
     public JpaStoreProvider(@Nonnull EntityManagerFactory entityManagerFactory, @Nonnull Class<T> serializationType,
                             @Nonnull SerializationOption... options) {
-
-        this.entityManagerFactory = requireNonNull(entityManagerFactory, "EntityManagerFactory must not be null");
-        this.serializer = SerializerFactory.newEventSerializer(serializationType, options);
-        this.entryType = StoreEntryFactory.entryTypeOf(serializationType);
+        try {
+            this.entityManagerFactory = requireNonNull(entityManagerFactory, "EntityManagerFactory must not be null");
+            this.serializer = SerializerFactory.newEventSerializer(serializationType, options);
+            this.entryType = StoreEntryFactory.entryTypeOf(serializationType);
+        } catch (Exception e) {
+            throw new BrokenStoreException(e);
+        }
     }
 
     @Override

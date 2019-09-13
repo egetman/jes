@@ -5,24 +5,22 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nonnull;
 
-import org.junit.Assert;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import lombok.SneakyThrows;
 import store.jesframework.Command;
 import store.jesframework.JEventStore;
 import store.jesframework.bus.CommandBus;
 import store.jesframework.bus.SyncCommandBus;
 import store.jesframework.ex.BrokenReactorException;
 import store.jesframework.internal.Events;
+import store.jesframework.internal.FancyStuff;
 import store.jesframework.offset.InMemoryOffset;
 import store.jesframework.offset.Offset;
 import store.jesframework.provider.InMemoryStoreProvider;
 import store.jesframework.provider.JdbcStoreProvider;
-import lombok.SneakyThrows;
-import store.jesframework.internal.FancyStuff;
 
-import static store.jesframework.internal.FancyStuff.newPostgresDataSource;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -202,7 +200,7 @@ class ReactorTest {
         };
 
         store.write(new Events.SampleEvent("Reactor sample", UUID.randomUUID()));
-        Assert.assertTrue(latch.await(1, TimeUnit.SECONDS));
+        assertTrue(latch.await(1, TimeUnit.SECONDS));
     }
 
 }

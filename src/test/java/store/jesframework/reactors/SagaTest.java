@@ -19,8 +19,12 @@ import javax.sql.DataSource;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import store.jesframework.Event;
 import store.jesframework.JEventStore;
+import store.jesframework.internal.Events;
+import store.jesframework.internal.FancyStuff;
 import store.jesframework.lock.InMemoryReentrantLock;
 import store.jesframework.lock.JdbcLock;
 import store.jesframework.lock.Lock;
@@ -28,12 +32,7 @@ import store.jesframework.offset.InMemoryOffset;
 import store.jesframework.offset.JdbcOffset;
 import store.jesframework.offset.Offset;
 import store.jesframework.provider.JdbcStoreProvider;
-import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
-import store.jesframework.internal.Events;
-import store.jesframework.internal.FancyStuff;
 
-import static store.jesframework.internal.FancyStuff.newPostgresDataSource;
 import static java.lang.Runtime.getRuntime;
 import static java.util.UUID.randomUUID;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -236,7 +235,7 @@ class SagaTest {
 
         TestLatchSaga(@Nonnull JEventStore store, @Nonnull Offset offset, @Nonnull Lock lock, CountDownLatch counter,
                       CountDownLatch isFailed) {
-            super(store, offset, lock);
+            super(store, offset, lock, new PollingTrigger());
             this.counter = Objects.requireNonNull(counter);
             this.isFailed = isFailed;
         }

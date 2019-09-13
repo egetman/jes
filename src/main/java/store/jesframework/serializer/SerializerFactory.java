@@ -3,12 +3,12 @@ package store.jesframework.serializer;
 import java.util.Objects;
 import javax.annotation.Nonnull;
 
-import store.jesframework.Aggregate;
-import store.jesframework.Event;
 import lombok.extern.slf4j.Slf4j;
-
-import static java.lang.String.format;
-import static java.util.Arrays.stream;
+import store.jesframework.Aggregate;
+import store.jesframework.serializer.api.EventSerializer;
+import store.jesframework.serializer.api.SerializationOption;
+import store.jesframework.serializer.api.Serializer;
+import store.jesframework.serializer.api.Upcaster;
 
 /**
  * Factory, that provides different serialization implementations based on target serialization type and
@@ -18,41 +18,18 @@ import static java.util.Arrays.stream;
 @Slf4j
 public class SerializerFactory {
 
-    private SerializerFactory() {
+    private SerializerFactory() {}
+
+    @Nonnull
+    @SuppressWarnings({"unused"})
+    static EventSerializer<byte[]> newBinarySerializer(@Nonnull ParsedOptions<byte[]> options) {
+        return new EventSerializerProxy<>(new KryoEventSerializer(), options.upcasterRegistry);
     }
 
     @Nonnull
-    @SuppressWarnings({"unused", "unchecked"})
-    static <T, E extends Serializer<T, byte[]>> E newBinarySerializer(@Nonnull SerializationOption... options) {
-        for (SerializationOption option : options) {
-            log.warn("Binary serializer can't use option: {}", option);
-        }
-        return (E) new EventSerializerProxy<>(new KryoSerializer<>());
-    }
-
-    @Nonnull
-    @SuppressWarnings({"unused", "unchecked"})
-    static <T, E extends Serializer<T, String>> E newStringSerializer(@Nonnull SerializationOption... options) {
-        for (SerializationOption option : options) {
-            if (option instanceof SerializationOptions) {
-                final SerializationOptions defaults = (SerializationOptions) option;
-                if (defaults == SerializationOptions.USE_TYPE_ALIASES) {
-                    log.debug("Resolved option: {}", option);
-                    TypeRegistry registry = stream(options)
-                            .filter(serializationOption -> serializationOption instanceof TypeRegistry)
-                            .findFirst()
-                            .map(TypeRegistry.class::cast)
-                            .orElseThrow(() -> {
-                                final String error = format("%s without provided %s", option, TypeRegistry.class);
-                                return new IllegalArgumentException(error);
-                            });
-                    return (E) new EventSerializerProxy<>(new JacksonSerializer<>(registry.getAliases()));
-                } else {
-                    log.warn("String serializer can't use option: {}", option);
-                }
-            }
-        }
-        return (E) new EventSerializerProxy<>(new JacksonSerializer<>());
+    @SuppressWarnings({"unused"})
+    static EventSerializer<String> newStringSerializer(@Nonnull ParsedOptions<String> options) {
+        return new EventSerializerProxy<>(new JacksonEventSerializer(options.typeRegistry), options.upcasterRegistry);
     }
 
     /**
@@ -65,15 +42,17 @@ public class SerializerFactory {
      */
     @Nonnull
     @SuppressWarnings({"unchecked", "squid:S1905"})
-    public static <T> Serializer<Event, T> newEventSerializer(@Nonnull Class<T> serializationType,
-                                                              SerializationOption... options) {
+    public static <T> EventSerializer<T> newEventSerializer(@Nonnull Class<T> serializationType,
+                                                            SerializationOption... options) {
         Objects.requireNonNull(serializationType, "Serialization type must be provided");
+        final ParsedOptions<T> parsedOptions = ParsedOptions.parse(options);
+
         if (serializationType == byte[].class) {
-            Serializer<Event, byte[]> serializer = newBinarySerializer(options);
-            return (Serializer<Event, T>) serializer;
+            final EventSerializer<byte[]> serializer = newBinarySerializer((ParsedOptions<byte[]>) parsedOptions);
+            return (EventSerializer<T>) serializer;
         } else if (serializationType == String.class) {
-            Serializer<Event, String> serializer = newStringSerializer(options);
-            return (Serializer<Event, T>) serializer;
+            final EventSerializer<String> serializer = newStringSerializer((ParsedOptions<String>) parsedOptions);
+            return (EventSerializer<T>) serializer;
         }
         throw new IllegalArgumentException("Serialization for type " + serializationType + " not supported");
     }
@@ -92,13 +71,42 @@ public class SerializerFactory {
                                                                       SerializationOption... options) {
         Objects.requireNonNull(serializationType, "Serialization type must be provided");
         if (serializationType == byte[].class) {
-            Serializer<Aggregate, byte[]> serializer = new KryoSerializer<>();
+            final Serializer<Aggregate, byte[]> serializer = new KryoSerializer<>();
             return (Serializer<Aggregate, T>) serializer;
         } else if (serializationType == String.class) {
-            Serializer<Aggregate, String> serializer = new JacksonSerializer<>();
+            final Serializer<Aggregate, String> serializer = new JacksonSerializer<>();
             return (Serializer<Aggregate, T>) serializer;
         }
         throw new IllegalArgumentException("Serialization for type " + serializationType + " not supported");
     }
 
+    static class ParsedOptions<T> {
+
+        private TypeRegistry typeRegistry;
+        private UpcasterRegistry<T> upcasterRegistry = new UpcasterRegistry<>();
+
+        static <T> ParsedOptions<T> parse(SerializationOption... options) {
+            final ParsedOptions<T> parsedOptions = new ParsedOptions<>();
+            if (options == null || options.length == 0) {
+                return parsedOptions;
+            }
+
+            for (SerializationOption option : options) {
+                if (option instanceof TypeRegistry) {
+                    parsedOptions.typeRegistry = (TypeRegistry) option;
+                } else if (option instanceof Upcaster) {
+                    try {
+                        //noinspection unchecked
+                        parsedOptions.upcasterRegistry.addUpcaster((Upcaster<T>) option);
+                    } catch (ClassCastException e) {
+                        log.warn("Failed to register upcaster {}: type mismatch", option, e);
+                    }
+                } else {
+                    log.warn("Unsupported serialization option found: {}", option);
+                }
+            }
+            log.debug("parsing of {} serialization option(s) complete", options.length);
+            return parsedOptions;
+        }
+    }
 }

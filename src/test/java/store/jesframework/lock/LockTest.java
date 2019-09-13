@@ -1,5 +1,9 @@
 package store.jesframework.lock;
 
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.Collection;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
@@ -17,13 +21,18 @@ import org.junit.jupiter.params.provider.MethodSource;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import store.jesframework.ex.BrokenStoreException;
 
-import static store.jesframework.internal.FancyStuff.newPostgresDataSource;
-import static store.jesframework.internal.FancyStuff.newRedissonClient;
 import static java.util.Arrays.asList;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static store.jesframework.internal.FancyStuff.newPostgresDataSource;
+import static store.jesframework.internal.FancyStuff.newRedissonClient;
 
 @Slf4j
 class LockTest {
@@ -112,6 +121,34 @@ class LockTest {
 
         assertFalse(latch.await(2, TimeUnit.SECONDS));
         threadPool.shutdown();
+    }
+
+    @Test
+    @SneakyThrows
+    void exceptionsInJdbcLockShouldBeWrappedInBrokenStoreException() {
+        final DataSource dataSource = mock(DataSource.class);
+        final Connection connection = mock(Connection.class);
+        when(dataSource.getConnection()).thenReturn(connection);
+
+        // first verify creation
+        assertThrows(BrokenStoreException.class, () -> new JdbcLock(dataSource));
+
+        final DatabaseMetaData metadata = mock(DatabaseMetaData.class);
+        when(connection.getMetaData()).thenReturn(metadata);
+        when(metadata.getDatabaseProductName()).thenReturn("PostgreSQL");
+        final PreparedStatement statement = mock(PreparedStatement.class);
+        when(connection.prepareStatement(anyString())).thenReturn(statement);
+
+        // ok, create new one, try all other methods
+        final JdbcLock lock = new JdbcLock(dataSource);
+
+        assertThrows(BrokenStoreException.class, () -> lock.doProtectedWrite("", () -> {
+            throw new IllegalArgumentException("Foo");
+        }));
+
+        // SQLException just handled as warn
+        when(statement.executeUpdate()).thenThrow(SQLException.class);
+        assertDoesNotThrow(() -> lock.doProtectedWrite("", () -> {}));
     }
 
     @AfterAll

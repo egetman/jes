@@ -12,20 +12,23 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
+import javax.persistence.EntityManagerFactory;
+import javax.sql.DataSource;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import store.jesframework.Event;
-import store.jesframework.ex.VersionMismatchException;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import store.jesframework.Event;
+import store.jesframework.ex.BrokenStoreException;
+import store.jesframework.ex.VersionMismatchException;
 import store.jesframework.internal.Events;
 import store.jesframework.internal.FancyStuff;
 
-import static store.jesframework.internal.FancyStuff.newPostgresDataSource;
 import static java.lang.Runtime.getRuntime;
 import static java.util.Arrays.asList;
 import static java.util.UUID.randomUUID;
@@ -37,6 +40,7 @@ import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
 
 @Slf4j
 class StoreProviderTest {
@@ -197,6 +201,19 @@ class StoreProviderTest {
         } finally {
             executor.shutdown();
         }
+    }
+
+    @Test
+    @SuppressWarnings("ConstantConditions")
+    void providersShouldProtectItsInvariants() {
+        assertThrows(BrokenStoreException.class, () -> new JdbcStoreProvider<>(null, String.class));
+        assertThrows(BrokenStoreException.class, () -> new JdbcStoreProvider<>(mock(DataSource.class), null));
+        assertThrows(BrokenStoreException.class, () -> new JdbcStoreProvider<>(mock(DataSource.class), int.class));
+
+        assertThrows(BrokenStoreException.class, () -> new JpaStoreProvider<>(null, String.class));
+        assertThrows(BrokenStoreException.class, () -> new JpaStoreProvider<>(mock(EntityManagerFactory.class), null));
+        assertThrows(BrokenStoreException.class,
+                () -> new JpaStoreProvider<>(mock(EntityManagerFactory.class), int.class));
     }
 
     @SuppressWarnings("SameParameterValue")

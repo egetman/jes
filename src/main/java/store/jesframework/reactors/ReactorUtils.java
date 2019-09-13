@@ -54,7 +54,7 @@ class ReactorUtils {
             while (cause.getCause() != null) {
                 cause = cause.getCause();
             }
-            throw new BrokenReactorException(cause.getMessage(), e);
+            throw new BrokenReactorException(cause.getMessage(), cause);
         }
     }
 

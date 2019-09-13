@@ -16,6 +16,7 @@ import com.fasterxml.jackson.databind.jsontype.impl.TypeIdResolverBase;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 
 import store.jesframework.ex.SerializationException;
+import store.jesframework.serializer.api.Serializer;
 
 import static com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.ANY;
 import static com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.NONE;
@@ -35,31 +36,30 @@ class JacksonSerializer<S> implements Serializer<S, String> {
 
     @SuppressWarnings("WeakerAccess")
     public JacksonSerializer() {
-        this(new HashMap<>());
+        this(null);
     }
 
     @SuppressWarnings("WeakerAccess")
-    public JacksonSerializer(@Nullable Map<Class<?>, String> aliases) {
-        this(new ObjectMapper(), aliases);
+    public JacksonSerializer(@Nullable TypeRegistry registry) {
+        this(new ObjectMapper(), registry);
     }
 
     @SuppressWarnings("WeakerAccess")
-    public JacksonSerializer(ObjectMapper mapper, @Nullable Map<Class<?>, String> aliases) {
+    public JacksonSerializer(@Nonnull ObjectMapper mapper, @Nullable TypeRegistry registry) {
         this.mapper = Objects.requireNonNull(mapper, "ObjectMapper must not be null");
-        configureMapper(this.mapper, aliases);
+        configureMapper(this.mapper, registry);
     }
 
-    private void configureMapper(@Nonnull ObjectMapper mapper, @Nullable Map<Class<?>, String> aliases) {
+    private void configureMapper(@Nonnull ObjectMapper mapper, @Nullable TypeRegistry registry) {
         mapper.disable(FAIL_ON_EMPTY_BEANS);
         mapper.disable(FAIL_ON_UNKNOWN_PROPERTIES);
         mapper.disable(WRITE_DATES_AS_TIMESTAMPS);
         mapper.setSerializationInclusion(NON_NULL);
 
+        final Map<Class<?>, String> aliases = registry == null ? new HashMap<>() : registry.getAliases();
         final Map<String, Class<?>> reversed = new HashMap<>();
-        if (aliases != null) {
-            for (Map.Entry<Class<?>, String> entry : aliases.entrySet()) {
-                reversed.put(entry.getValue(), entry.getKey());
-            }
+        for (Map.Entry<Class<?>, String> entry : aliases.entrySet()) {
+            reversed.put(entry.getValue(), entry.getKey());
         }
 
         mapper.setDefaultTyping(new DefaultTypeResolverBuilder(DefaultTyping.NON_FINAL)
@@ -74,8 +74,9 @@ class JacksonSerializer<S> implements Serializer<S, String> {
         mapper.findAndRegisterModules();
     }
 
+    @Nonnull
     @Override
-    public String serialize(S toSerialize) {
+    public String serialize(@Nonnull S toSerialize) {
         try {
             return mapper.writeValueAsString(toSerialize);
         } catch (Exception e) {
@@ -83,8 +84,9 @@ class JacksonSerializer<S> implements Serializer<S, String> {
         }
     }
 
+    @Nonnull
     @Override
-    public S deserialize(String toDeserialize) {
+    public S deserialize(@Nonnull String toDeserialize) {
         try {
             return mapper.readValue(toDeserialize, serializationType);
         } catch (IOException e) {

@@ -11,7 +11,7 @@ class StreamSplittedToTest {
 
     @Test
     @SuppressWarnings("ConstantConditions")
-    void streamSplittedToEventShouldHandleItsInvariants() {
+    void streamSplittedToEventShouldProtectItsInvariants() {
         assertThrows(NullPointerException.class, () -> new StreamSplittedTo(null, singleton(randomUUID())));
         assertThrows(NullPointerException.class, () -> new StreamSplittedTo(randomUUID(), null));
         assertThrows(IllegalArgumentException.class, () -> new StreamSplittedTo(randomUUID(), emptySet()));

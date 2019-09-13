@@ -1,5 +1,6 @@
 package store.jesframework.serializer;
 
+import java.util.Arrays;
 import java.util.UUID;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
@@ -17,28 +18,30 @@ import store.jesframework.internal.Events;
 import store.jesframework.internal.Events.FancyEvent;
 import lombok.SneakyThrows;
 import net.bytebuddy.ByteBuddy;
+import store.jesframework.serializer.api.EventSerializer;
+import store.jesframework.serializer.api.Serializer;
 
 class SerializerTest {
 
-    private static Stream<Serializer<Event, ?>> createSerializers() {
+    private static Stream<EventSerializer<?>> eventSerializers() {
         return Stream.of(
-                new EventSerializerProxy<>(new KryoSerializer<>()),
-                new EventSerializerProxy<>(new JacksonSerializer<>())
+                new EventSerializerProxy<>(new KryoEventSerializer(), new UpcasterRegistry<>()),
+                new EventSerializerProxy<>(new JacksonEventSerializer(), new UpcasterRegistry<>())
         );
     }
 
     private static Stream<Arguments> createInvariantsVerificationPair() {
         return Stream.of(
-                Arguments.of(new KryoSerializer<Event>(), new byte[]{}),
-                Arguments.of(new JacksonSerializer<Event>(), "")
+                Arguments.of(new KryoEventSerializer(), new byte[]{}),
+                Arguments.of(new JacksonEventSerializer(), "")
         );
     }
 
     // for some serializers deserialization without default constructor is possible
     // if constructor has a metadata (lombok adds it via @java.beans.ConstructorProperties)
     @ParameterizedTest
-    @MethodSource("createSerializers")
-    <T> void shouldSerializeEventWithoutDefaultConstructor(@Nonnull Serializer<Event, T> serializer) {
+    @MethodSource("eventSerializers")
+    <T> void shouldSerializeEventWithoutDefaultConstructor(@Nonnull EventSerializer<T> serializer) {
         final Event event = new FancyEvent("FOO", UUID.randomUUID());
         final T serialized = serializer.serialize(event);
         Assertions.assertNotNull(serialized);
@@ -48,8 +51,8 @@ class SerializerTest {
     }
 
     @ParameterizedTest
-    @MethodSource("createSerializers")
-    <T> void shouldSerializeEventWithAbstractType(@Nonnull Serializer<Event, T> serializer) {
+    @MethodSource("eventSerializers")
+    <T> void shouldSerializeEventWithAbstractType(@Nonnull EventSerializer<T> serializer) {
         final Event event = new Events.ColorChanged(new Events.Black());
         final T serialized = serializer.serialize(event);
         Assertions.assertNotNull(serialized);
@@ -60,8 +63,8 @@ class SerializerTest {
 
     @SneakyThrows
     @ParameterizedTest
-    @MethodSource("createSerializers")
-    <T> void shouldReturnUnregisteredEventTypeWhenNoTypeInformationFound(@Nonnull Serializer<Event, T> serializer) {
+    @MethodSource("eventSerializers")
+    <T> void shouldReturnUnregisteredEventTypeWhenNoTypeInformationFound(@Nonnull EventSerializer<T> serializer) {
         final Class<? extends Event> dynamicEvent = new ByteBuddy()
                 .subclass(Event.class)
                 .make()
@@ -79,7 +82,7 @@ class SerializerTest {
 
     @ParameterizedTest
     @MethodSource("createInvariantsVerificationPair")
-    <T> void shouldWrapNativeExceptionsIntoSerializationException(@Nonnull Serializer<Event, T> serializer,
+    <T> void shouldWrapNativeExceptionsIntoSerializationException(@Nonnull EventSerializer<T> serializer,
                                                                   @Nonnull T wrongInput) {
         Assertions.assertThrows(SerializationException.class, () -> serializer.deserialize(wrongInput));
     }
@@ -88,13 +91,28 @@ class SerializerTest {
     void shouldSerializeObjectWithAliasIfTypeRegistryPassed() {
         final TypeRegistry registry = new TypeRegistry();
         registry.addAlias(Events.SampleEvent.class, "MyAlias");
-        final Serializer<Event, String> serializer = SerializerFactory.newEventSerializer(String.class,
-                SerializationOptions.USE_TYPE_ALIASES, registry);
+        final Serializer<Event, String> serializer = SerializerFactory.newEventSerializer(String.class, registry);
 
         final String serialized = serializer.serialize(new Events.SampleEvent("Sample", UUID.randomUUID()));
         Assertions.assertTrue(serialized.contains("\"@type\":\"MyAlias\""));
 
         final Event deserialized = serializer.deserialize(serialized);
         Assertions.assertEquals(Events.SampleEvent.class, deserialized.getClass());
+    }
+
+    @Test
+    void jacksonEventSerializerShouldBeAbleToProcessEventNamesLargerThanDefault() {
+        final int defaultNameSize = JacksonEventSerializer.DEFAULT_NAME_SIZE;
+        final char[] largeName = new char[defaultNameSize * 3];
+        Arrays.fill(largeName, 'O');
+        final String eventName = new String(largeName);
+
+        TypeRegistry registry = new TypeRegistry();
+        registry.addAlias(Events.SampleEvent.class, eventName);
+
+        final JacksonEventSerializer serializer = new JacksonEventSerializer(registry);
+        final String serialized = serializer.serialize(new Events.SampleEvent("name", UUID.randomUUID()));
+
+        Assertions.assertEquals(eventName, serializer.fetchTypeName(serialized));
     }
 }

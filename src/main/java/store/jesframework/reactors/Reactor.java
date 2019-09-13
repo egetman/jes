@@ -29,11 +29,11 @@ abstract class Reactor implements AutoCloseable {
     private final String key = getClass().getName();
     private final Map<Class<? extends Event>, Consumer<? super Event>> reactors = new HashMap<>();
 
-    protected Reactor(@Nonnull JEventStore store, @Nonnull Offset offset) {
+    Reactor(@Nonnull JEventStore store, @Nonnull Offset offset) {
         this(store, offset, new PollingTrigger());
     }
 
-    protected Reactor(@Nonnull JEventStore store, @Nonnull Offset offset, @Nonnull Trigger trigger) {
+    Reactor(@Nonnull JEventStore store, @Nonnull Offset offset, @Nonnull Trigger trigger) {
         this.store = Objects.requireNonNull(store, "Event store must not be null");
         this.offset = Objects.requireNonNull(offset, "Offset must not be null");
 

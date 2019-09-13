@@ -17,9 +17,8 @@ import store.jesframework.provider.StoreProvider;
 import store.jesframework.readmodel.event.ItemCreated;
 import store.jesframework.readmodel.event.ItemRemoved;
 import store.jesframework.readmodel.event.OrderPlaced;
-import store.jesframework.serializer.SerializationOption;
-import store.jesframework.serializer.SerializationOptions;
 import store.jesframework.serializer.TypeRegistry;
+import store.jesframework.serializer.api.SerializationOption;
 
 @Configuration
 @EnableJpaRepositories(basePackages = "store.jesframework.readmodel.*")
@@ -55,7 +54,7 @@ public class Config {
         registry.addAlias(ItemCreated.class, ItemCreated.class.getSimpleName());
         registry.addAlias(ItemRemoved.class, "ItemRemoved");
         registry.addAlias(OrderPlaced.class, OrderPlaced.class.getSimpleName());
-        return new SerializationOption[]{SerializationOptions.USE_TYPE_ALIASES, registry};
+        return new SerializationOption[]{registry};
     }
 
 }

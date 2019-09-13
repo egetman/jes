@@ -48,7 +48,7 @@ public class DDLFactory {
             throw new IllegalArgumentException(format(UNSUPPORTED_TYPE, databaseName));
         }
         final String schemaName = getSchemaName(connection);
-        return script.replaceAll(SCHEMA_NAME_PROPERTY, schemaName).replaceAll("contentType", contentType);
+        return script.replace(SCHEMA_NAME_PROPERTY, schemaName).replace("contentType", contentType);
     }
 
     /**
@@ -64,7 +64,7 @@ public class DDLFactory {
 
         if (DB_NAME_POSTGRE_SQL.equals(databaseName)) {
             final String script = readDDL("ddl/snapshot-store-postgres.ddl");
-            return script.replaceAll(SCHEMA_NAME_PROPERTY, schemaName);
+            return script.replace(SCHEMA_NAME_PROPERTY, schemaName);
         } else {
             throw new IllegalArgumentException(format(UNSUPPORTED_TYPE, databaseName));
         }
@@ -89,7 +89,7 @@ public class DDLFactory {
         }
 
         final String schemaName = getSchemaName(connection);
-        return script.replaceAll(SCHEMA_NAME_PROPERTY, schemaName);
+        return script.replace(SCHEMA_NAME_PROPERTY, schemaName);
     }
 
     /**
@@ -103,14 +103,14 @@ public class DDLFactory {
         final String schemaName = getSchemaName(connection);
         if (DB_NAME_POSTGRE_SQL.equals(databaseName)) {
             final String script = readDDL("ddl/locks-postgres.ddl");
-            return script.replaceAll(SCHEMA_NAME_PROPERTY, schemaName);
+            return script.replace(SCHEMA_NAME_PROPERTY, schemaName);
         } else {
             throw new IllegalArgumentException(format(UNSUPPORTED_TYPE, databaseName));
         }
     }
 
     @SneakyThrows
-    private static String readDDL(@Nonnull String location) {
+    static String readDDL(@Nonnull String location) {
         final ClassLoader classLoader = DDLFactory.class.getClassLoader();
         try (final InputStream inputStream = classLoader.getResourceAsStream(location)) {
             if (inputStream != null) {

@@ -14,29 +14,28 @@ import java.util.stream.StreamSupport;
 import javax.annotation.Nonnull;
 import javax.sql.DataSource;
 
-import store.jesframework.Event;
-import store.jesframework.ex.BrokenStoreException;
-import store.jesframework.ex.VersionMismatchException;
-import store.jesframework.provider.jdbc.DDLFactory;
-import store.jesframework.serializer.SerializationOption;
-import store.jesframework.serializer.Serializer;
-import store.jesframework.serializer.SerializerFactory;
-import store.jesframework.serializer.upcaster.Upcaster;
-import store.jesframework.snapshot.SnapshotReader;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import store.jesframework.Event;
+import store.jesframework.ex.BrokenStoreException;
+import store.jesframework.ex.VersionMismatchException;
+import store.jesframework.provider.jdbc.DDLFactory;
+import store.jesframework.serializer.SerializerFactory;
+import store.jesframework.serializer.api.SerializationOption;
+import store.jesframework.serializer.api.Serializer;
+import store.jesframework.snapshot.SnapshotReader;
 
-import static store.jesframework.util.JdbcUtils.createConnection;
-import static store.jesframework.util.JdbcUtils.unwrapJdbcType;
-import static store.jesframework.util.PropsReader.getPropety;
 import static java.sql.ResultSet.CONCUR_READ_ONLY;
 import static java.sql.ResultSet.TYPE_FORWARD_ONLY;
 import static java.util.Objects.requireNonNull;
 import static java.util.Spliterator.ORDERED;
 import static java.util.Spliterators.spliteratorUnknownSize;
 import static java.util.stream.Collectors.toList;
+import static store.jesframework.util.JdbcUtils.createConnection;
+import static store.jesframework.util.JdbcUtils.unwrapJdbcType;
+import static store.jesframework.util.PropsReader.getPropety;
 
 /**
  * JDBC {@link StoreProvider} implementation.
@@ -50,7 +49,6 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
 
     private final DataSource dataSource;
     private final Serializer<Event, T> serializer;
-    private final UpcasterRegistry<T> upcasterRegistry = new UpcasterRegistry<>();
 
     public JdbcStoreProvider(@Nonnull DataSource dataSource, @Nonnull Class<T> serializationType,
                              @Nonnull SerializationOption... options) {
@@ -242,11 +240,6 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
         }
     }
 
-    @SuppressWarnings("unused")
-    public void addUpcaster(@Nonnull Upcaster<T> upcaster) {
-        upcasterRegistry.addUpcaster(upcaster);
-    }
-
     /**
      * This iterator is NOT Thread safe.
      */
@@ -297,7 +290,6 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
             // get values by index a bit more efficient
             lastOffset = set.getLong(1);
             T data = unwrapJdbcType(set.getObject(2));
-            data = upcasterRegistry.tryUpcast(lastOffset, data);
             return serializer.deserialize(data);
         }
 

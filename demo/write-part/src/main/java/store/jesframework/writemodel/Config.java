@@ -16,12 +16,11 @@ import store.jesframework.offset.JdbcOffset;
 import store.jesframework.offset.Offset;
 import store.jesframework.provider.JdbcStoreProvider;
 import store.jesframework.provider.StoreProvider;
+import store.jesframework.serializer.TypeRegistry;
+import store.jesframework.serializer.api.SerializationOption;
 import store.jesframework.writemodel.event.ItemCreated;
 import store.jesframework.writemodel.event.ItemRemoved;
 import store.jesframework.writemodel.event.OrderPlaced;
-import store.jesframework.serializer.SerializationOption;
-import store.jesframework.serializer.SerializationOptions;
-import store.jesframework.serializer.TypeRegistry;
 
 @Configuration
 @EnableAutoConfiguration
@@ -66,6 +65,6 @@ public class Config {
         registry.addAlias(ItemCreated.class, ItemCreated.class.getSimpleName());
         registry.addAlias(ItemRemoved.class, "ItemRemoved");
         registry.addAlias(OrderPlaced.class, OrderPlaced.class.getSimpleName());
-        return new SerializationOption[]{SerializationOptions.USE_TYPE_ALIASES, registry};
+        return new SerializationOption[]{registry};
     }
 }
