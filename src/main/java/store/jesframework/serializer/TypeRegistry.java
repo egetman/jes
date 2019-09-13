@@ -34,6 +34,11 @@ public class TypeRegistry implements SerializationOption {
         );
     }
 
+    /**
+     * Register types and aliases for serialization/deserialization.
+     *
+     * @param classesToAliases is the map with mappings.
+     */
     @SuppressWarnings({"unused", "WeakerAccess"})
     public void addAliases(@Nonnull Map<Class<?>, String> classesToAliases) {
         log.trace("Prepare to add given aliases {} into {}", classesToAliases, this.getClass().getName());
