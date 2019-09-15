@@ -24,7 +24,6 @@ import lombok.extern.slf4j.Slf4j;
 import store.jesframework.Event;
 import store.jesframework.JEventStore;
 import store.jesframework.internal.Events;
-import store.jesframework.internal.FancyStuff;
 import store.jesframework.lock.InMemoryReentrantLock;
 import store.jesframework.lock.JdbcLock;
 import store.jesframework.lock.Lock;
@@ -41,6 +40,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static store.jesframework.internal.FancyStuff.newPostgresDataSource;
 
 @Slf4j
 class SagaTest {
@@ -48,7 +48,7 @@ class SagaTest {
     @Test
     @SneakyThrows
     void cuncurrentSagasMustNotProcessDuplicates() {
-        final DataSource dataSource = FancyStuff.newPostgresDataSource();
+        final DataSource dataSource = newPostgresDataSource();
         final JEventStore store = new JEventStore(new JdbcStoreProvider<>(dataSource, String.class));
         final Lock lock = new JdbcLock(dataSource);
         final Offset offset = new JdbcOffset(dataSource);
@@ -74,7 +74,7 @@ class SagaTest {
     @SneakyThrows
     @RepeatedTest(5)
     void sagaShouldNotLoseAnyEventsOnConcurrentReadWrite() {
-        final JdbcStoreProvider<String> provider = new JdbcStoreProvider<>(FancyStuff.newPostgresDataSource(), String.class);
+        final JdbcStoreProvider<String> provider = new JdbcStoreProvider<>(newPostgresDataSource(), String.class);
 
         final JEventStore store = new JEventStore(provider);
         final Lock lock = new InMemoryReentrantLock();

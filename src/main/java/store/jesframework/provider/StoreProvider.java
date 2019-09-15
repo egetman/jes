@@ -50,7 +50,8 @@ public interface StoreProvider {
     /**
      * see {@link JEventStore#deleteBy(UUID)}.
      *
-     * @param uuid of stream  to delete.
+     * @param uuid of stream to delete.
+     * @throws UnsupportedOperationException if delete operation is not supported by underlying provider.
      */
     void deleteBy(@Nonnull UUID uuid);
 

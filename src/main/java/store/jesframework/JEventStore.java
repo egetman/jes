@@ -11,7 +11,6 @@ import store.jesframework.provider.StoreProvider;
 import store.jesframework.snapshot.SnapshotReader;
 import store.jesframework.util.Check;
 
-import static store.jesframework.util.Check.nonEmpty;
 import static java.util.Objects.requireNonNull;
 
 public class JEventStore {
@@ -99,8 +98,10 @@ public class JEventStore {
 
     /**
      * Delete a whole stream by it's {@literal uuid} (its a safe operation).
+     * Note: not all {@link StoreProvider} can support deletion.
      *
      * @param uuid of stream  to delete.
+     * @throws UnsupportedOperationException if delete operation is not supported by underlying provider.
      */
     public void deleteBy(@Nonnull UUID uuid) {
         provider.deleteBy(requireNonNull(uuid, NON_NULL_UUID));
