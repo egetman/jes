@@ -1,3 +1,3 @@
 package store.jesframework.snapshot;
 
-public class NoopSnapshotProvider implements SnapshotProvider {}
+public class NoopSnapshotProvider extends DefaultSnapshotProvider {}

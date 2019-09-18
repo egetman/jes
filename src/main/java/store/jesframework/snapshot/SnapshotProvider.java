@@ -31,8 +31,8 @@ public interface SnapshotProvider {
 
     @Nonnull
     default <T extends Aggregate> T snapshot(@Nonnull T aggregate) {
-        return Objects.requireNonNull(aggregate, "Aggregate must not be null");
         // do nothing - default impl
+        return Objects.requireNonNull(aggregate, "Aggregate must not be null");
     }
 
     /**
@@ -42,7 +42,7 @@ public interface SnapshotProvider {
      */
     @SuppressWarnings("unused")
     default void reset(@Nonnull UUID uuid) {
-        Objects.requireNonNull(uuid, "Uuid must not be null");
         // do nothing - default impl
+        Objects.requireNonNull(uuid, "Uuid must not be null");
     }
 }

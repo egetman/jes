@@ -5,9 +5,11 @@ import java.util.UUID;
 import javax.annotation.Nonnull;
 
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import lombok.RequiredArgsConstructor;
 import store.jesframework.Aggregate;
 import store.jesframework.AggregateStore;
 import store.jesframework.JEventStore;
@@ -140,6 +142,42 @@ class SnapshotProviderTest {
         // check state in cache
         final FancyAggregate fromSnapshot = provider.initialStateOf(uuid, FancyAggregate.class);
         assertEquals(fromStore, fromSnapshot);
+    }
+
+    @ParameterizedTest
+    @MethodSource("createSnapshotProviders")
+    void initialStateShouldReturnNewInstanceFromAggregateCreatorIfRegistered(@Nonnull SnapshotProvider provider) {
+        @RequiredArgsConstructor
+        @SuppressWarnings("unused")
+        class AggregateWithoutDefaultConstructor extends Aggregate {
+            private final UUID uuid;
+        }
+
+        assertThrows(AggregateCreationException.class,
+                () -> provider.initialStateOf(randomUUID(), AggregateWithoutDefaultConstructor.class));
+
+        final DefaultSnapshotProvider defaultProvider = (DefaultSnapshotProvider) provider;
+        defaultProvider.addAggregateCreator(
+                AggregateWithoutDefaultConstructor.class,
+                (uuid, aClass) -> new AggregateWithoutDefaultConstructor(uuid)
+        );
+
+        assertDoesNotThrow(() -> provider.initialStateOf(randomUUID(), AggregateWithoutDefaultConstructor.class));
+    }
+
+    @Test
+    @SuppressWarnings("ConstantConditions")
+    void defaultSnaphotProviderShouldNotPermitNullValues() {
+        final DefaultSnapshotProvider provider = new DefaultSnapshotProvider();
+        assertThrows(NullPointerException.class, () -> provider.addAggregateCreator(null, ((uuid, aClass) -> null)));
+        assertThrows(NullPointerException.class, () -> provider.addAggregateCreator(Aggregate.class, null));
+    }
+
+    @Test
+    void defaultSnaphotProviderShouldNotReturnNull() {
+        final DefaultSnapshotProvider provider = new DefaultSnapshotProvider();
+        provider.addAggregateCreator(Aggregate.class, (uuid, aClass) -> null);
+        assertThrows(AggregateCreationException.class, () -> provider.initialStateOf(randomUUID(), Aggregate.class));
     }
 
     @AfterAll

@@ -24,7 +24,7 @@ import static store.jesframework.util.PropsReader.getPropety;
 import static java.util.Objects.requireNonNull;
 
 @Slf4j
-public class JdbcSnapshotProvider<T> implements SnapshotProvider, AutoCloseable {
+public class JdbcSnapshotProvider<T> extends DefaultSnapshotProvider implements AutoCloseable {
 
     private final DataSource dataSource;
     private final Serializer<Aggregate, T> serializer;
@@ -59,7 +59,7 @@ public class JdbcSnapshotProvider<T> implements SnapshotProvider, AutoCloseable 
     public <A extends Aggregate> A initialStateOf(@Nonnull UUID uuid, @Nonnull Class<A> type) {
         final Aggregate aggregate = findAggregateByUuid(uuid);
         if (aggregate == null) {
-            return SnapshotProvider.super.initialStateOf(uuid, type);
+            return super.initialStateOf(uuid, type);
         }
         //noinspection unchecked
         return (A) aggregate;
