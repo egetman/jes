@@ -106,13 +106,14 @@ public class JdbcSnapshotProvider<T> extends DefaultSnapshotProvider implements 
     private Aggregate findAggregateByUuid(@Nonnull UUID uuid) {
         return execute(connection -> {
             final String query = getPropety("jes.jdbc.statement.select-aggregate");
-            try (PreparedStatement statement = connection.prepareStatement(query)) {
+            try (final PreparedStatement statement = connection.prepareStatement(query)) {
                 statement.setObject(1, Objects.requireNonNull(uuid, "Aggregate uuid must not be null"));
-                final ResultSet set = statement.executeQuery();
-                if (!set.next()) {
-                    return null;
+                try (final ResultSet set = statement.executeQuery()) {
+                    if (!set.next()) {
+                        return null;
+                    }
+                    return serializer.deserialize(unwrapJdbcType(set.getObject(1)));
                 }
-                return serializer.deserialize(unwrapJdbcType(set.getObject(1)));
             }
         });
     }
@@ -121,13 +122,14 @@ public class JdbcSnapshotProvider<T> extends DefaultSnapshotProvider implements 
     private boolean existsAggregateByUuid(@Nonnull UUID uuid) {
         return execute(connection -> {
             final String query = getPropety("jes.jdbc.statement.exists-aggregate");
-            try (PreparedStatement statement = connection.prepareStatement(query)) {
+            try (final PreparedStatement statement = connection.prepareStatement(query)) {
                 statement.setObject(1, Objects.requireNonNull(uuid, "Aggregate uuid must not be null"));
-                final ResultSet set = statement.executeQuery();
-                if (!set.next()) {
-                    return false;
+                try (final ResultSet set = statement.executeQuery()) {
+                    if (!set.next()) {
+                        return false;
+                    }
+                    return set.getBoolean(1);
                 }
-                return set.getBoolean(1);
             }
         });
     }

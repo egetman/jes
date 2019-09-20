@@ -150,7 +150,7 @@ public class JesConfig {
 - [x] event stream merge: event stream corrections
 - [x] event stream deletion: event stream corrections
 - [x] multiple event versions: versioning
-- [ ] upcasting: versioning
+- [x] upcasting: versioning
 - [ ] lazy transformation: versioning
 - [x] copy-and-transform event store: versioning
 - [x] strong/weak schema formats (partial): core

@@ -19,8 +19,10 @@ public class DDLFactory {
 
     private static final String DB_NAME_H2 = "H2";
     private static final String DB_NAME_POSTGRE_SQL = "PostgreSQL";
+    private static final int POSTGRESQL_WITH_IDENTITY_VERSION = 10;
 
     private static final String SCHEMA_NAME_PROPERTY = "schemaName";
+    private static final String CONTENT_TYPE_PROPERTY = "contentType";
 
     private static final String UNSUPPORTED_TYPE = "DDL for %s type not supported";
 
@@ -37,18 +39,20 @@ public class DDLFactory {
     @SneakyThrows
     public static String getEventStoreDDL(@Nonnull Connection connection, @Nonnull Class<?> type) {
         final String databaseName = JdbcUtils.getDatabaseName(connection);
+        final String schemaName = getSchemaName(connection);
         final String contentType = getSqlTypeByClassAndDatabaseName(type, databaseName);
-        final String script;
 
         if (DB_NAME_POSTGRE_SQL.equals(databaseName)) {
-            script = readDDL("ddl/event-store-postgres.ddl");
+            final int postgreSqlVersion = JdbcUtils.getDatabaseMajorVersion(connection);
+            if (postgreSqlVersion >= POSTGRESQL_WITH_IDENTITY_VERSION) {
+                return replaceWith(readDDL("ddl/postgresql/v10/event-store-postgres.ddl"), schemaName, contentType);
+            } else {
+                return replaceWith(readDDL("ddl/postgresql/v9/event-store-postgres.ddl"), schemaName, contentType);
+            }
         } else if (DB_NAME_H2.equals(databaseName)) {
-            script = readDDL("ddl/event-store-h2.ddl");
-        } else {
-            throw new IllegalArgumentException(format(UNSUPPORTED_TYPE, databaseName));
+            return replaceWith(readDDL("ddl/h2/event-store-h2.ddl"), schemaName, contentType);
         }
-        final String schemaName = getSchemaName(connection);
-        return script.replace(SCHEMA_NAME_PROPERTY, schemaName).replace("contentType", contentType);
+        throw new IllegalArgumentException(format(UNSUPPORTED_TYPE, databaseName));
     }
 
     /**
@@ -63,11 +67,14 @@ public class DDLFactory {
         final String schemaName = getSchemaName(connection);
 
         if (DB_NAME_POSTGRE_SQL.equals(databaseName)) {
-            final String script = readDDL("ddl/snapshot-store-postgres.ddl");
-            return script.replace(SCHEMA_NAME_PROPERTY, schemaName);
-        } else {
-            throw new IllegalArgumentException(format(UNSUPPORTED_TYPE, databaseName));
+            final int postgreSqlVersion = JdbcUtils.getDatabaseMajorVersion(connection);
+            if (postgreSqlVersion >= POSTGRESQL_WITH_IDENTITY_VERSION) {
+                return replaceWith(readDDL("ddl/postgresql/v10/snapshot-store-postgres.ddl"), schemaName);
+            } else {
+                return replaceWith(readDDL("ddl/postgresql/v9/snapshot-store-postgres.ddl"), schemaName);
+            }
         }
+        throw new IllegalArgumentException(format(UNSUPPORTED_TYPE, databaseName));
     }
 
     /**
@@ -78,18 +85,19 @@ public class DDLFactory {
      */
     public static String getOffsetsDDL(@Nonnull Connection connection) {
         final String databaseName = JdbcUtils.getDatabaseName(connection);
-
-        final String script;
-        if (DB_NAME_POSTGRE_SQL.equals(databaseName)) {
-            script = readDDL("ddl/offsets-postgres.ddl");
-        } else if (DB_NAME_H2.equals(databaseName)) {
-            script = readDDL("ddl/offsets-h2.ddl");
-        } else {
-            throw new IllegalArgumentException(format(UNSUPPORTED_TYPE, databaseName));
-        }
-
         final String schemaName = getSchemaName(connection);
-        return script.replace(SCHEMA_NAME_PROPERTY, schemaName);
+
+        if (DB_NAME_POSTGRE_SQL.equals(databaseName)) {
+            final int postgreSqlVersion = JdbcUtils.getDatabaseMajorVersion(connection);
+            if (postgreSqlVersion >= POSTGRESQL_WITH_IDENTITY_VERSION) {
+                return  replaceWith(readDDL("ddl/postgresql/v10/offsets-postgres.ddl"), schemaName);
+            } else {
+                return replaceWith(readDDL("ddl/postgresql/v9/offsets-postgres.ddl"), schemaName);
+            }
+        } else if (DB_NAME_H2.equals(databaseName)) {
+            return replaceWith(readDDL("ddl/h2/offsets-h2.ddl"), schemaName);
+        }
+        throw new IllegalArgumentException(format(UNSUPPORTED_TYPE, databaseName));
     }
 
     /**
@@ -101,12 +109,16 @@ public class DDLFactory {
     public static String getLockDDL(@Nonnull Connection connection) {
         final String databaseName = JdbcUtils.getDatabaseName(connection);
         final String schemaName = getSchemaName(connection);
+
         if (DB_NAME_POSTGRE_SQL.equals(databaseName)) {
-            final String script = readDDL("ddl/locks-postgres.ddl");
-            return script.replace(SCHEMA_NAME_PROPERTY, schemaName);
-        } else {
-            throw new IllegalArgumentException(format(UNSUPPORTED_TYPE, databaseName));
+            final int postgreSqlVersion = JdbcUtils.getDatabaseMajorVersion(connection);
+            if (postgreSqlVersion >= POSTGRESQL_WITH_IDENTITY_VERSION) {
+                return replaceWith(readDDL("ddl/postgresql/v10/locks-postgres.ddl"), schemaName);
+            } else {
+                return replaceWith(readDDL("ddl/postgresql/v9/locks-postgres.ddl"), schemaName);
+            }
         }
+        throw new IllegalArgumentException(format(UNSUPPORTED_TYPE, databaseName));
     }
 
     @SneakyThrows
@@ -124,4 +136,15 @@ public class DDLFactory {
         }
         throw new IllegalStateException("Can't find script: " + location);
     }
+
+    @Nonnull
+    private static String replaceWith(@Nonnull String script, @Nonnull String schemaName) {
+        return script.replace(SCHEMA_NAME_PROPERTY, schemaName);
+    }
+
+    @Nonnull
+    private static String replaceWith(@Nonnull String script, @Nonnull String schemaName, @Nonnull String contentType) {
+        return script.replace(SCHEMA_NAME_PROPERTY, schemaName).replace(CONTENT_TYPE_PROPERTY, contentType);
+    }
+
 }

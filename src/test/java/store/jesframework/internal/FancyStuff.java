@@ -68,10 +68,10 @@ public final class FancyStuff {
     }
 
     @Nonnull
-    private static PostgreSQLContainer<?> newPostgreSQLContainer() {
+    private static PostgreSQLContainer<?> newPostgreSQLContainer(@Nonnull String dockerTag) {
         final String user = "user";
         final String password = "password";
-        final PostgreSQLContainer container = new PostgreSQLContainer("postgres:latest")
+        final PostgreSQLContainer container = new PostgreSQLContainer(dockerTag)
                 .withDatabaseName("jes")
                 .withUsername(user)
                 .withPassword(password);
@@ -90,13 +90,18 @@ public final class FancyStuff {
 
     @Nonnull
     public static DataSource newPostgresDataSource() {
-        return newPostgresDataSource("public");
+        return newPostgresDataSource("public", "postgres:latest");
     }
 
     @Nonnull
     public static DataSource newPostgresDataSource(@Nonnull String schemaName) {
+        return newPostgresDataSource(schemaName, "postgres:latest");
+    }
+
+    @Nonnull
+    public static DataSource newPostgresDataSource(@Nonnull String schemaName, @Nonnull String dockerTag) {
         schemaName = schemaName + "_" + now().toInstant(UTC).toEpochMilli();
-        PostgreSQLContainer<?> container = newPostgreSQLContainer();
+        PostgreSQLContainer<?> container = newPostgreSQLContainer(dockerTag);
         final HikariConfig config = new HikariConfig();
 
         config.setUsername(container.getUsername());

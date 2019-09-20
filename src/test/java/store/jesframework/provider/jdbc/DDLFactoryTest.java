@@ -22,13 +22,18 @@ class DDLFactoryTest {
 
     private static final String POSTGRE_SQL = "PostgreSQL";
 
-    @SneakyThrows
     private Connection newConnectionMock(String databaseName, String schema) {
+        return newConnectionMock(databaseName, schema, 10);
+    }
+
+    @SneakyThrows
+    private Connection newConnectionMock(String databaseName, String schema, int version) {
         final Connection connection = mock(Connection.class);
         when(connection.getSchema()).thenReturn(schema);
 
         final DatabaseMetaData metaData = mock(DatabaseMetaData.class);
         when(metaData.getDatabaseProductName()).thenReturn(databaseName);
+        when(metaData.getDatabaseMajorVersion()).thenReturn(version);
         when(connection.getMetaData()).thenReturn(metaData);
         return connection;
     }
@@ -36,13 +41,21 @@ class DDLFactoryTest {
     @Test
     void getEventStoreDDLShouldReturnScriptOnCorrectValue() {
         assertNotNull(getEventStoreDDL(newConnectionMock(POSTGRE_SQL, "FOO"), byte[].class));
+        assertNotNull(getEventStoreDDL(newConnectionMock(POSTGRE_SQL, "FOO", 9), byte[].class));
         assertNotNull(getEventStoreDDL(newConnectionMock("H2", "FOO"), String.class));
+    }
+
+    @Test
+    void getAggregateStoreDDLShouldReturnScriptOnCorrectValue() {
+        assertNotNull(getAggregateStoreDDL(newConnectionMock(POSTGRE_SQL, "FOO")));
+        assertNotNull(getAggregateStoreDDL(newConnectionMock(POSTGRE_SQL, "FOO", 8)));
     }
 
     @Test
     void getOffsetDDLShouldReturnStriptOnCorrectValue() {
         assertNotNull(getOffsetsDDL(newConnectionMock("H2", "FOO")));
         assertNotNull(getOffsetsDDL(newConnectionMock(POSTGRE_SQL, "FOO")).getClass());
+        assertNotNull(getOffsetsDDL(newConnectionMock(POSTGRE_SQL, "FOO", 7)).getClass());
     }
 
     @Test
@@ -75,6 +88,7 @@ class DDLFactoryTest {
     @Test
     void getLockDDLShouldReturnScriptOnCorrectValue() {
         assertNotNull(getOffsetsDDL(newConnectionMock(POSTGRE_SQL, "FOO")));
+        assertNotNull(getOffsetsDDL(newConnectionMock(POSTGRE_SQL, "FOO", 9)));
     }
 
     @Test

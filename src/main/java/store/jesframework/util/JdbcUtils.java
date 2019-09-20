@@ -47,6 +47,18 @@ public final class JdbcUtils {
     }
 
     /**
+     * Returns the database version, obtained via connection
+     *
+     * @param connection is an active connection to datasource.
+     * @return the database majow version, obtained via connection.
+     */
+    @SneakyThrows
+    public static int getDatabaseMajorVersion(@Nonnull Connection connection) {
+        final DatabaseMetaData metaData = Objects.requireNonNull(connection).getMetaData();
+        return metaData.getDatabaseMajorVersion();
+    }
+
+    /**
      * Unwraps the returned from {@link java.sql.ResultSet#getObject(String)} type to appropriate java type.
      *
      * @param jdbcType type to unwrap.

@@ -27,7 +27,6 @@ import store.jesframework.Event;
 import store.jesframework.ex.BrokenStoreException;
 import store.jesframework.ex.VersionMismatchException;
 import store.jesframework.internal.Events;
-import store.jesframework.internal.FancyStuff;
 
 import static java.lang.Runtime.getRuntime;
 import static java.util.Arrays.asList;
@@ -41,18 +40,22 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import static store.jesframework.internal.FancyStuff.newEntityManagerFactory;
+import static store.jesframework.internal.FancyStuff.newH2DataSource;
+import static store.jesframework.internal.FancyStuff.newPostgresDataSource;
 
 @Slf4j
 class StoreProviderTest {
 
     private static final Collection<StoreProvider> PROVIDERS = asList(
             new InMemoryStoreProvider(),
-            new JdbcStoreProvider<>(FancyStuff.newH2DataSource(), String.class),
-            new JdbcStoreProvider<>(FancyStuff.newH2DataSource(), byte[].class),
-            new JdbcStoreProvider<>(FancyStuff.newPostgresDataSource(), byte[].class),
-            new JdbcStoreProvider<>(FancyStuff.newPostgresDataSource(), String.class),
-            new JpaStoreProvider<>(FancyStuff.newEntityManagerFactory(byte[].class), byte[].class),
-            new JpaStoreProvider<>(FancyStuff.newEntityManagerFactory(String.class), String.class)
+            new JdbcStoreProvider<>(newH2DataSource(), String.class),
+            new JdbcStoreProvider<>(newH2DataSource(), byte[].class),
+            new JdbcStoreProvider<>(newPostgresDataSource(), byte[].class),
+            new JdbcStoreProvider<>(newPostgresDataSource("es", "postgres:latest"), String.class),
+            new JdbcStoreProvider<>(newPostgresDataSource("es", "postgres:9.6"), String.class),
+            new JpaStoreProvider<>(newEntityManagerFactory(byte[].class), byte[].class),
+            new JpaStoreProvider<>(newEntityManagerFactory(String.class), String.class)
     );
 
     private static Collection<StoreProvider> createProviders() {
@@ -63,7 +66,11 @@ class StoreProviderTest {
     @MethodSource("createProviders")
     void shouldReadOwnWrites(@Nonnull StoreProvider provider) {
 
-        final List<Event> expected = asList(new Events.SampleEvent("FOO"), new Events.SampleEvent("BAR"), new Events.SampleEvent("BAZ"));
+        final List<Event> expected = asList(
+                new Events.SampleEvent("FOO"),
+                new Events.SampleEvent("BAR"),
+                new Events.SampleEvent("BAZ")
+        );
         expected.forEach(provider::write);
 
         final List<Event> actual;
