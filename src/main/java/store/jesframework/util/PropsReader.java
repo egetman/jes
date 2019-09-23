@@ -62,7 +62,6 @@ public final class PropsReader {
                 return property;
             }
         }
-
         throw new PropertyNotFoundException(propertyName);
     }
 }
