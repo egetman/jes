@@ -81,10 +81,11 @@ abstract class Reactor implements AutoCloseable {
         } catch (Exception e) {
             // we must not stop to try read store, if any exception happens
             log.error("Exception during event store tailing:", e);
+        } finally {
+            final long processedCount = counter.longValue();
+            offset.add(getKey(), processedCount);
+            log.trace("Offset increased for: {} by {}", processedCount, getKey());
         }
-        final long processedCount = counter.longValue();
-        offset.add(getKey(), processedCount);
-        log.trace("Offset increased for: {} by {}", processedCount, getKey());
     }
 
     @SuppressWarnings({"unused"})

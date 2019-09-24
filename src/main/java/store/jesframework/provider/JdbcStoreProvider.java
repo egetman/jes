@@ -263,12 +263,7 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
         @SneakyThrows
         public boolean hasNext() {
             if (fetchState == FetchState.UNKNOWN) {
-                final boolean next = set.next();
-                if (next) {
-                    fetchState = FetchState.HAS_NEXT;
-                } else {
-                    fetchState = FetchState.EMPTY;
-                }
+                fetchState = set.next() ? FetchState.HAS_NEXT : FetchState.EMPTY;
             }
             return fetchState == FetchState.HAS_NEXT;
         }

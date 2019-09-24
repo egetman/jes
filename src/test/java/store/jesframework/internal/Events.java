@@ -117,8 +117,8 @@ public final class Events {
         }
     }
 
-    @RequiredArgsConstructor
     @EqualsAndHashCode(of = "color")
+    @RequiredArgsConstructor(onConstructor = @__(@ConstructorProperties("color")))
     public static class ColorChanged implements Event {
 
         private final Color color;
