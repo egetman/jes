@@ -9,6 +9,7 @@ import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
+import javax.annotation.OverridingMethodsMustInvokeSuper;
 
 import store.jesframework.Event;
 import store.jesframework.JEventStore;
@@ -65,6 +66,7 @@ abstract class Reactor implements AutoCloseable {
     }
 
     // think of better solution for tailing. mb CDC (https://github.com/debezium/debezium) for db backed stores?
+    @OverridingMethodsMustInvokeSuper
     void tailStore() {
         final LongAdder counter = new LongAdder();
         final long offsetValue = offset.value(getKey());

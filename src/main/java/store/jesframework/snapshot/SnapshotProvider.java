@@ -20,6 +20,7 @@ public interface SnapshotProvider {
      */
     @Nonnull
     default <T extends Aggregate> T initialStateOf(@Nonnull UUID uuid, @Nonnull Class<T> type) {
+        Objects.requireNonNull(type, "Aggregate type must not be null");
         try {
             final Constructor<T> constructor = type.getDeclaredConstructor();
             constructor.setAccessible(true);

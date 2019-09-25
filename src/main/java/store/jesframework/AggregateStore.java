@@ -5,8 +5,10 @@ import java.util.UUID;
 import javax.annotation.Nonnull;
 
 import store.jesframework.ex.EmptyEventStreamException;
+import store.jesframework.snapshot.AlwaysSnapshotStrategy;
 import store.jesframework.snapshot.NoopSnapshotProvider;
 import store.jesframework.snapshot.SnapshotProvider;
+import store.jesframework.snapshot.SnapshotStrategy;
 
 import static java.util.Objects.requireNonNull;
 
@@ -15,8 +17,9 @@ import static java.util.Objects.requireNonNull;
  */
 public class AggregateStore {
 
-    final SnapshotProvider snapshotter;
     private final JEventStore eventStore;
+    private final SnapshotProvider snapshotProvider;
+    private final SnapshotStrategy snapshotStrategy;
 
     @SuppressWarnings({"unused"})
     public AggregateStore(@Nonnull JEventStore eventStore) {
@@ -24,8 +27,14 @@ public class AggregateStore {
     }
 
     public AggregateStore(@Nonnull JEventStore eventStore, @Nonnull SnapshotProvider snapshotProvider) {
+        this(eventStore, snapshotProvider, new AlwaysSnapshotStrategy());
+    }
+
+    public AggregateStore(@Nonnull JEventStore eventStore, @Nonnull SnapshotProvider snapshotProvider,
+                          @Nonnull SnapshotStrategy snapshotStrategy) {
         this.eventStore = requireNonNull(eventStore, "Event Store must not be null");
-        this.snapshotter = requireNonNull(snapshotProvider, "Snapshot Provider must not be null");
+        this.snapshotProvider = requireNonNull(snapshotProvider, "Snapshot Provider must not be null");
+        this.snapshotStrategy = requireNonNull(snapshotStrategy, "Snapshot Strategy must not be null");
     }
 
     /**
@@ -43,13 +52,14 @@ public class AggregateStore {
      */
     @Nonnull
     public <T extends Aggregate> T readBy(@Nonnull UUID uuid, @Nonnull Class<T> type) {
-        final T aggregate = snapshotter.initialStateOf(uuid, requireNonNull(type, "Aggregate type must not be null"));
+        final T aggregate = snapshotProvider.initialStateOf(uuid, type);
         final Collection<Event> events = eventStore.readBy(uuid, aggregate.streamVersion());
         if (events.isEmpty()) {
             return aggregate;
         }
         aggregate.handleEventStream(events);
-        return snapshotter.snapshot(aggregate);
+        return snapshotStrategy.isSnapshotNecessary(aggregate, events) ? snapshotProvider.snapshot(aggregate) :
+                aggregate;
     }
 
     /**

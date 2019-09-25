@@ -4,6 +4,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
 
 import store.jesframework.Aggregate;
@@ -18,7 +19,7 @@ public class InMemorySnapshotProvider extends DefaultSnapshotProvider {
         this(MAX_CACHE_SIZE);
     }
 
-    public InMemorySnapshotProvider(int cacheSize) {
+    public InMemorySnapshotProvider(@Nonnegative int cacheSize) {
         this.cache = new LinkedHashMap<UUID, Aggregate>(cacheSize, .75f, true) {
             @Override
             public boolean removeEldestEntry(Map.Entry<UUID, Aggregate> eldest) {

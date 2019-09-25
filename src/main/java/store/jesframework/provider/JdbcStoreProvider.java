@@ -12,6 +12,7 @@ import java.util.UUID;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import javax.annotation.Nonnull;
+import javax.annotation.WillClose;
 import javax.sql.DataSource;
 
 import lombok.AccessLevel;
@@ -228,7 +229,7 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
         }
     }
 
-    private void closeQuietly(AutoCloseable... resources) {
+    private void closeQuietly(@WillClose AutoCloseable... resources) {
         for (AutoCloseable resource : resources) {
             if (resource != null) {
                 try {
