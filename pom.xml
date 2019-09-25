@@ -52,8 +52,8 @@
         <jsr305.version>3.0.2</jsr305.version>
         <lombok.version>1.18.10</lombok.version>
         <logback.version>1.2.3</logback.version>
-        <jackson.version>2.9.9</jackson.version>
-        <jackson.databind.version>2.9.9.3</jackson.databind.version>
+        <jackson.version>2.9.10</jackson.version>
+        <jackson.databind.version>2.9.10</jackson.databind.version>
         <redisson.version>3.11.3</redisson.version>
         <byte-buddy.version>1.10.1</byte-buddy.version>
         <javax.persistence-api.version>2.2</javax.persistence-api.version>
