@@ -1,6 +1,8 @@
 package store.jesframework.reactors;
 
+import java.util.Collection;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
@@ -11,21 +13,22 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import store.jesframework.Event;
-import store.jesframework.JEventStore;
-import store.jesframework.lock.InMemoryReentrantLock;
-import store.jesframework.offset.InMemoryOffset;
-import store.jesframework.offset.Offset;
-import store.jesframework.provider.JdbcStoreProvider;
 import lombok.Data;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import store.jesframework.internal.Events;
+import store.jesframework.Event;
+import store.jesframework.JEventStore;
+import store.jesframework.common.ProjectionFailure;
 import store.jesframework.internal.FancyStuff;
+import store.jesframework.lock.InMemoryReentrantLock;
+import store.jesframework.offset.InMemoryOffset;
+import store.jesframework.offset.Offset;
+import store.jesframework.provider.InMemoryStoreProvider;
+import store.jesframework.provider.JdbcStoreProvider;
 
-import static store.jesframework.internal.FancyStuff.newPostgresDataSource;
-import static store.jesframework.reactors.ProjectorTest.SampleProjector.Projection;
 import static java.util.Arrays.asList;
+import static java.util.UUID.randomUUID;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -33,7 +36,13 @@ import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static store.jesframework.internal.Events.FancyEvent;
+import static store.jesframework.internal.Events.ProcessingStarted;
+import static store.jesframework.internal.Events.ProcessingTerminated;
+import static store.jesframework.internal.Events.SampleEvent;
+import static store.jesframework.reactors.ProjectorTest.SampleProjector.Projection;
 
+@Slf4j
 class ProjectorTest {
 
     @Test
@@ -62,13 +71,13 @@ class ProjectorTest {
             assertTrue(projector.isStarted());
             assertNull(projector.getProjection());
 
-            final Events.SampleEvent sampleEvent = new Events.SampleEvent("FOO");
-            final Events.FancyEvent fancyEvent = new Events.FancyEvent("BAR", UUID.randomUUID());
+            final SampleEvent sampleEvent = new SampleEvent("FOO");
+            final FancyEvent fancyEvent = new FancyEvent("BAR", UUID.randomUUID());
 
-            store.write(new Events.ProcessingStarted());
+            store.write(new ProcessingStarted());
             store.write(sampleEvent);
             store.write(fancyEvent);
-            store.write(new Events.ProcessingTerminated());
+            store.write(new ProcessingTerminated());
 
             final Projection projection = projector.getProjection();
 
@@ -94,7 +103,45 @@ class ProjectorTest {
         } catch (Exception ignored) {}
     }
 
-    @Slf4j
+    @Test
+    @SneakyThrows
+    void projectorShouldWriteProjectionFailureEventOnFailedEventHandling() {
+        final JEventStore store = new JEventStore(new InMemoryStoreProvider());
+        final InMemoryOffset offset = new InMemoryOffset();
+        final InMemoryReentrantLock lock = new InMemoryReentrantLock();
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        //noinspection unused
+        final Projector projector = new Projector(store, offset, lock) {
+
+            @ReactsOn
+            void handle(FancyEvent  event) {
+                throw new IllegalStateException("Boom Bam");
+            }
+            @ReactsOn
+            void handle(ProjectionFailure event) {
+                latch.countDown();
+                log.debug("Received {}", event);
+            }
+
+            // do nothing
+            @Override
+            protected void cleanUp() {}
+        };
+
+        final UUID uuid = randomUUID();
+        store.write(new FancyEvent("Fancy", uuid));
+
+        assertTrue(latch.await(2, SECONDS));
+
+        final Collection<Event> actual = store.readBy(uuid);
+        assertEquals(2, actual.size());
+
+        final Iterator<Event> iterator = actual.iterator();
+        assertEquals(FancyEvent.class, iterator.next().getClass());
+        assertEquals(ProjectionFailure.class, iterator.next().getClass());
+    }
+
     @SuppressWarnings("unused")
     static class SampleProjector extends Projector {
 
@@ -107,26 +154,26 @@ class ProjectorTest {
         }
 
         @ReactsOn
-        private void handle(@Nonnull Events.ProcessingStarted event) {
+        private void handle(@Nonnull ProcessingStarted event) {
             projection = new Projection();
             projection.totalProcessed++;
         }
 
         @ReactsOn
-        private void handle(@Nonnull Events.SampleEvent event) {
+        private void handle(@Nonnull SampleEvent event) {
             projection.name = event.getName();
             projection.totalProcessed++;
             projection.uniqueEventStreams.add(event.uuid());
         }
 
         @ReactsOn
-        private void handle(@Nonnull Events.FancyEvent event) {
+        private void handle(@Nonnull FancyEvent event) {
             projection.totalProcessed++;
             projection.uniqueEventStreams.add(event.uuid());
         }
 
         @ReactsOn
-        private void handle(@Nonnull Events.ProcessingTerminated event) {
+        private void handle(@Nonnull ProcessingTerminated event) {
             projection.totalProcessed++;
             endStreamLatch.countDown();
         }

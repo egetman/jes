@@ -2,6 +2,7 @@ package store.jesframework.reactors;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
@@ -23,6 +24,7 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import store.jesframework.Event;
 import store.jesframework.JEventStore;
+import store.jesframework.common.SagaFailure;
 import store.jesframework.internal.Events;
 import store.jesframework.lock.InMemoryReentrantLock;
 import store.jesframework.lock.JdbcLock;
@@ -30,6 +32,7 @@ import store.jesframework.lock.Lock;
 import store.jesframework.offset.InMemoryOffset;
 import store.jesframework.offset.JdbcOffset;
 import store.jesframework.offset.Offset;
+import store.jesframework.provider.InMemoryStoreProvider;
 import store.jesframework.provider.JdbcStoreProvider;
 
 import static java.lang.Runtime.getRuntime;
@@ -124,6 +127,40 @@ class SagaTest {
             executor.shutdown();
             provider.close();
         }
+    }
+
+    @Test
+    @SneakyThrows
+    void sagaShouldWriteSagaFailureEventOnFailedEventHandling() {
+        final JEventStore store = new JEventStore(new InMemoryStoreProvider());
+        final InMemoryOffset offset = new InMemoryOffset();
+        final InMemoryReentrantLock lock = new InMemoryReentrantLock();
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        //noinspection unused
+        final Saga saga = new Saga(store, offset, lock) {
+            @ReactsOn
+            void handle(Events.SampleEvent  event) {
+                throw new IllegalStateException("Boom");
+            }
+            @ReactsOn
+            void handle(SagaFailure event) {
+                latch.countDown();
+                log.debug("Received {}", event);
+            }
+        };
+
+        final UUID uuid = randomUUID();
+        store.write(new Events.SampleEvent("Sample", uuid));
+
+        assertTrue(latch.await(2, SECONDS));
+
+        final Collection<Event> actual = store.readBy(uuid);
+        assertEquals(2, actual.size());
+
+        final Iterator<Event> iterator = actual.iterator();
+        assertEquals(Events.SampleEvent.class, iterator.next().getClass());
+        assertEquals(SagaFailure.class, iterator.next().getClass());
     }
 
     @SuppressWarnings("SameParameterValue")

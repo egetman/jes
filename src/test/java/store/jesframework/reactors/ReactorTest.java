@@ -6,7 +6,7 @@ import java.util.concurrent.TimeUnit;
 import javax.annotation.Nonnull;
 
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
+import org.mockito.stubbing.Answer;
 
 import lombok.SneakyThrows;
 import store.jesframework.Command;
@@ -20,11 +20,19 @@ import store.jesframework.offset.InMemoryOffset;
 import store.jesframework.offset.Offset;
 import store.jesframework.provider.InMemoryStoreProvider;
 import store.jesframework.provider.JdbcStoreProvider;
+import store.jesframework.provider.StoreProvider;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class ReactorTest {
 
@@ -32,8 +40,8 @@ class ReactorTest {
     @SuppressWarnings({"ConstantConditions", "unused"})
     void shouldHandleItsInvariants() {
         final InMemoryOffset offset = new InMemoryOffset();
-        final CommandBus bus = Mockito.mock(CommandBus.class);
-        final JEventStore store = Mockito.mock(JEventStore.class);
+        final CommandBus bus = mock(CommandBus.class);
+        final JEventStore store = mock(JEventStore.class);
 
         // verify all parameters protected
         assertThrows(NullPointerException.class, () -> new Reactor(null, offset) {});
@@ -201,6 +209,46 @@ class ReactorTest {
 
         store.write(new Events.SampleEvent("Reactor sample", UUID.randomUUID()));
         assertTrue(latch.await(1, TimeUnit.SECONDS));
+    }
+
+    @Test
+    @SneakyThrows
+    void reactorShouldRetryFailurelimitedNumberOfTimes() {
+        final StoreProvider storeProvider = mock(StoreProvider.class);
+        final JEventStore eventStore = new JEventStore(storeProvider);
+        final Trigger trigger = mock(Trigger.class);
+        final InMemoryOffset offset = new InMemoryOffset();
+
+        when(storeProvider.readFrom(anyLong())).thenThrow(new IllegalStateException("Boom"));
+        doAnswer((Answer<Void>) invocation -> {
+            final Runnable runnable = invocation.getArgument(0);
+            try {
+                //noinspection InfiniteLoopStatement
+                while (true) {
+                    runnable.run();
+                    Thread.sleep(0);
+                }
+            } catch (InterruptedException ignored) {
+                Thread.currentThread().interrupt();
+            }
+            return null;
+        }).when(trigger).onChange(any());
+
+        doAnswer((Answer<Void>) invocation -> {
+            Thread.currentThread().interrupt();
+            return null;
+        }).when(trigger).close();
+
+        //noinspection unused
+        new Reactor(eventStore, offset, trigger) {
+
+            @ReactsOn
+            void handle(Events.SampleEvent ignored) {
+                // do nothing
+            }
+        };
+        verify(storeProvider, times(Reactor.MAX_RETRIES)).readFrom(anyLong());
+        verify(trigger, times(1)).close();
     }
 
 }

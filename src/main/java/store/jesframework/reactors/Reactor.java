@@ -11,16 +11,19 @@ import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.annotation.OverridingMethodsMustInvokeSuper;
 
-import store.jesframework.Event;
-import store.jesframework.JEventStore;
-import store.jesframework.offset.Offset;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import store.jesframework.Event;
+import store.jesframework.JEventStore;
+import store.jesframework.offset.Offset;
+import store.jesframework.util.Pair;
 
 @Slf4j
 abstract class Reactor implements AutoCloseable {
+
+    static final int MAX_RETRIES = 3;
 
     final Offset offset;
     final JEventStore store;
@@ -28,8 +31,9 @@ abstract class Reactor implements AutoCloseable {
 
     @Getter(value = AccessLevel.PROTECTED)
     private final String key = getClass().getName();
+    private Pair<Long, LongAdder> failureCounter;
     private final Map<Class<? extends Event>, Consumer<? super Event>> reactors = new HashMap<>();
-
+    
     Reactor(@Nonnull JEventStore store, @Nonnull Offset offset) {
         this(store, offset, new PollingTrigger());
     }
@@ -83,6 +87,18 @@ abstract class Reactor implements AutoCloseable {
         } catch (Exception e) {
             // we must not stop to try read store, if any exception happens
             log.error("Exception during event store tailing:", e);
+            // but we must not read the store infinitely (we could fall on store#read or reactors#get)
+            final long expectedOffset = offsetValue + counter.longValue();
+            // tailing is sequential, so the failed offset will be always the last processed
+            if (failureCounter == null || !failureCounter.getKey().equals(expectedOffset)) {
+                failureCounter = Pair.of(expectedOffset, new LongAdder());
+            }
+            failureCounter.getValue().increment();
+            if (failureCounter.getValue().intValue() >= MAX_RETRIES) {
+                // something weird
+                log.error("{} retries exceeded. Stopping {}", MAX_RETRIES, this);
+                close();
+            }
         } finally {
             final long processedCount = counter.longValue();
             offset.add(getKey(), processedCount);
