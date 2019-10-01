@@ -1,6 +1,5 @@
 package store.jesframework.reactors;
 
-import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 import javax.annotation.Nonnull;
@@ -24,25 +23,13 @@ import static java.util.concurrent.Executors.newFixedThreadPool;
 @Slf4j
 public class Saga extends Reactor {
 
-    private final Lock lock;
     private final ExecutorService workers = newFixedThreadPool(
             getRuntime().availableProcessors(),
             new DaemonThreadFactory(getClass().getSimpleName())
     );
 
     public Saga(@Nonnull JEventStore store, @Nonnull Offset offset, @Nonnull Lock lock) {
-        super(store, offset);
-        this.lock = Objects.requireNonNull(lock, "Lock must not be null");
-    }
-
-    public Saga(@Nonnull JEventStore store, @Nonnull Offset offset, @Nonnull Lock lock, @Nonnull Trigger trigger) {
-        super(store, offset, trigger);
-        this.lock = Objects.requireNonNull(lock, "Lock must not be null");
-    }
-
-    @Override
-    void tailStore() {
-        lock.doProtectedWrite(getKey(), super::tailStore);
+        super(store, offset, new BlockingPollingTrigger(lock));
     }
 
     @Override
@@ -63,4 +50,5 @@ public class Saga extends Reactor {
         super.close();
         workers.shutdown();
     }
+
 }

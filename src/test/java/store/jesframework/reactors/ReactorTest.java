@@ -6,6 +6,7 @@ import java.util.concurrent.TimeUnit;
 import javax.annotation.Nonnull;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.mockito.stubbing.Answer;
 
 import lombok.SneakyThrows;
@@ -15,16 +16,17 @@ import store.jesframework.bus.CommandBus;
 import store.jesframework.bus.SyncCommandBus;
 import store.jesframework.ex.BrokenReactorException;
 import store.jesframework.internal.Events;
-import store.jesframework.internal.FancyStuff;
 import store.jesframework.offset.InMemoryOffset;
 import store.jesframework.offset.Offset;
 import store.jesframework.provider.InMemoryStoreProvider;
 import store.jesframework.provider.JdbcStoreProvider;
 import store.jesframework.provider.StoreProvider;
 
+import static java.time.Duration.ofMillis;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTimeout;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -33,6 +35,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static store.jesframework.internal.FancyStuff.newPostgresDataSource;
 
 class ReactorTest {
 
@@ -85,24 +88,23 @@ class ReactorTest {
 
     @Test
     @SneakyThrows
+    @Timeout(value = 1, unit = TimeUnit.MINUTES)
     void reactorShouldReactOnEventStoreChanges() {
         final CountDownLatch endLatch = new CountDownLatch(1);
-        final CountDownLatch startLatch = new CountDownLatch(1);
         final CountDownLatch fancyLatch = new CountDownLatch(1);
         final CountDownLatch sampleLatch = new CountDownLatch(2);
 
-        final String key = SampleReactor.class.getName();
-
         final Offset offset = new InMemoryOffset();
-        final JdbcStoreProvider<byte[]> provider = new JdbcStoreProvider<>(FancyStuff.newPostgresDataSource(), byte[].class);
+        final StoreProvider provider = new JdbcStoreProvider<>(newPostgresDataSource(), byte[].class);
         final JEventStore store = new JEventStore(provider);
+
+        final String key;
 
         // after creation reactor start listening event store and handle written events
         // noinspection unused
-        try (final Reactor reactor = new SampleReactor(store, offset, endLatch, startLatch, fancyLatch, sampleLatch)) {
+        try (final Reactor reactor = new SampleReactor(store, offset, endLatch, fancyLatch, sampleLatch)) {
+            key = reactor.getKey();
 
-            // verify reactor launch listening
-            assertTrue(startLatch.await(1, TimeUnit.SECONDS));
             // verify no events written now
             assertEquals(1, fancyLatch.getCount());
             assertEquals(2, sampleLatch.getCount());
@@ -112,7 +114,6 @@ class ReactorTest {
 
             // verify reactor handle first store change
             assertTrue(fancyLatch.await(1, TimeUnit.SECONDS));
-            assertEquals(0, fancyLatch.getCount());
             assertEquals(2, sampleLatch.getCount());
 
             store.write(new Events.SampleEvent("BAR", UUID.randomUUID()));
@@ -121,49 +122,45 @@ class ReactorTest {
 
             // verify reactor handle all other store changes
             assertTrue(sampleLatch.await(1, TimeUnit.SECONDS));
-            assertEquals(0, fancyLatch.getCount());
-            assertEquals(0, sampleLatch.getCount());
 
             // verify last event was handled and offset value reflects the total amount of processed events
             assertTrue(endLatch.await(1, TimeUnit.SECONDS));
-            assertEquals(4, offset.value(key));
         }
+        assertTimeout(ofMillis(200), () -> {
+            //noinspection StatementWithEmptyBody
+            while (offset.value(key) != 4) {
+                // do nothing
+            }
+        });
+
         try {
-            provider.close();
+            ((AutoCloseable) provider).close();
         } catch (Exception ignored) {}
     }
 
     @SuppressWarnings("unused")
     static class SampleReactor extends Reactor {
 
-        @Nonnull
         private final CountDownLatch endLatch;
-        @Nonnull
-        private final CountDownLatch startLatch;
-        @Nonnull
         private final CountDownLatch fancyLatch;
-        @Nonnull
         private final CountDownLatch sampleLatch;
 
         private volatile boolean terminated;
 
         SampleReactor(@Nonnull JEventStore store, @Nonnull Offset offset,
                       @Nonnull CountDownLatch endLatch,
-                      @Nonnull CountDownLatch startLatch,
                       @Nonnull CountDownLatch fancyLatch,
                       @Nonnull CountDownLatch sampleLatch) {
 
             super(store, offset);
-            this.startLatch = startLatch;
             this.endLatch = endLatch;
             this.fancyLatch = fancyLatch;
             this.sampleLatch = sampleLatch;
         }
 
-
         @ReactsOn
         private void handle(Events.ProcessingTerminated event) {
-            this.terminated = true;
+            endLatch.countDown();
         }
 
         @ReactsOn
@@ -174,15 +171,6 @@ class ReactorTest {
         @ReactsOn
         private void handle(Events.FancyEvent event) {
             fancyLatch.countDown();
-        }
-
-        @Override
-        void tailStore() {
-            super.tailStore();
-            startLatch.countDown();
-            if (terminated) {
-                endLatch.countDown();
-            }
         }
     }
 
@@ -221,7 +209,7 @@ class ReactorTest {
 
         when(storeProvider.readFrom(anyLong())).thenThrow(new IllegalStateException("Boom"));
         doAnswer((Answer<Void>) invocation -> {
-            final Runnable runnable = invocation.getArgument(0);
+            final Runnable runnable = invocation.getArgument(1);
             try {
                 //noinspection InfiniteLoopStatement
                 while (true) {
@@ -232,7 +220,7 @@ class ReactorTest {
                 Thread.currentThread().interrupt();
             }
             return null;
-        }).when(trigger).onChange(any());
+        }).when(trigger).onChange(any(), any());
 
         doAnswer((Answer<Void>) invocation -> {
             Thread.currentThread().interrupt();

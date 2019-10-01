@@ -17,13 +17,8 @@ public abstract class Projector extends Reactor {
     private final Lock lock;
 
     public Projector(@Nonnull JEventStore store, @Nonnull Offset offset, @Nonnull Lock lock) {
-        super(store, offset);
+        super(store, offset, new BlockingPollingTrigger(lock));
         this.lock = Objects.requireNonNull(lock, "Lock must not be null");
-    }
-
-    @Override
-    void tailStore() {
-        lock.doProtectedWrite(getKey(), super::tailStore);
     }
 
     @Override

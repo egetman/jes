@@ -10,6 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -19,6 +20,7 @@ import javax.sql.DataSource;
 
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -50,6 +52,7 @@ class SagaTest {
 
     @Test
     @SneakyThrows
+    @Timeout(value = 1, unit = TimeUnit.MINUTES)
     void cuncurrentSagasMustNotProcessDuplicates() {
         final DataSource dataSource = newPostgresDataSource();
         final JEventStore store = new JEventStore(new JdbcStoreProvider<>(dataSource, String.class));
@@ -76,6 +79,7 @@ class SagaTest {
 
     @SneakyThrows
     @RepeatedTest(5)
+    @Timeout(value = 2, unit = TimeUnit.MINUTES)
     void sagaShouldNotLoseAnyEventsOnConcurrentReadWrite() {
         final JdbcStoreProvider<String> provider = new JdbcStoreProvider<>(newPostgresDataSource(), String.class);
 
@@ -131,6 +135,7 @@ class SagaTest {
 
     @Test
     @SneakyThrows
+    @Timeout(value = 1, unit = TimeUnit.MINUTES)
     void sagaShouldWriteSagaFailureEventOnFailedEventHandling() {
         final JEventStore store = new JEventStore(new InMemoryStoreProvider());
         final InMemoryOffset offset = new InMemoryOffset();
@@ -272,7 +277,7 @@ class SagaTest {
 
         TestLatchSaga(@Nonnull JEventStore store, @Nonnull Offset offset, @Nonnull Lock lock, CountDownLatch counter,
                       CountDownLatch isFailed) {
-            super(store, offset, lock, new PollingTrigger());
+            super(store, offset, lock);
             this.counter = Objects.requireNonNull(counter);
             this.isFailed = isFailed;
         }

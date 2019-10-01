@@ -68,7 +68,6 @@ class ProjectorTest {
 
         try (final SampleProjector projector = new SampleProjector(store, offset)) {
             // verify projector start listen event store and projection is not created yet
-            assertTrue(projector.isStarted());
             assertNull(projector.getProjection());
 
             final SampleEvent sampleEvent = new SampleEvent("FOO");
@@ -146,7 +145,6 @@ class ProjectorTest {
     static class SampleProjector extends Projector {
 
         private Projection projection;
-        private CountDownLatch started = new CountDownLatch(1);
         private CountDownLatch endStreamLatch = new CountDownLatch(1);
 
         SampleProjector(@Nonnull JEventStore store, @Nonnull Offset offset) {
@@ -185,21 +183,9 @@ class ProjectorTest {
         }
 
         @Override
-        void tailStore() {
-            super.tailStore();
-            started.countDown();
-        }
-
-        @Override
         protected void cleanUp() {
             projection = null;
             endStreamLatch = new CountDownLatch(1);
-            started = new CountDownLatch(1);
-        }
-
-        @SneakyThrows
-        boolean isStarted() {
-            return started.await(1, TimeUnit.SECONDS);
         }
 
         @Override

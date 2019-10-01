@@ -45,7 +45,7 @@ abstract class Reactor implements AutoCloseable {
         this.trigger = Objects.requireNonNull(trigger, "Trigger must not be null");
         this.reactors.putAll(readReactors());
 
-        trigger.onChange(this::tailStore);
+        this.trigger.onChange(getKey(), this::tailStore);
     }
 
     @Nonnull
@@ -70,8 +70,7 @@ abstract class Reactor implements AutoCloseable {
     }
 
     // think of better solution for tailing. mb CDC (https://github.com/debezium/debezium) for db backed stores?
-    @OverridingMethodsMustInvokeSuper
-    void tailStore() {
+    private void tailStore() {
         final LongAdder counter = new LongAdder();
         final long offsetValue = offset.value(getKey());
         log.trace("Current offset value: {} for {}", offsetValue, getKey());
@@ -114,6 +113,7 @@ abstract class Reactor implements AutoCloseable {
 
     @Override
     @SneakyThrows
+    @OverridingMethodsMustInvokeSuper
     public void close() {
         trigger.close();
         log.debug("{} closed", getKey());
