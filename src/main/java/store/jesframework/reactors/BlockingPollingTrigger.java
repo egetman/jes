@@ -22,6 +22,6 @@ class BlockingPollingTrigger extends PollingTrigger {
     @Override
     public void onChange(@Nonnull String key, @Nonnull Runnable runnable) {
         Objects.requireNonNull(runnable, "Runnable action must not be null");
-        super.onChange(key, () -> lock.doProtectedWrite(key, runnable));
+        super.onChange(key, () -> lock.doExclusively(key, runnable));
     }
 }

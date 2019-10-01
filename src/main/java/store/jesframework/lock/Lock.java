@@ -15,11 +15,11 @@ import store.jesframework.reactors.Projector;
 public interface Lock {
 
     /**
-     * Executes {@code action} in exclusive write mode, all other clients wait until this action completes.
+     * Executes {@code action} in exclusive mode, all other clients wait until this action completes.
      *
      * @param key    key to obtain lock instance.
      * @param action action to perform.
      */
-    void doProtectedWrite(@Nonnull String key, @Nonnull Runnable action);
+    void doExclusively(@Nonnull String key, @Nonnull Runnable action);
 
 }

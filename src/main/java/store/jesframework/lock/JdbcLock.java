@@ -43,7 +43,7 @@ public class JdbcLock implements Lock {
 
     @Override
     @SuppressWarnings("squid:S1141")
-    public void doProtectedWrite(@Nonnull String key, @Nonnull Runnable action) {
+    public void doExclusively(@Nonnull String key, @Nonnull Runnable action) {
         Objects.requireNonNull(key, "Key must not be null");
         Objects.requireNonNull(action, "Action must not be null");
 

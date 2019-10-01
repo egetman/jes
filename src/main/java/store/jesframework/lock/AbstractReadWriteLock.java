@@ -8,7 +8,7 @@ import static java.util.Objects.requireNonNull;
 abstract class AbstractReadWriteLock implements Lock {
 
     @Override
-    public void doProtectedWrite(@Nonnull String key, @Nonnull Runnable action) {
+    public void doExclusively(@Nonnull String key, @Nonnull Runnable action) {
         final ReadWriteLock lock = getLockByKey(key);
         try {
             lock.writeLock().lock();

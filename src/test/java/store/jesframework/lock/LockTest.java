@@ -60,8 +60,8 @@ class LockTest {
     @MethodSource("allLocks")
     @SuppressWarnings("ConstantConditions")
     void shouldThrowNpeOnNullArguments(@Nonnull Lock lock) {
-        assertThrows(NullPointerException.class, () -> lock.doProtectedWrite(null, () -> {}));
-        assertThrows(NullPointerException.class, () -> lock.doProtectedWrite("", null));
+        assertThrows(NullPointerException.class, () -> lock.doExclusively(null, () -> {}));
+        assertThrows(NullPointerException.class, () -> lock.doExclusively("", null));
     }
 
     // note: only for reentrant impl's
@@ -73,8 +73,8 @@ class LockTest {
         final ExecutorService threadPool = Executors.newSingleThreadExecutor();
         final CountDownLatch latch = new CountDownLatch(2);
 
-        threadPool.execute(() -> lock.doProtectedWrite(key, () -> {
-            lock.doProtectedWrite(key, latch::countDown);
+        threadPool.execute(() -> lock.doExclusively(key, () -> {
+            lock.doExclusively(key, latch::countDown);
             latch.countDown();
             try {
                 latch.await();
@@ -116,8 +116,8 @@ class LockTest {
         final ExecutorService threadPool = Executors.newFixedThreadPool(2);
         final CountDownLatch latch = new CountDownLatch(2);
 
-        threadPool.execute(() -> first.doProtectedWrite(key, new Accessor(latch)));
-        threadPool.execute(() -> second.doProtectedWrite(key, new Accessor(latch)));
+        threadPool.execute(() -> first.doExclusively(key, new Accessor(latch)));
+        threadPool.execute(() -> second.doExclusively(key, new Accessor(latch)));
 
         assertFalse(latch.await(2, TimeUnit.SECONDS));
         threadPool.shutdown();
@@ -142,13 +142,13 @@ class LockTest {
         // ok, create new one, try all other methods
         final JdbcLock lock = new JdbcLock(dataSource);
 
-        assertThrows(BrokenStoreException.class, () -> lock.doProtectedWrite("", () -> {
+        assertThrows(BrokenStoreException.class, () -> lock.doExclusively("", () -> {
             throw new IllegalArgumentException("Foo");
         }));
 
         // SQLException just handled as warn
         when(statement.executeUpdate()).thenThrow(SQLException.class);
-        assertDoesNotThrow(() -> lock.doProtectedWrite("", () -> {}));
+        assertDoesNotThrow(() -> lock.doExclusively("", () -> {}));
     }
 
     @AfterAll

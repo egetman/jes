@@ -35,7 +35,7 @@ public abstract class Projector extends Reactor {
      * Method used to fully recreate projection.
      */
     public void recreate() {
-        lock.doProtectedWrite(getKey(), () -> {
+        lock.doExclusively(getKey(), () -> {
             offset.reset(getKey());
             cleanUp();
         });
