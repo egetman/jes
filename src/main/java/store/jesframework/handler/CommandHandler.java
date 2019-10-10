@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import javax.annotation.Nonnull;
 
+import store.jesframework.AggregateStore;
 import store.jesframework.Command;
 import store.jesframework.JEventStore;
 import store.jesframework.bus.CommandBus;
@@ -23,6 +24,13 @@ import static store.jesframework.handler.HandlerUtils.invokeHandle;
 public abstract class CommandHandler {
 
     protected final JEventStore store;
+    // for cases when you need some validation against aggregate state
+    protected AggregateStore aggregateStore;
+
+    public CommandHandler(@Nonnull AggregateStore aggregateStore, @Nonnull CommandBus bus) {
+        this(aggregateStore.unwrap(), bus);
+        this.aggregateStore = aggregateStore;
+    }
 
     public CommandHandler(@Nonnull JEventStore store, @Nonnull CommandBus bus) {
         Objects.requireNonNull(bus, "Command bus must not be null");

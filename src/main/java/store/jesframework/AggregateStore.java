@@ -4,7 +4,6 @@ import java.util.Collection;
 import java.util.UUID;
 import javax.annotation.Nonnull;
 
-import store.jesframework.ex.EmptyEventStreamException;
 import store.jesframework.snapshot.AlwaysSnapshotStrategy;
 import store.jesframework.snapshot.NoopSnapshotProvider;
 import store.jesframework.snapshot.SnapshotProvider;
@@ -38,28 +37,53 @@ public class AggregateStore {
     }
 
     /**
-     * Returns specified aggregate of type {@code type} with restored state from {@link JEventStore}.
-     * Note: if {@link SnapshotProvider} was specified during {@link AggregateStore} initialization, snapshotting
-     * (aggregate caching) will be performed on {@code this#readBy(UUID, Class)} calls based on {@link SnapshotProvider}
-     * implementation.
+     * This method provide the ability to retrieve the delegate instance.
      *
-     * @param uuid identifier of event stream (uuid) to read.
-     * @param type class of aggregate to load
-     * @param <T>  type of aggregate.
+     * @return the underlying event store.
+     */
+    public JEventStore unwrap() {
+        return eventStore;
+    }
+
+    /**
+     * Returns specified aggregate of type {@code type} with restored state from {@link JEventStore}. Note: if {@link
+     * SnapshotProvider} was specified during {@link AggregateStore} initialization, snapshotting (aggregate caching)
+     * will be performed on {@code this#readBy(UUID, Class)} calls based on {@link SnapshotStrategy} implementation.
+     *
+     * @param uuid identifier of the event stream (uuid) to read.
+     * @param type class of the aggregate to load.
+     * @param <T>  type of the aggregate.
      * @return recreated/restored form {@link JEventStore} aggregate instance.
      * @throws NullPointerException if any of {@code uuid}/{@code type} is null.
-     * @throws EmptyEventStreamException if no event stream found by given {@code uuid}.
      */
     @Nonnull
     public <T extends Aggregate> T readBy(@Nonnull UUID uuid, @Nonnull Class<T> type) {
         final T aggregate = snapshotProvider.initialStateOf(uuid, type);
+        return readBy(uuid, aggregate);
+    }
+
+    /**
+     * Returns specified aggregate with refreshed state from {@link JEventStore}. Note: if {@link SnapshotProvider} was
+     * specified during {@link AggregateStore} initialization, snapshotting (aggregate caching) will be performed on
+     * {@code this#readBy(UUID, Class)} calls based on {@link SnapshotStrategy} implementation.
+     *
+     * @param uuid      identifier of the event stream (uuid) to read.
+     * @param aggregate instance of the aggregate to refresh.
+     * @param <T>       type of the aggregate.
+     * @return refreshed form {@link JEventStore} aggregate instance.
+     * @throws NullPointerException if any of {@code uuid}/{@code type} is null.
+     */
+    @Nonnull
+    public <T extends Aggregate> T readBy(@Nonnull UUID uuid, @Nonnull T aggregate) {
         final Collection<Event> events = eventStore.readBy(uuid, aggregate.streamVersion());
         if (events.isEmpty()) {
             return aggregate;
         }
         aggregate.handleEventStream(events);
-        return snapshotStrategy.isSnapshotNecessary(aggregate, events) ? snapshotProvider.snapshot(aggregate) :
-                aggregate;
+        if (snapshotStrategy.isSnapshotNecessary(aggregate, events)) {
+            return snapshotProvider.snapshot(aggregate);
+        }
+        return aggregate;
     }
 
     /**

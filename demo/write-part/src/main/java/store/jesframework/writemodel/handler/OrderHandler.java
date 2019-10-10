@@ -5,25 +5,21 @@ import javax.annotation.Nonnull;
 
 import org.springframework.stereotype.Component;
 
+import lombok.extern.slf4j.Slf4j;
 import store.jesframework.AggregateStore;
-import store.jesframework.JEventStore;
 import store.jesframework.bus.CommandBus;
 import store.jesframework.handler.CommandHandler;
 import store.jesframework.handler.Handle;
 import store.jesframework.writemodel.command.PlaceOrder;
 import store.jesframework.writemodel.domain.Item;
 import store.jesframework.writemodel.event.OrderPlaced;
-import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Component
 public class OrderHandler extends CommandHandler {
 
-    private final AggregateStore aggregateStore;
-
-    public OrderHandler(@Nonnull JEventStore store, @Nonnull CommandBus bus, @Nonnull AggregateStore aggregateStore) {
-        super(store, bus);
-        this.aggregateStore = aggregateStore;
+    public OrderHandler(@Nonnull AggregateStore aggregateStore, @Nonnull CommandBus bus) {
+        super(aggregateStore, bus);
     }
 
     @Handle

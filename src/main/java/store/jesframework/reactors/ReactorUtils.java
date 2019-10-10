@@ -2,15 +2,37 @@ package store.jesframework.reactors;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 import javax.annotation.Nonnull;
 
+import com.fasterxml.uuid.impl.NameBasedGenerator;
+
+import lombok.extern.slf4j.Slf4j;
 import store.jesframework.Event;
 import store.jesframework.ex.BrokenReactorException;
 import store.jesframework.util.Check;
 
+import static com.fasterxml.uuid.Generators.nameBasedGenerator;
+import static com.fasterxml.uuid.impl.NameBasedGenerator.NAMESPACE_DNS;
+import static java.security.MessageDigest.getInstance;
+
+@Slf4j
 class ReactorUtils {
+
+    private static final NameBasedGenerator GENERATOR;
+
+    static {
+        try {
+            GENERATOR = nameBasedGenerator(NAMESPACE_DNS, getInstance("SHA-1"));
+        } catch (NoSuchAlgorithmException e) {
+            log.error("Failed to find sha-1 impl: ", e);
+            throw new IllegalStateException(e);
+        }
+    }
 
     private ReactorUtils() {}
 
@@ -58,4 +80,11 @@ class ReactorUtils {
         }
     }
 
+    /**
+     * Method for generating name-based UUIDs using specified name (serialized to bytes using UTF-8 encoding).
+     */
+    static UUID uuidByKey(@Nonnull String key) {
+        Objects.requireNonNull(key, "Key must not be null");
+        return GENERATOR.generate(key);
+    }
 }

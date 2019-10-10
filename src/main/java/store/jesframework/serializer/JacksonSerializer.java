@@ -23,6 +23,7 @@ import static com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.NONE;
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.As;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
+import static com.fasterxml.jackson.databind.DeserializationFeature.ADJUST_DATES_TO_CONTEXT_TIME_ZONE;
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 import static com.fasterxml.jackson.databind.ObjectMapper.DefaultTypeResolverBuilder;
 import static com.fasterxml.jackson.databind.ObjectMapper.DefaultTyping;
@@ -54,6 +55,7 @@ class JacksonSerializer<S> implements Serializer<S, String> {
         mapper.disable(FAIL_ON_EMPTY_BEANS);
         mapper.disable(FAIL_ON_UNKNOWN_PROPERTIES);
         mapper.disable(WRITE_DATES_AS_TIMESTAMPS);
+        mapper.disable(ADJUST_DATES_TO_CONTEXT_TIME_ZONE);
         mapper.setSerializationInclusion(NON_NULL);
 
         final Map<Class<?>, String> aliases = registry == null ? new HashMap<>() : registry.getAliases();

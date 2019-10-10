@@ -1,7 +1,7 @@
 package store.jesframework.common;
 
 import java.beans.ConstructorProperties;
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.Objects;
 import java.util.UUID;
 import javax.annotation.Nonnull;
@@ -29,7 +29,7 @@ class Failure implements Event {
     /**
      * A date-time of the incident. Default is #now().
      */
-    private final LocalDateTime when = LocalDateTime.now();
+    private final ZonedDateTime when = ZonedDateTime.now();
 
     /**
      * Constructor for {@literal Failure} event.

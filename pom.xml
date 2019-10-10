@@ -53,9 +53,10 @@
         <lombok.version>1.18.10</lombok.version>
         <logback.version>1.2.3</logback.version>
         <jackson.version>2.9.10</jackson.version>
-        <jackson.databind.version>2.9.10</jackson.databind.version>
         <redisson.version>3.11.3</redisson.version>
         <byte-buddy.version>1.10.1</byte-buddy.version>
+        <jackson.databind.version>2.9.10</jackson.databind.version>
+        <java-uuid-generator.version>3.2.0</java-uuid-generator.version>
         <javax.persistence-api.version>2.2</javax.persistence-api.version>
 
         <!-- test dependencies versions -->
@@ -137,6 +138,12 @@
             <groupId>net.bytebuddy</groupId>
             <artifactId>byte-buddy</artifactId>
             <version>${byte-buddy.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.uuid</groupId>
+            <artifactId>java-uuid-generator</artifactId>
+            <version>${java-uuid-generator.version}</version>
         </dependency>
 
         <!-- for distributed locks/offset -->

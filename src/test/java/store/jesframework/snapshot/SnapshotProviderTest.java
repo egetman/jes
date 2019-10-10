@@ -10,18 +10,15 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import store.jesframework.Aggregate;
 import store.jesframework.AggregateStore;
 import store.jesframework.JEventStore;
 import store.jesframework.ex.AggregateCreationException;
-import store.jesframework.ex.EmptyEventStreamException;
 import store.jesframework.internal.Events;
 import store.jesframework.internal.FancyAggregate;
 import store.jesframework.provider.JdbcStoreProvider;
-import lombok.SneakyThrows;
 
-import static store.jesframework.internal.FancyStuff.newPostgresDataSource;
-import static store.jesframework.internal.FancyStuff.newRedissonClient;
 import static java.util.Arrays.asList;
 import static java.util.UUID.randomUUID;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -31,6 +28,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static store.jesframework.internal.FancyStuff.newPostgresDataSource;
+import static store.jesframework.internal.FancyStuff.newRedissonClient;
 
 class SnapshotProviderTest {
 
@@ -106,6 +105,13 @@ class SnapshotProviderTest {
         assertThrows(NullPointerException.class, () -> provider.reset(null));
     }
 
+    @Test
+    void resetFallbackShouldBeNoop() {
+        //noinspection ConstantConditions
+        assertThrows(NullPointerException.class, () -> new SnapshotProvider() {}.reset(null));
+        assertDoesNotThrow(() -> new SnapshotProvider() {}.reset(randomUUID()));
+    }
+
     @ParameterizedTest
     @MethodSource("createSnapshotProviders")
     void initialStateShouldReturnNewInstanceIfSnapshotWasReseted(@Nonnull SnapshotProvider provider) {
@@ -129,7 +135,6 @@ class SnapshotProviderTest {
         final UUID uuid = randomUUID();
         final Events.SampleEvent foo = new Events.SampleEvent("FOO", uuid);
         final Events.FancyEvent fancy = new Events.FancyEvent("Fancy", uuid);
-        assertThrows(EmptyEventStreamException.class, () -> aggregateStore.readBy(uuid, FancyAggregate.class));
 
         eventStore.write(foo);
         eventStore.write(fancy);

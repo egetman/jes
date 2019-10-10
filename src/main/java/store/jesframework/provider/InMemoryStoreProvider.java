@@ -7,6 +7,8 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.LongAdder;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
@@ -21,6 +23,7 @@ public class InMemoryStoreProvider implements StoreProvider {
 
     private final List<Event> events = new CopyOnWriteArrayList<>();
     private final Map<UUID, LongAdder> streamsVersions = new ConcurrentHashMap<>();
+    private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
     @Override
     public Stream<Event> readFrom(long offset) {
@@ -33,20 +36,28 @@ public class InMemoryStoreProvider implements StoreProvider {
         return events.stream().filter(event -> uuid.equals(event.uuid())).collect(Collectors.toList());
     }
 
-    // todo: need to make it thread safe to write versioned events
+    // not optimal exclusive write
     @Override
     public void write(@Nonnull Event event) {
-        if (event.uuid() != null) {
-            streamsVersions.putIfAbsent(event.uuid(), new LongAdder());
-            final LongAdder actualVersion = streamsVersions.get(event.uuid());
-            final long expectedVersion = event.expectedStreamVersion();
-            if (expectedVersion != -1 && actualVersion.longValue() != expectedVersion) {
-                throw new VersionMismatchException(expectedVersion, actualVersion.longValue());
+        try {
+            lock.writeLock().lock();
+            if (event.uuid() != null) {
+                final long expectedVersion = event.expectedStreamVersion();
+                // check current event stream version
+                if (expectedVersion != -1) {
+                    final LongAdder actual = streamsVersions.computeIfAbsent(event.uuid(), uuid -> new LongAdder());
+                    if (actual.longValue() != expectedVersion) {
+                        throw new VersionMismatchException(event.uuid(), expectedVersion, actual.longValue());
+                    }
+                }
             }
-        }
-        events.add(event);
-        if (event.uuid() != null) {
-            streamsVersions.get(event.uuid()).increment();
+            events.add(event);
+            // update written event stream version
+            if (event.uuid() != null) {
+                streamsVersions.computeIfAbsent(event.uuid(), uuid -> new LongAdder()).increment();
+            }
+        } finally {
+            lock.writeLock().unlock();
         }
     }
 

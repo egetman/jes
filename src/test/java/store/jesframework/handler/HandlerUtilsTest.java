@@ -23,7 +23,7 @@ class HandlerUtilsTest {
 
             @Override
             public void accept(Command command) {
-                throw new UnsupportedOperationException("Foo");
+                throw new IllegalStateException(new UnsupportedOperationException("Foo"));
             }
         };
 

@@ -5,7 +5,6 @@ import java.util.UUID;
 import javax.annotation.Nonnull;
 
 import store.jesframework.Event;
-import store.jesframework.ex.EmptyEventStreamException;
 
 public interface SnapshotReader {
 
@@ -17,7 +16,6 @@ public interface SnapshotReader {
      * @param skip events count to skip.
      * @return {@link Collection} of events stored in that {@literal EventStore}, grouped by {@literal uuid}.
      * @throws NullPointerException                if uuid is null.
-     * @throws EmptyEventStreamException if event stream with given {@code uuid} not found.
      */
     Collection<Event> readBy(@Nonnull UUID uuid, long skip);
 

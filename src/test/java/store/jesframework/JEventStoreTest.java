@@ -14,18 +14,19 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
-import store.jesframework.ex.EmptyEventStreamException;
 import store.jesframework.provider.InMemoryStoreProvider;
 import store.jesframework.provider.JdbcStoreProvider;
 
-import static store.jesframework.internal.Events.SampleEvent;
-import static store.jesframework.internal.FancyStuff.newPostgresDataSource;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toSet;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.TestInstance.Lifecycle;
+import static store.jesframework.internal.Events.SampleEvent;
+import static store.jesframework.internal.FancyStuff.newPostgresDataSource;
 
 @TestInstance(Lifecycle.PER_CLASS)
 class JEventStoreTest {
@@ -55,8 +56,8 @@ class JEventStoreTest {
     }
 
     @Test
-    void shouldThrowEmptyEventStreamExceptionOnNonExistingStreamUuid() {
-        assertThrows(EmptyEventStreamException.class, () -> source.readBy(UUID.randomUUID()));
+    void shouldReturnEmptyEventStreamOnNonExistingStreamUuid() {
+        assertEquals(0, source.readBy(UUID.randomUUID()).size());
     }
 
     @Test
@@ -83,7 +84,7 @@ class JEventStoreTest {
         final Collection<Event> actual = source.readBy(uuid);
         assertIterableEquals(events, actual);
 
-        assertThrows(EmptyEventStreamException.class, () -> target.readBy(uuid));
+        assertTrue(target.readBy(uuid).isEmpty());
 
         source.copyTo(target);
         final Collection<Event> transferred = target.readBy(uuid);
@@ -103,7 +104,7 @@ class JEventStoreTest {
         final Collection<Event> actual = source.readBy(uuid);
         assertIterableEquals(events, actual);
 
-        assertThrows(EmptyEventStreamException.class, () -> target.readBy(uuid));
+        assertTrue(target.readBy(uuid).isEmpty());
 
         // should change first 2 uuid and leave the rest
         final UUID newUuid = UUID.randomUUID();

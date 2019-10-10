@@ -131,7 +131,7 @@ public class JpaStoreProvider<T> implements StoreProvider, SnapshotReader, AutoC
             });
 
             if (expectedVersion != actualVersion) {
-                throw new VersionMismatchException(expectedVersion, actualVersion);
+                throw new VersionMismatchException(uuid, expectedVersion, actualVersion);
             }
         }
 

@@ -102,8 +102,9 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
     private Stream<Event> readBy(@Nonnull String from, @Nonnull Object... values) {
         final Connection connection = createConnection(dataSource);
         try {
-            connection.setReadOnly(true);
+            // order of calls matters
             connection.setAutoCommit(false);
+            connection.setReadOnly(true);
 
             final PreparedStatement statement = connection.prepareStatement(from, TYPE_FORWARD_ONLY, CONCUR_READ_ONLY);
             statement.setFetchSize(FETCH_SIZE);
@@ -200,7 +201,7 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
                     final long actualVersion = resultSet.getLong(1);
                     if (expectedVersion != actualVersion) {
                         log.error("Version mismatch detected for {}", event);
-                        throw new VersionMismatchException(expectedVersion, actualVersion);
+                        throw new VersionMismatchException(uuid, expectedVersion, actualVersion);
                     }
                 }
             }
@@ -317,6 +318,7 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
         private ResultSetIterator createIterator(@Nonnull String from, long offset) {
             final Connection connection = createConnection(dataSource);
             try {
+                // order of calls matters
                 connection.setAutoCommit(false);
                 connection.setReadOnly(true);
 

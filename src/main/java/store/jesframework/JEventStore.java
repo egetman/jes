@@ -6,10 +6,8 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
-import store.jesframework.ex.EmptyEventStreamException;
 import store.jesframework.provider.StoreProvider;
 import store.jesframework.snapshot.SnapshotReader;
-import store.jesframework.util.Check;
 
 import static java.util.Objects.requireNonNull;
 
@@ -53,12 +51,9 @@ public class JEventStore {
      * @param uuid identifier of event uuid to read.
      * @return {@link Collection} of events stored in that {@literal EventStore}, grouped by {@literal uuid}.
      * @throws NullPointerException                if uuid is null.
-     * @throws EmptyEventStreamException if event stream with given {@code uuid} not found.
      */
     public Collection<Event> readBy(@Nonnull UUID uuid) {
-        final Collection<Event> events = provider.readBy(requireNonNull(uuid, NON_NULL_UUID));
-        Check.nonEmpty(events, () -> new EmptyEventStreamException("Event stream with uuid " + uuid + " not found"));
-        return events;
+        return provider.readBy(requireNonNull(uuid, NON_NULL_UUID));
     }
 
     Collection<Event> readBy(@Nonnull UUID uuid, long skip) {
