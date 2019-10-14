@@ -5,10 +5,9 @@ import javax.annotation.Nonnull;
 
 import org.springframework.context.event.ContextClosedEvent;
 import org.springframework.context.event.EventListener;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import store.jesframework.AggregateStore;
-import store.jesframework.JEventStore;
 import store.jesframework.bus.CommandBus;
 import store.jesframework.lock.Lock;
 import store.jesframework.offset.Offset;
@@ -18,17 +17,17 @@ import store.jesframework.writemodel.command.RemoveFromStock;
 import store.jesframework.writemodel.domain.Item;
 import store.jesframework.writemodel.event.OrderPlaced;
 
-@Component
+@Service
 public class OrderSaga extends Saga {
 
     private final CommandBus bus;
     private final AggregateStore aggregateStore;
 
-    public OrderSaga(@Nonnull JEventStore store, @Nonnull Offset offset, @Nonnull Lock lock, @Nonnull CommandBus bus,
-                     @Nonnull AggregateStore aggregateStore) {
-        super(store, offset, lock);
+    public OrderSaga(@Nonnull AggregateStore aggregateStore, @Nonnull Offset offset, @Nonnull Lock lock,
+                     @Nonnull CommandBus bus) {
+        super(aggregateStore, offset, lock);
         this.bus = Objects.requireNonNull(bus, "CommandBus must not be null");
-        this.aggregateStore = Objects.requireNonNull(aggregateStore, "AggregateStore must not be null");
+        this.aggregateStore = aggregateStore;
     }
 
     @ReactsOn

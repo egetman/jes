@@ -53,7 +53,7 @@
         <dependency>
             <groupId>store.jesframework</groupId>
             <artifactId>jes-core</artifactId>
-            <version>0.2.0</version>
+            <version>1.0.0</version>
         </dependency>
 
         <dependency>
@@ -70,6 +70,7 @@
     </dependencies>
 
     <build>
+        <finalName>read-part-${project.version}</finalName>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
