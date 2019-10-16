@@ -67,7 +67,7 @@ There are some typical patterns for mainstream apps for which Jes is perfect:
 3) **hybrid apps, which combines 1 & 2 types in some proportion** 
 
 ## Features
-Feature | Seubsection | Description
+Feature | Subsection | Description
 --------|-------------|-------------
 event stream corrections | | what to do if something goes wrong?
 &#xfeff;| event stream split | it can be useful when you need, for example, split event stream for the anonymous one and another, that contains clients personal data
