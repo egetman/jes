@@ -8,6 +8,12 @@ import store.jesframework.serializer.api.EventSerializer;
 
 public class XStreamEventSerializer extends XStreamSerializer<Event> implements EventSerializer<String> {
 
+    @SuppressWarnings("WeakerAccess")
+    public XStreamEventSerializer() {
+        super(null);
+    }
+
+    @SuppressWarnings("unused")
     public XStreamEventSerializer(@Nullable TypeRegistry typeRegistry) {
         super(typeRegistry);
     }

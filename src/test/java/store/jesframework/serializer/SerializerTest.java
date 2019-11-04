@@ -26,14 +26,16 @@ class SerializerTest {
     private static Stream<EventSerializer<?>> eventSerializers() {
         return Stream.of(
                 new EventSerializerProxy<>(new KryoEventSerializer(), new UpcasterRegistry<>()),
-                new EventSerializerProxy<>(new JacksonEventSerializer(), new UpcasterRegistry<>())
+                new EventSerializerProxy<>(new JacksonEventSerializer(), new UpcasterRegistry<>()),
+                new EventSerializerProxy<>(new XStreamEventSerializer(), new UpcasterRegistry<>())
         );
     }
 
     private static Stream<Arguments> createInvariantsVerificationPair() {
         return Stream.of(
                 Arguments.of(new KryoEventSerializer(), new byte[]{}),
-                Arguments.of(new JacksonEventSerializer(), "")
+                Arguments.of(new JacksonEventSerializer(), ""),
+                Arguments.of(new XStreamEventSerializer(), "")
         );
     }
 
