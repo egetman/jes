@@ -7,6 +7,7 @@ import javax.annotation.Nullable;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.Xpp3Driver;
 import com.thoughtworks.xstream.mapper.CannotResolveClassException;
+import com.thoughtworks.xstream.security.AnyTypePermission;
 
 import store.jesframework.ex.SerializationException;
 import store.jesframework.serializer.api.Serializer;
@@ -17,11 +18,13 @@ public class XStreamSerializer<S> implements Serializer<S, String> {
     private final XStream xstream = new XStream(new Xpp3Driver());
 
     public XStreamSerializer(@Nullable TypeRegistry typeRegistry) {
-        if (typeRegistry == null) {
-            return;
+        XStream.setupDefaultSecurity(xstream);
+        xstream.addPermission(AnyTypePermission.ANY);
+
+        if (typeRegistry != null) {
+            final Map<Class<?>, String> aliases = typeRegistry.getAliases();
+            aliases.forEach((clazz, name) -> xstream.alias(name, clazz));
         }
-        final Map<Class<?>, String> aliases = typeRegistry.getAliases();
-        aliases.forEach((clazz, name) -> xstream.alias(name, clazz));
     }
 
     @Nonnull
