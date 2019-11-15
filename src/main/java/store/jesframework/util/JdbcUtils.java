@@ -64,7 +64,7 @@ public final class JdbcUtils {
      * @param jdbcType type to unwrap.
      * @param <T>      is one of appropriate java types.
      * @return unwrapped type from result set.
-     * @throws IllegalArgumentException if type is not supported or null.
+     * @throws IllegalArgumentException if jdbcType is not supported or null.
      */
     @SneakyThrows
     @SuppressWarnings("unchecked")

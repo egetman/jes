@@ -37,7 +37,7 @@ public class AggregateStore {
     }
 
     /**
-     * This method provide the ability to retrieve the delegate instance.
+     * This method provides the ability to retrieve the delegate instance.
      *
      * @return the underlying event store.
      */

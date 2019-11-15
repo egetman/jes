@@ -16,6 +16,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static store.jesframework.internal.Events.SampleEvent;
 import static store.jesframework.internal.FancyStuff.newEntityManagerFactory;
 import static store.jesframework.internal.FancyStuff.newPostgresDataSource;
+import static store.jesframework.serializer.api.Format.BINARY_KRYO;
+import static store.jesframework.serializer.api.Format.JSON_JACKSON;
+import static store.jesframework.serializer.api.Format.XML_XSTREAM;
 
 class FailureTest {
 
@@ -45,7 +48,7 @@ class FailureTest {
     @Test
     void stringProviderShouldBeAbleToDeserializeSagaFailure() {
         @Cleanup
-        final JdbcStoreProvider<String> provider = new JdbcStoreProvider<>(newPostgresDataSource(), String.class);
+        final JdbcStoreProvider<String> provider = new JdbcStoreProvider<>(newPostgresDataSource(), XML_XSTREAM);
 
         final SampleEvent event = new SampleEvent("SampleName", UUID.randomUUID(), 100500);
         final SagaFailure failure = new SagaFailure(event, getClass().getName(), 2, "NullPointerException");
@@ -61,7 +64,7 @@ class FailureTest {
     @Test
     void stringProviderShouldBeAbleToDeserializeProjectionFailure() {
         @Cleanup
-        final JdbcStoreProvider<String> provider = new JdbcStoreProvider<>(newPostgresDataSource(), String.class);
+        final JdbcStoreProvider<String> provider = new JdbcStoreProvider<>(newPostgresDataSource(), JSON_JACKSON);
 
         final SampleEvent event = new SampleEvent("SampleName", UUID.randomUUID(), 100500);
         final ProjectionFailure failure = new ProjectionFailure(event, getClass().getName(), 2, "NullPointerException");
@@ -78,7 +81,7 @@ class FailureTest {
     void byteArrayProviderShouldBeAbleToDeserializeSagaFailure() {
         @Cleanup
         final JpaStoreProvider<byte[]> provider
-                = new JpaStoreProvider<>(newEntityManagerFactory(byte[].class), byte[].class);
+                = new JpaStoreProvider<>(newEntityManagerFactory(byte[].class), BINARY_KRYO);
 
         final SampleEvent event = new SampleEvent("SampleName", UUID.randomUUID(), 100500);
         final SagaFailure failure = new SagaFailure(event, "", 200, "ClassCastException: foo vs bar");
@@ -95,7 +98,7 @@ class FailureTest {
     void byteArrayProviderShouldBeAbleToDeserializeProjectorFailure() {
         @Cleanup
         final JpaStoreProvider<byte[]> provider
-                = new JpaStoreProvider<>(newEntityManagerFactory(byte[].class), byte[].class);
+                = new JpaStoreProvider<>(newEntityManagerFactory(byte[].class), BINARY_KRYO);
 
         final SampleEvent event = new SampleEvent("SampleName", UUID.randomUUID(), 10500);
         final ProjectionFailure failure = new ProjectionFailure(event, "", 100, "ClassCastException: foo vs bar");

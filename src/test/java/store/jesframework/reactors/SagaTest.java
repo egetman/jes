@@ -55,7 +55,7 @@ class SagaTest {
     @Timeout(value = 1, unit = TimeUnit.MINUTES)
     void cuncurrentSagasMustNotProcessDuplicates() {
         final DataSource dataSource = newPostgresDataSource();
-        final JEventStore store = new JEventStore(new JdbcStoreProvider<>(dataSource, String.class));
+        final JEventStore store = new JEventStore(new JdbcStoreProvider<>(dataSource));
         final Lock lock = new JdbcLock(dataSource);
         final Offset offset = new JdbcOffset(dataSource);
 
@@ -81,7 +81,7 @@ class SagaTest {
     @RepeatedTest(5)
     @Timeout(value = 2, unit = TimeUnit.MINUTES)
     void sagaShouldNotLoseAnyEventsOnConcurrentReadWrite() {
-        final JdbcStoreProvider<String> provider = new JdbcStoreProvider<>(newPostgresDataSource(), String.class);
+        final JdbcStoreProvider<String> provider = new JdbcStoreProvider<>(newPostgresDataSource());
 
         final JEventStore store = new JEventStore(provider);
         final Lock lock = new InMemoryReentrantLock();

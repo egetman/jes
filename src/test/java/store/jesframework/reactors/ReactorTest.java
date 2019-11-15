@@ -21,6 +21,7 @@ import store.jesframework.offset.Offset;
 import store.jesframework.provider.InMemoryStoreProvider;
 import store.jesframework.provider.JdbcStoreProvider;
 import store.jesframework.provider.StoreProvider;
+import store.jesframework.serializer.api.Format;
 
 import static java.time.Duration.ofMillis;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -95,7 +96,7 @@ class ReactorTest {
         final CountDownLatch sampleLatch = new CountDownLatch(2);
 
         final Offset offset = new InMemoryOffset();
-        final StoreProvider provider = new JdbcStoreProvider<>(newPostgresDataSource(), byte[].class);
+        final StoreProvider provider = new JdbcStoreProvider<>(newPostgresDataSource(), Format.BINARY_KRYO);
         final JEventStore store = new JEventStore(provider);
 
         final String key;
@@ -123,7 +124,7 @@ class ReactorTest {
             // verify reactor handle all other store changes
             assertTrue(sampleLatch.await(1, TimeUnit.SECONDS));
 
-            // verify last event was handled and offset value reflects the total amount of processed events
+            // verify last event handled, and offset value reflects the total amount of processed events
             assertTrue(endLatch.await(1, TimeUnit.SECONDS));
         }
         assertTimeout(ofMillis(200), () -> {

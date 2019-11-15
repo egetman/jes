@@ -19,7 +19,6 @@ import lombok.extern.slf4j.Slf4j;
 import store.jesframework.Event;
 import store.jesframework.JEventStore;
 import store.jesframework.common.ProjectionFailure;
-import store.jesframework.internal.FancyStuff;
 import store.jesframework.lock.InMemoryReentrantLock;
 import store.jesframework.offset.InMemoryOffset;
 import store.jesframework.offset.Offset;
@@ -40,6 +39,7 @@ import static store.jesframework.internal.Events.FancyEvent;
 import static store.jesframework.internal.Events.ProcessingStarted;
 import static store.jesframework.internal.Events.ProcessingTerminated;
 import static store.jesframework.internal.Events.SampleEvent;
+import static store.jesframework.internal.FancyStuff.newPostgresDataSource;
 import static store.jesframework.reactors.ProjectorTest.SampleProjector.Projection;
 
 @Slf4j
@@ -63,11 +63,11 @@ class ProjectorTest {
     @SneakyThrows
     void projectorShouldCorrectlyRebuildProjection() {
         final InMemoryOffset offset = new InMemoryOffset();
-        final JdbcStoreProvider<String> provider = new JdbcStoreProvider<>(FancyStuff.newPostgresDataSource(), String.class);
+        final JdbcStoreProvider<String> provider = new JdbcStoreProvider<>(newPostgresDataSource());
         final JEventStore store = new JEventStore(provider);
 
         try (final SampleProjector projector = new SampleProjector(store, offset)) {
-            // verify projector start listen event store and projection is not created yet
+            // verify projector start listen event store, and the projection was not created yet
             assertNull(projector.getProjection());
 
             final SampleEvent sampleEvent = new SampleEvent("FOO");

@@ -34,7 +34,7 @@ class AggregateStoreTest {
     @Test
     void aggregateStateShouldReactToEventStreamChange() {
         final EntityManagerFactory entityManager = newEntityManagerFactory(String.class);
-        final JpaStoreProvider<String> storeProvider = new JpaStoreProvider<>(entityManager, String.class);
+        final JpaStoreProvider<String> storeProvider = new JpaStoreProvider<>(entityManager);
 
         final JEventStore eventStore = new JEventStore(storeProvider);
         final AggregateStore aggregateStore = new AggregateStore(eventStore, new InMemorySnapshotProvider());
@@ -59,7 +59,7 @@ class AggregateStoreTest {
         aggregate = aggregateStore.readBy(uuid, FancyAggregate.class);
         assertTrue(aggregate.isCancelled());
 
-        // not handled event type should not broke anithing
+        // not handled event type should not break anything
         eventStore.write(new ProcessingStarted(uuid));
         assertDoesNotThrow(() -> aggregateStore.readBy(uuid, FancyAggregate.class));
 

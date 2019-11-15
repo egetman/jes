@@ -7,7 +7,8 @@ import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import store.jesframework.Event;
 import store.jesframework.common.UnknownTypeResolved;
-import store.jesframework.serializer.api.EventSerializer;
+import store.jesframework.serializer.api.Format;
+import store.jesframework.serializer.api.Serializer;
 
 /**
  * This Serializer handles the case event cannot be deserialized cause of missing type information.
@@ -15,12 +16,12 @@ import store.jesframework.serializer.api.EventSerializer;
  * @param <T> type of raw event type.
  */
 @Slf4j
-class EventSerializerProxy<T> implements EventSerializer<T> {
+class EventSerializerProxy<T> implements Serializer<Event, T> {
 
-    private final EventSerializer<T> actual;
+    private final Serializer<Event, T> actual;
     private final UpcasterRegistry<T> registry;
 
-    EventSerializerProxy(@Nonnull EventSerializer<T> actual, @Nonnull UpcasterRegistry<T> registry) {
+    EventSerializerProxy(@Nonnull Serializer<Event, T> actual, @Nonnull UpcasterRegistry<T> registry) {
         this.actual = Objects.requireNonNull(actual);
         this.registry = Objects.requireNonNull(registry, "Upcaster registry must not be null");
     }
@@ -48,5 +49,11 @@ class EventSerializerProxy<T> implements EventSerializer<T> {
     @Override
     public String fetchTypeName(@Nonnull T raw) {
         return actual.fetchTypeName(raw);
+    }
+
+    @Nonnull
+    @Override
+    public Format format() {
+        return actual.format();
     }
 }

@@ -5,12 +5,12 @@ import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import javax.annotation.Nonnull;
 
-import store.jesframework.util.JdbcUtils;
 import lombok.SneakyThrows;
+import store.jesframework.util.JdbcUtils;
 
+import static java.lang.String.format;
 import static store.jesframework.util.JdbcUtils.getSchemaName;
 import static store.jesframework.util.JdbcUtils.getSqlTypeByClassAndDatabaseName;
-import static java.lang.String.format;
 
 /**
  * Factory for vendor specific database dialects.
@@ -33,7 +33,7 @@ public class DDLFactory {
      * Constructs new DDL producer based on DB vendor name and provided schema.
      *
      * @param connection is an active connection to underlying database.
-     * @param type       is a type of payload to use. Currently one of {@literal String} or {@literal byte[]}
+     * @param type       is a type of payload to use. Currently, one of {@literal String} or {@literal byte[]}
      * @return ddl for event store.
      */
     @SneakyThrows

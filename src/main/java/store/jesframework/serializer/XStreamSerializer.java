@@ -10,14 +10,19 @@ import com.thoughtworks.xstream.mapper.CannotResolveClassException;
 import com.thoughtworks.xstream.security.AnyTypePermission;
 
 import store.jesframework.ex.SerializationException;
+import store.jesframework.serializer.api.Format;
 import store.jesframework.serializer.api.Serializer;
 
-public class XStreamSerializer<S> implements Serializer<S, String> {
+class XStreamSerializer<S> implements Serializer<S, String> {
 
     // it's thread-safe, so it's ok to have just 1 instance
     private final XStream xstream = new XStream(new Xpp3Driver());
 
-    public XStreamSerializer(@Nullable TypeRegistry typeRegistry) {
+    XStreamSerializer() {
+        this(null);
+    }
+
+    XStreamSerializer(@Nullable TypeRegistry typeRegistry) {
         XStream.setupDefaultSecurity(xstream);
         xstream.addPermission(AnyTypePermission.ANY);
 
@@ -44,5 +49,11 @@ public class XStreamSerializer<S> implements Serializer<S, String> {
         } catch (Exception e) {
             throw new SerializationException(e);
         }
+    }
+
+    @Nonnull
+    @Override
+    public Format format() {
+        return Format.XML_XSTREAM;
     }
 }

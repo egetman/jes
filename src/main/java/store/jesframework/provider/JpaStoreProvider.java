@@ -8,6 +8,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.EntityTransaction;
@@ -19,6 +20,7 @@ import store.jesframework.ex.BrokenStoreException;
 import store.jesframework.ex.VersionMismatchException;
 import store.jesframework.provider.jpa.StoreEntry;
 import store.jesframework.provider.jpa.StoreEntryFactory;
+import store.jesframework.serializer.api.Format;
 import store.jesframework.serializer.api.SerializationOption;
 import store.jesframework.serializer.api.Serializer;
 import store.jesframework.serializer.SerializerFactory;
@@ -32,7 +34,7 @@ import static java.util.Objects.requireNonNull;
 /**
  * JPA {@link StoreProvider} implementation.
  * {@implNote this implementation works correctly with application-managed entity manager factory && disabled
- * autocommit feature - JpaStoreProvider manage transactions manually}.
+ * autocommit feature — JpaStoreProvider manage transactions manually}.
  *
  * @param <T> type of event serialization.
  */
@@ -53,12 +55,14 @@ public class JpaStoreProvider<T> implements StoreProvider, SnapshotReader, AutoC
     private static final String QUERY_COUNT_BY_UUID = "SELECT COUNT(e) FROM %s e WHERE e.uuid = :uuid";
     private static final String QUERY_BY_OFFSET = "SELECT e FROM %s e WHERE e.id > :id ORDER BY id";
 
-    public JpaStoreProvider(@Nonnull EntityManagerFactory entityManagerFactory, @Nonnull Class<T> serializationType,
-                            @Nonnull SerializationOption... options) {
+    public JpaStoreProvider(@Nonnull EntityManagerFactory entityManagerFactory,
+                            @Nullable SerializationOption... options) {
         try {
             this.entityManagerFactory = requireNonNull(entityManagerFactory, "EntityManagerFactory must not be null");
-            this.serializer = SerializerFactory.newEventSerializer(serializationType, options);
-            this.entryType = StoreEntryFactory.entryTypeOf(serializationType);
+            this.serializer = SerializerFactory.newEventSerializer(options);
+
+            final Format format = serializer.format();
+            this.entryType = StoreEntryFactory.entryTypeOf(format.getJavaType());
         } catch (Exception e) {
             throw new BrokenStoreException(e);
         }

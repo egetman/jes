@@ -29,11 +29,11 @@ public class JdbcSnapshotProvider<T> extends DefaultSnapshotProvider implements 
     private final DataSource dataSource;
     private final Serializer<Aggregate, T> serializer;
 
-    public JdbcSnapshotProvider(@Nonnull DataSource dataSource, @Nonnull Class<T> serializationType,
-                                @Nonnull SerializationOption... options) {
+    @SuppressWarnings("WeakerAccess")
+    public JdbcSnapshotProvider(@Nonnull DataSource dataSource, @Nonnull SerializationOption... options) {
         try {
             this.dataSource = requireNonNull(dataSource);
-            this.serializer = SerializerFactory.newAggregateSerializer(serializationType, options);
+            this.serializer = SerializerFactory.newAggregateSerializer(options);
 
             try (final Connection connection = createConnection(this.dataSource)) {
                 createSnapshotStore(connection, DDLFactory.getAggregateStoreDDL(connection));

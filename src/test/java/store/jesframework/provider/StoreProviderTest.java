@@ -12,8 +12,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
-import javax.persistence.EntityManagerFactory;
-import javax.sql.DataSource;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -39,23 +37,28 @@ import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
 import static store.jesframework.internal.FancyStuff.newEntityManagerFactory;
 import static store.jesframework.internal.FancyStuff.newH2DataSource;
 import static store.jesframework.internal.FancyStuff.newPostgresDataSource;
+import static store.jesframework.serializer.api.Format.BINARY_KRYO;
+import static store.jesframework.serializer.api.Format.JSON_JACKSON;
+import static store.jesframework.serializer.api.Format.XML_XSTREAM;
 
 @Slf4j
 class StoreProviderTest {
 
     private static final Collection<StoreProvider> PROVIDERS = asList(
             new InMemoryStoreProvider(),
-            new JdbcStoreProvider<>(newH2DataSource(), String.class),
-            new JdbcStoreProvider<>(newH2DataSource(), byte[].class),
-            new JdbcStoreProvider<>(newPostgresDataSource(), byte[].class),
-            new JdbcStoreProvider<>(newPostgresDataSource("es", "postgres:latest"), String.class),
-            new JdbcStoreProvider<>(newPostgresDataSource("es", "postgres:9.6"), String.class),
-            new JpaStoreProvider<>(newEntityManagerFactory(byte[].class), byte[].class),
-            new JpaStoreProvider<>(newEntityManagerFactory(String.class), String.class)
+            new JdbcStoreProvider<>(newH2DataSource(), JSON_JACKSON),
+            new JdbcStoreProvider<>(newH2DataSource(), XML_XSTREAM),
+            new JdbcStoreProvider<>(newH2DataSource(), BINARY_KRYO),
+            new JdbcStoreProvider<>(newPostgresDataSource(), BINARY_KRYO),
+            new JdbcStoreProvider<>(newPostgresDataSource("es", "postgres:latest"), JSON_JACKSON),
+            new JdbcStoreProvider<>(newPostgresDataSource("es", "postgres:latest"), XML_XSTREAM),
+            new JdbcStoreProvider<>(newPostgresDataSource("es", "postgres:9.6"), JSON_JACKSON),
+            new JpaStoreProvider<>(newEntityManagerFactory(byte[].class), BINARY_KRYO),
+            new JpaStoreProvider<>(newEntityManagerFactory(String.class), JSON_JACKSON),
+            new JpaStoreProvider<>(newEntityManagerFactory(String.class), XML_XSTREAM)
     );
 
     private static Collection<StoreProvider> createProviders() {
@@ -99,7 +102,7 @@ class StoreProviderTest {
 
         assertNotNull(actual);
         assertIterableEquals(expected, actual);
-        actual.forEach(event -> log.info("Loaded event {}", event));
+        actual.forEach(event -> log.info("A loaded event {}", event));
     }
 
     @ParameterizedTest
@@ -118,7 +121,7 @@ class StoreProviderTest {
 
         assertNotNull(actual);
         assertIterableEquals(expected, actual);
-        actual.forEach(event -> log.info("Loaded event {}", event));
+        actual.forEach(event -> log.info("A loaded event {}", event));
     }
 
     @ParameterizedTest
@@ -190,7 +193,7 @@ class StoreProviderTest {
     void providersShouldWriteAllEventsInConcurrentEnvironment(@Nonnull StoreProvider provider) {
         final int workersCount = getRuntime().availableProcessors();
         final int streamSize = 100;
-        log.info("Prepare to verify dataset with size {}", workersCount * streamSize);
+        log.info("Prepare to verify a dataset with size {}", workersCount * streamSize);
         final ExecutorService executor = Executors.newFixedThreadPool(workersCount);
         try {
             final CountDownLatch latch = new CountDownLatch(workersCount);
@@ -213,14 +216,8 @@ class StoreProviderTest {
     @Test
     @SuppressWarnings("ConstantConditions")
     void providersShouldProtectItsInvariants() {
-        assertThrows(BrokenStoreException.class, () -> new JdbcStoreProvider<>(null, String.class));
-        assertThrows(BrokenStoreException.class, () -> new JdbcStoreProvider<>(mock(DataSource.class), null));
-        assertThrows(BrokenStoreException.class, () -> new JdbcStoreProvider<>(mock(DataSource.class), int.class));
-
-        assertThrows(BrokenStoreException.class, () -> new JpaStoreProvider<>(null, String.class));
-        assertThrows(BrokenStoreException.class, () -> new JpaStoreProvider<>(mock(EntityManagerFactory.class), null));
-        assertThrows(BrokenStoreException.class,
-                () -> new JpaStoreProvider<>(mock(EntityManagerFactory.class), int.class));
+        assertThrows(BrokenStoreException.class, () -> new JdbcStoreProvider<>(null));
+        assertThrows(BrokenStoreException.class, () -> new JpaStoreProvider<>(null));
     }
 
     @SuppressWarnings("SameParameterValue")

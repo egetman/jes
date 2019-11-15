@@ -22,18 +22,20 @@ import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
+import lombok.SneakyThrows;
 import store.jesframework.Event;
 import store.jesframework.provider.InMemoryStoreProvider;
 import store.jesframework.provider.JdbcStoreProvider;
 import store.jesframework.provider.JpaStoreProvider;
 import store.jesframework.provider.StoreProvider;
-import lombok.SneakyThrows;
 
+import static java.util.stream.IntStream.range;
+import static java.util.stream.Stream.of;
 import static store.jesframework.internal.Events.SampleEvent;
 import static store.jesframework.internal.FancyStuff.newEntityManagerFactory;
 import static store.jesframework.internal.FancyStuff.newPostgresDataSource;
-import static java.util.stream.IntStream.range;
-import static java.util.stream.Stream.of;
+import static store.jesframework.serializer.api.Format.BINARY_KRYO;
+import static store.jesframework.serializer.api.Format.JSON_JACKSON;
 
 @Fork(1)
 @State(Scope.Thread)
@@ -59,10 +61,10 @@ public class ProvidersReadBenchmark {
         @Setup(Level.Trial)
         public void setUp() {
             inMemoryProvider = new InMemoryStoreProvider();
-            jdbcProviderBytesEncoding = new JdbcStoreProvider<>(newPostgresDataSource("sample1"), byte[].class);
-            jdbcProviderStringEncoding = new JdbcStoreProvider<>(newPostgresDataSource("sample2"), String.class);
-            jpaProviderBytesEncoding = new JpaStoreProvider<>(newEntityManagerFactory(byte[].class), byte[].class);
-            jpaProviderStringEncoding = new JpaStoreProvider<>(newEntityManagerFactory(String.class), String.class);
+            jdbcProviderBytesEncoding = new JdbcStoreProvider<>(newPostgresDataSource("sample1"), BINARY_KRYO);
+            jdbcProviderStringEncoding = new JdbcStoreProvider<>(newPostgresDataSource("sample2"), JSON_JACKSON);
+            jpaProviderBytesEncoding = new JpaStoreProvider<>(newEntityManagerFactory(byte[].class), BINARY_KRYO);
+            jpaProviderStringEncoding = new JpaStoreProvider<>(newEntityManagerFactory(String.class), JSON_JACKSON);
 
             Event[] events = range(0, totalEventsToRead).mapToObj(i -> new SampleEvent("" + i, UUID.randomUUID()))
                     .parallel().collect(Collectors.toList()).toArray(new Event[] {});

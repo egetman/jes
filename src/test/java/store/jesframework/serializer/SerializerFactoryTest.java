@@ -1,61 +1,59 @@
 package store.jesframework.serializer;
 
-import java.util.stream.Stream;
-
 import javax.annotation.Nonnull;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import store.jesframework.Event;
+import store.jesframework.serializer.api.Format;
 import store.jesframework.serializer.api.SerializationOption;
+import store.jesframework.serializer.api.Serializer;
 import store.jesframework.serializer.api.Upcaster;
 
 import static store.jesframework.serializer.SerializerFactory.ParsedOptions;
 import static store.jesframework.serializer.SerializerFactory.newAggregateSerializer;
-import static store.jesframework.serializer.SerializerFactory.newBinarySerializer;
 import static store.jesframework.serializer.SerializerFactory.newEventSerializer;
-import static store.jesframework.serializer.SerializerFactory.newStringSerializer;
 
 class SerializerFactoryTest {
 
     @Test
-    void newBinarySerializerShouldReturnNonNullSerializer() {
-        Assertions.assertNotNull(newBinarySerializer(ParsedOptions.parse()));
+    void defaultEventSerializerShouldBeJsonJackson() {
+        final Serializer<Event, Object> serializer = newEventSerializer();
+        Assertions.assertEquals(Format.JSON_JACKSON, serializer.format());
     }
 
     @Test
-    void newStringSerializerShouldReturnNonNullSerializer() {
-        Assertions.assertNotNull(newStringSerializer(ParsedOptions.parse()));
+    void newEventSerializerShouldReturnNonNullSerializerWhenJsonFormatRequested() {
+        final Serializer<Event, Object> serializer = newEventSerializer(Format.JSON_JACKSON);
+        Assertions.assertEquals(Format.JSON_JACKSON, serializer.format());
     }
 
     @Test
-    void newEventSerializerShouldReturnNonNullSerializerWhenStringClassPassed() {
-        Assertions.assertNotNull(newEventSerializer(String.class).getClass());
+    void newEventSerializerShouldReturnNonNullSerializerWhenXstreamRequested() {
+        final Serializer<Event, Object> serializer = newEventSerializer(Format.XML_XSTREAM);
+        Assertions.assertEquals(Format.XML_XSTREAM, serializer.format());
     }
 
     @Test
-    void newEventSerializerShouldReturnNonNullSerializerWhenByteClassPassed() {
-        Assertions.assertNotNull(newEventSerializer(byte[].class).getClass());
+    void newEventSerializerShouldReturnNonNullSerializerWhenKryoRequested() {
+        final Serializer<Event, Object> serializer = newEventSerializer(Format.BINARY_KRYO);
+        Assertions.assertEquals(Format.BINARY_KRYO, serializer.format());
     }
 
     @Test
-    void newEventSerializerShouldThrowIllegalArgumentExceptionOnUnknownSerializationType() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> newEventSerializer(Void.class));
+    void newAggregateSerializerShouldReturnKryoImplAsDefaultWhenBinaryFormatRequested() {
+        Assertions.assertEquals(KryoSerializer.class, newAggregateSerializer(Format.BINARY_KRYO).getClass());
     }
 
     @Test
-    void newAggregateSerializerShouldReturnKryoImplAsDefaultWhenByteClassPassed() {
-        Assertions.assertEquals(KryoSerializer.class, newAggregateSerializer(byte[].class).getClass());
+    void newAggregateSerializerShouldReturnJacksonImplAsDefaultWhenJsonFormatRequested() {
+        Assertions.assertEquals(JacksonSerializer.class, newAggregateSerializer(Format.JSON_JACKSON).getClass());
     }
 
     @Test
-    void newAggregateSerializerShouldReturnJacksonImplAsDefaultWhenStringClassPassed() {
-        Assertions.assertEquals(JacksonSerializer.class, newAggregateSerializer(String.class).getClass());
-    }
-
-    @Test
-    void newAggregateSerializerShouldThrowIllegalArgumentExceptionOnUnknownSerializationType() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> newAggregateSerializer(Stream.class));
+    void newAggregateSerializerShouldReturnJacksonImplAsDefaultWhenXmlFormatRequested() {
+        Assertions.assertEquals(XStreamSerializer.class, newAggregateSerializer(Format.XML_XSTREAM).getClass());
     }
 
     @Test
