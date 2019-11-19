@@ -286,7 +286,7 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
         @Nonnull
         @SneakyThrows
         private Event readEvent() {
-            // get values by index a bit more efficient
+            // get values by an index a bit more efficient
             lastOffset = set.getLong(1);
             T data = unwrapJdbcType(set.getObject(2));
             return serializer.deserialize(data);
@@ -357,7 +357,7 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
             log.trace("last returned offset {}, offset before last {}", delegate.getLastOffset(), beforeLastOffset);
             /*
             We have some kind of read anomaly. It can be explained in context of PostgreSQL.
-            First, create table:
+            First, create a table:
 
             CREATE TABLE counters(counter INT);
             INSERT INTO counters(counter) VALUES(1);
@@ -374,7 +374,7 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
             INSERT INTO counters(counter) VALUES(10);
             COMMIT;
 
-            both transactions commit and the final table looks like: 1, 10, 1
+            both transactions commit, and the final table looks like: 1, 10, 1
 
             which is possible if the first transaction committed first, and then the second transaction committed
             which is different from the order the transactions committed in by the wall clock. so it is possible
@@ -384,8 +384,8 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
                 [1, 10] (after the second transaction committed)
                 [1, 1, 10] (after the first transaction committed)
 
-            which is a sequence of states which should not be possible. if you see [1], [1, 10] then you should see
-            [1, 10, 11] as the last state. hence it violates external consistency.
+            which is a sequence of states, which should not be possible. if you see [1], [1, 10] then you should see
+            [1, 10, 11] as the last state. hence, it violates external consistency.
             */
             log.trace("Closing current delegate and create new one with start offset {}", beforeLastOffset);
             close();
