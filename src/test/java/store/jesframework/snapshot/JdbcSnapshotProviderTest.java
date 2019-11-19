@@ -15,7 +15,7 @@ class JdbcSnapshotProviderTest {
     @Test
     void exceptionsDuringInitializeShouldBeWrapped() {
         final DataSource dataSource = mock(DataSource.class);
-        assertThrows(BrokenStoreException.class, () -> new JdbcStoreProvider<>(dataSource, String.class));
+        assertThrows(BrokenStoreException.class, () -> new JdbcStoreProvider<>(dataSource));
     }
 
 }

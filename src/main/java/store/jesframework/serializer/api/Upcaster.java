@@ -3,8 +3,6 @@ package store.jesframework.serializer.api;
 import javax.annotation.Nonnull;
 
 /**
- * Note: upcasters are WIP.
- *
  * @param <T> type of raw event.
  */
 public interface Upcaster<T> extends SerializationOption {

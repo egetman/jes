@@ -22,11 +22,10 @@ import store.jesframework.common.StreamSplittedTo;
 import store.jesframework.ex.EmptyEventStreamException;
 import store.jesframework.ex.EventStreamRewriteUnsupportedException;
 import store.jesframework.ex.EventStreamSplitUnsupportedException;
-import store.jesframework.provider.JdbcStoreProvider;
 import store.jesframework.internal.Events;
-import store.jesframework.internal.FancyStuff;
+import store.jesframework.provider.JdbcStoreProvider;
+import store.jesframework.serializer.api.Format;
 
-import static store.jesframework.internal.FancyStuff.newPostgresDataSource;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
@@ -39,6 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.TestInstance.Lifecycle;
+import static store.jesframework.internal.FancyStuff.newPostgresDataSource;
 
 @TestInstance(Lifecycle.PER_CLASS)
 class UnsafeOpsTest {
@@ -47,7 +47,7 @@ class UnsafeOpsTest {
     private final UnsafeOps unsafeOps;
 
     UnsafeOpsTest() {
-        store = new JEventStore(new JdbcStoreProvider<>(FancyStuff.newPostgresDataSource(), byte[].class));
+        store = new JEventStore(new JdbcStoreProvider<>(newPostgresDataSource(), Format.BINARY_KRYO));
         unsafeOps = new UnsafeOps(store);
     }
 
@@ -197,7 +197,7 @@ class UnsafeOpsTest {
         final Collection<Event> expected = singletonList(new Events.FancyEvent("BAZ", newStreamUuid));
         assertIterableEquals(expected, store.readBy(newStreamUuid));
 
-        // check that reference from old stream to new stream exists
+        // check reference from the old stream to the new stream exists
         final Collection<Event> modifiedSourceEvents = new ArrayList<>(source);
         modifiedSourceEvents.add(new StreamMovedTo(uuid, newStreamUuid));
 
@@ -303,7 +303,7 @@ class UnsafeOpsTest {
         );
         assertIterableEquals(expected, store.readBy(newStreamUuid));
 
-        // check that reference from old stream to new stream exists
+        // check reference from the old stream to the new stream exists
         final Collection<Event> modifiedSourceEvents = new ArrayList<>(source);
         modifiedSourceEvents.add(new StreamMovedTo(uuid, newStreamUuid));
 
@@ -335,7 +335,7 @@ class UnsafeOpsTest {
 
             @Override
             public Map<UUID, Collection<Event>> apply(Collection<Event> events) {
-                // let's devide events by 2
+                // lets devide events by 2
                 Map<UUID, Collection<Event>> result = new HashMap<>();
                 UUID generated = UUID.randomUUID();
                 for (Event event : events) {
@@ -356,7 +356,7 @@ class UnsafeOpsTest {
         assertEquals(2, newStreamUuids.size(), "Produced streams count don't match");
 
         for (UUID newStreamUuid : newStreamUuids) {
-            // we don't know what uuid we processing, cause set unordered
+            // we don't know what uuid we process, cause set unordered
             final Collection<Event> read = store.readBy(newStreamUuid);
             if (read.size() == 1) {
                 // ok, it's second stream
@@ -369,7 +369,7 @@ class UnsafeOpsTest {
             }
         }
 
-        // check that reference from old stream to new stream exists
+        // check reference from the old stream to the new stream exists
         final Collection<Event> modifiedSourceEvents = new ArrayList<>(source);
         modifiedSourceEvents.add(new StreamSplittedTo(uuid, newStreamUuids));
 
@@ -416,13 +416,13 @@ class UnsafeOpsTest {
                 new Events.SampleEvent("SAMPLE", newStreamUuid)
         );
         final List<Event> actual = new ArrayList<>(store.readBy(newStreamUuid));
-        // "read" order not specified, so if u pass n uuid's there is no garantee which will be read first
+        // "read" order not specified, so if u pass n uuid's there is no garantee, which will be read first
         actual.sort(comparator);
         expected.sort(comparator);
 
         assertIterableEquals(expected, actual);
 
-        // check that reference from old stream to new stream exists
+        // check reference from the old stream to the new stream exists
         final Collection<Event> expectedFirstSourceStream = asList(fancy, new StreamMergedTo(fancyUuid, newStreamUuid));
         assertIterableEquals(expectedFirstSourceStream, store.readBy(fancyUuid));
 

@@ -12,6 +12,7 @@ import java.util.UUID;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.annotation.WillClose;
 import javax.sql.DataSource;
 
@@ -24,6 +25,7 @@ import store.jesframework.ex.BrokenStoreException;
 import store.jesframework.ex.VersionMismatchException;
 import store.jesframework.provider.jdbc.DDLFactory;
 import store.jesframework.serializer.SerializerFactory;
+import store.jesframework.serializer.api.Format;
 import store.jesframework.serializer.api.SerializationOption;
 import store.jesframework.serializer.api.Serializer;
 import store.jesframework.snapshot.SnapshotReader;
@@ -51,14 +53,14 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
     private final DataSource dataSource;
     private final Serializer<Event, T> serializer;
 
-    public JdbcStoreProvider(@Nonnull DataSource dataSource, @Nonnull Class<T> serializationType,
-                             @Nonnull SerializationOption... options) {
+    public JdbcStoreProvider(@Nonnull DataSource dataSource, @Nullable SerializationOption... options) {
         try {
             this.dataSource = requireNonNull(dataSource);
-            this.serializer = SerializerFactory.newEventSerializer(serializationType, options);
+            this.serializer = SerializerFactory.newEventSerializer(options);
 
             try (final Connection connection = createConnection(this.dataSource)) {
-                final String ddl = DDLFactory.getEventStoreDDL(connection, serializationType);
+                final Format format = this.serializer.format();
+                final String ddl = DDLFactory.getEventStoreDDL(connection, format.getJavaType());
                 createEventStore(connection, ddl);
             }
         } catch (Exception e) {

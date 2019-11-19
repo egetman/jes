@@ -30,12 +30,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static store.jesframework.internal.FancyStuff.newPostgresDataSource;
 import static store.jesframework.internal.FancyStuff.newRedissonClient;
+import static store.jesframework.serializer.api.Format.XML_XSTREAM;
 
 class SnapshotProviderTest {
 
     private static final Collection<SnapshotProvider> SNAPSHOT_PROVIDERS = asList(
             new InMemorySnapshotProvider(),
-            new JdbcSnapshotProvider<>(newPostgresDataSource(), String.class),
+            new JdbcSnapshotProvider<>(newPostgresDataSource()),
             new RedisSnapshotProvider(newRedissonClient())
     );
 
@@ -129,7 +130,7 @@ class SnapshotProviderTest {
     @ParameterizedTest
     @MethodSource("createSnapshotProviders")
     void sholdCreateSnapshotAndUpdateItReadThroughAggregateStore(@Nonnull SnapshotProvider provider) {
-        final JEventStore eventStore = new JEventStore(new JdbcStoreProvider<>(newPostgresDataSource(), String.class));
+        final JEventStore eventStore = new JEventStore(new JdbcStoreProvider<>(newPostgresDataSource(), XML_XSTREAM));
         final AggregateStore aggregateStore = new AggregateStore(eventStore, provider);
 
         final UUID uuid = randomUUID();

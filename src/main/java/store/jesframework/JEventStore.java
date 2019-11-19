@@ -64,13 +64,13 @@ public class JEventStore {
             throw new IllegalArgumentException("'skip' argument must be greater than 0. Actual: " + skip);
         }
         if (!canReadSnapshots) {
-            throw new IllegalStateException("Current provider doesn't support snapshotting");
+            throw new IllegalStateException("The current provider doesn't support snapshotting");
         }
         return ((SnapshotReader) provider).readBy(requireNonNull(uuid, NON_NULL_UUID), skip);
     }
 
     /**
-     * Write given event into {@literal Event Store}.
+     * Write a given event into the {@literal Event Store}.
      * {@implNote there is no guarantee that write operation will be performed in sync manner}.
      *
      * @param event is an event to store.
@@ -92,11 +92,11 @@ public class JEventStore {
     }
 
     /**
-     * Delete a whole stream by it's {@literal uuid} (its a safe operation).
+     * Delete a whole stream by its {@literal uuid} (it's a safe operation).
      * Note: not all {@link StoreProvider} can support deletion.
      *
-     * @param uuid of stream  to delete.
-     * @throws UnsupportedOperationException if delete operation is not supported by underlying provider.
+     * @param uuid of stream to delete.
+     * @throws UnsupportedOperationException if the underlying provider does not support delete operation.
      */
     public void deleteBy(@Nonnull UUID uuid) {
         provider.deleteBy(requireNonNull(uuid, NON_NULL_UUID));

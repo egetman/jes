@@ -45,12 +45,12 @@ public class UnsafeOps {
 
     /**
      * Copy the given stream and replace it with the new one in {@literal Event Store} (Old stream will not be deleted).
-     * Supplied handler allow change of existing stream.
+     * The supplied handler allow change of existing stream.
      * Note: new stream identifier (UUID) must differ from {@literal streamUuid}.
      * I.e. processed event, returned from {@link UnaryOperator#apply(Object)} MUST have new {@link Event#uuid()},
      * and ALL processed events MUST return the same {@link UUID} on {@link Event#uuid()} call.
      * Handler can return null values. Such values will be cleared from the new stream.
-     * After the replace operation, a new event ({@link StreamMovedTo}) will be appended to source stream.
+     * After replace operation, a new event ({@link StreamMovedTo}) will be appended to source stream.
      * It will contain a reference to the new stream UUID.
      *
      * @param streamUuid uuid of the event stream that will be rewritten.
@@ -73,12 +73,12 @@ public class UnsafeOps {
 
     /**
      * Copy the given stream and replace it with the new one in {@literal Event Store} (Old stream will not be deleted).
-     * Supplied handler allow change of existing stream.
+     * The supplied handler allow change of existing stream.
      * Note: new stream identifier (UUID) must differ from {@literal streamUuid}.
      * I.e. each processed event, returned from {@link UnaryOperator#apply(Object)} MUST have new {@link Event#uuid()},
      * and ALL processed events MUST return the same {@link UUID} on {@link Event#uuid()} call.
      * Handler can't return null values.
-     * After the replace operation, a new event ({@link StreamMovedTo}) will be appended to source stream.
+     * After replace operation, a new event ({@link StreamMovedTo}) will be appended to source stream.
      * It will contain a reference to the new stream UUID.
      *
      * @param streamUuid uuid of the event stream that will be rewritten.
@@ -102,7 +102,7 @@ public class UnsafeOps {
     /**
      * Copy the given streams and merge them with the new one in {@literal Event Store} (Old streams will not be
      * deleted).
-     * Supplied handler allow change of existing streams.
+     * The supplied handler allow change of existing streams.
      * Note: new stream identifier (UUID) must differ from any that contains in {@literal streamUuids}.
      * I.e. each processed event, returned from {@link Function#apply(Object)} MUST have new {@link Event#uuid()},
      * and ALL processed events MUST return the same {@link UUID} on {@link Event#uuid()} call.
@@ -135,7 +135,7 @@ public class UnsafeOps {
     /**
      * Copy the given stream and split it with the multiple ones in {@literal Event Store} (Old streams will not be
      * deleted).
-     * Supplied handler allow change of existing stream.
+     * The supplied handler allow change of existing stream.
      * Note: new stream identifiers (UUID) must differ from {@literal streamUuid}.
      * I.e. each processed event, returned from {@link Function#apply(Object)} MUST have new {@link Event#uuid()}.
      * Handler can't return null values.
@@ -242,7 +242,7 @@ public class UnsafeOps {
     private Map<UUID, Collection<Event>> readStreams(@Nonnull Set<UUID> uuids) {
         nonEmpty(uuids, () -> new EmptyEventStreamException("Event stream uuids is null or empty"));
         return uuids.stream().map(store::readBy).collect(toMap(events -> {
-            // no need to call #eventStreamToUniqUuid. It's events from event store, with equal UUID per collection
+            // no need to call #eventStreamToUniqUuid. It's events from event store, with equal UUID per collection,
             // so it's ok to check just first
             nonEmpty(events, () -> new EmptyEventStreamException("Event stream not found by one of uuids: " + uuids));
             return events.iterator().next().uuid();

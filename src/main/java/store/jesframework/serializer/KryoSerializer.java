@@ -13,9 +13,13 @@ import com.esotericsoftware.kryo.util.DefaultInstantiatorStrategy;
 
 import org.objenesis.strategy.StdInstantiatorStrategy;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import store.jesframework.ex.SerializationException;
+import store.jesframework.serializer.api.Format;
 import store.jesframework.serializer.api.Serializer;
 
+@NoArgsConstructor(access = AccessLevel.PACKAGE)
 class KryoSerializer<S> implements Serializer<S, byte[]> {
 
     private static final String NO_CLASS_KRYO_MESSAGE = "Unable to find class: ";
@@ -61,5 +65,11 @@ class KryoSerializer<S> implements Serializer<S, byte[]> {
         } catch (Exception e) {
             throw new SerializationException(e);
         }
+    }
+
+    @Nonnull
+    @Override
+    public Format format() {
+        return Format.BINARY_KRYO;
     }
 }

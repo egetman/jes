@@ -16,6 +16,7 @@ import org.junit.jupiter.api.TestInstance;
 
 import store.jesframework.provider.InMemoryStoreProvider;
 import store.jesframework.provider.JdbcStoreProvider;
+import store.jesframework.serializer.api.Format;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
@@ -38,8 +39,8 @@ class JEventStoreTest {
         final DataSource sourceDataSource = newPostgresDataSource("source");
         final DataSource targetDataSource = newPostgresDataSource("target");
 
-        this.source = new JEventStore(new JdbcStoreProvider<>(sourceDataSource, byte[].class));
-        this.target = new JEventStore(new JdbcStoreProvider<>(targetDataSource, byte[].class));
+        this.source = new JEventStore(new JdbcStoreProvider<>(sourceDataSource, Format.BINARY_KRYO));
+        this.target = new JEventStore(new JdbcStoreProvider<>(targetDataSource, Format.BINARY_KRYO));
     }
 
     @AfterEach
