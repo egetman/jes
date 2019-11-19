@@ -13,10 +13,12 @@ jobs:
           java-version: 1.8
       - name: Build with Maven & generate javadocs
         run: mvn clean install --file pom.xml -DskipTests=true
-      - name: Sonar report
-        run: mvn verify sonar:sonar -Dsonar.login=${{secrets.SONAR_TOKEN}}
       - name: Run tests
         run: mvn test
       - uses: codecov/codecov-action@v1.0.2
         with:
           token: ${{secrets.CODECOV_TOKEN}}
+      - name: Sonar report
+        run: mvn verify sonar:sonar -Dsonar.login=${{secrets.SONAR_TOKEN}} -DskipTests=true
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
