@@ -55,7 +55,7 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
 
     public JdbcStoreProvider(@Nonnull DataSource dataSource, @Nullable SerializationOption... options) {
         try {
-            this.dataSource = requireNonNull(dataSource);
+            this.dataSource = requireNonNull(dataSource, "DataSource must not be null");
             this.serializer = SerializerFactory.newEventSerializer(options);
 
             try (final Connection connection = createConnection(this.dataSource)) {
