@@ -341,7 +341,7 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
             return delegate.hasNext();
         }
 
-        private boolean isSequencial() {
+        private boolean isSequential() {
             return beforeLastOffset == 0 || delegate.getLastOffset() - beforeLastOffset == 1;
         }
 
@@ -349,8 +349,8 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
         @SuppressWarnings("squid:CommentedOutCodeLine")
         public Event next() {
             final Event next = delegate.next();
-            // ok, keep sequencially read stuff
-            if (isSequencial()) {
+            // ok, keep sequentially read stuff
+            if (isSequential()) {
                 beforeLastOffset = delegate.getLastOffset();
                 return next;
             }
@@ -364,7 +364,7 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
             BEGIN TRANSACTION ISOLATION LEVEL serializable;
             SELECT SUM(counter) FROM counters; / this will return 1 /
 
-            // insert sum into counters. wait until committing next transaction before executing the insert
+            // insert sum into counters. wait until committing next transaction before executing the insert:
             INSERT INTO counters(counter) VALUES(1);
             COMMIT;
 
@@ -376,7 +376,7 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
 
             both transactions commit, and the final table looks like: 1, 10, 1
 
-            which is possible if the first transaction committed first, and then the second transaction committed
+            which is possible if the first transaction committed first, and then the second transaction committed,
             which is different from the order the transactions committed in by the wall clock. so it is possible
             for another client to see the table as:
 
@@ -394,7 +394,7 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
             if (retryCount++ > MAX_RETRIES) {
                 /*
                 If we have gap there possible 2 situations:
-                1. some transactions are slow, and they just not commited yet
+                1. some transactions are slow, and they just not committed yet
                 2. some transaction rollback and increment sequence in db or stream deletion was performed. (in that
                 case it's ok to skip it)
                 case 1 should be avoided with MAX_RETRIES read retries.

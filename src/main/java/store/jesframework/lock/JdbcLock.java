@@ -22,7 +22,7 @@ public class JdbcLock implements Lock {
     private final DataSource dataSource;
 
     public JdbcLock(@Nonnull DataSource dataSource) {
-        this.dataSource = Objects.requireNonNull(dataSource, "DataSouce must not be null");
+        this.dataSource = Objects.requireNonNull(dataSource, "DataSource must not be null");
 
         try (Connection connection = createConnection(this.dataSource)) {
             createLocks(connection, DDLFactory.getLockDDL(connection));
