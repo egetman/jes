@@ -40,8 +40,13 @@ public class JdbcClusterStoreProvider<T> implements StoreProvider, SnapshotReade
 
     private final JdbcStoreProvider<T> master;
     private final List<JdbcStoreProvider<T>> replicas = new ArrayList<>();
-    private final Cache<UUID, Object> writesTracker =
-            Cache2kBuilder.of(UUID.class, Object.class).name(getClass()).permitNullValues(true).boostConcurrency(true).entryCapacity(MAX_TRACKED_WRITES).expireAfterWrite(MAX_TRACKED_TIME, TimeUnit.MINUTES).build();
+    private final Cache<UUID, Object> writesTracker = Cache2kBuilder.of(UUID.class, Object.class)
+            .name(getClass())
+            .permitNullValues(true)
+            .boostConcurrency(true)
+            .entryCapacity(MAX_TRACKED_WRITES)
+            .expireAfterWrite(MAX_TRACKED_TIME, TimeUnit.MINUTES)
+            .build();
 
     public JdbcClusterStoreProvider(@Nonnull DataSource master, @Nullable Collection<DataSource> replicas,
                                     @Nullable SerializationOption... options) {
@@ -74,6 +79,14 @@ public class JdbcClusterStoreProvider<T> implements StoreProvider, SnapshotReade
     }
 
     @Override
+    public Collection<Event> readBy(@Nonnull UUID uuid, long skip) {
+        if (isTracked(uuid)) {
+            return master.readBy(uuid, skip);
+        }
+        return nextReplica().readBy(uuid, skip);
+    }
+
+    @Override
     public void write(@Nonnull Event event) {
         track(event.uuid());
         master.write(event);
@@ -93,14 +106,6 @@ public class JdbcClusterStoreProvider<T> implements StoreProvider, SnapshotReade
         // event (or event stream) may still be present.
         track(uuid);
         master.deleteBy(uuid);
-    }
-
-    @Override
-    public Collection<Event> readBy(@Nonnull UUID uuid, long skip) {
-        if (isTracked(uuid)) {
-            return master.readBy(uuid, skip);
-        }
-        return nextReplica().readBy(uuid, skip);
     }
 
     private void track(@Nullable UUID uuid) {
