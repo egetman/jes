@@ -50,18 +50,26 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
 
     private static final int FETCH_SIZE = 100;
 
+    private final boolean readOnly;
     private final DataSource dataSource;
     private final Serializer<Event, T> serializer;
 
     public JdbcStoreProvider(@Nonnull DataSource dataSource, @Nullable SerializationOption... options) {
+        this(dataSource, false, options);
+    }
+
+    JdbcStoreProvider(@Nonnull DataSource dataSource, boolean readOnly, @Nullable SerializationOption... options) {
         try {
+            this.readOnly = readOnly;
             this.dataSource = requireNonNull(dataSource, "DataSource must not be null");
             this.serializer = SerializerFactory.newEventSerializer(options);
 
-            try (final Connection connection = createConnection(this.dataSource)) {
-                final Format format = this.serializer.format();
-                final String ddl = DDLFactory.getEventStoreDDL(connection, format.getJavaType());
-                createEventStore(connection, ddl);
+            if (!readOnly) {
+                try (final Connection connection = createConnection(this.dataSource)) {
+                    final Format format = this.serializer.format();
+                    final String ddl = DDLFactory.getEventStoreDDL(connection, format.getJavaType());
+                    createEventStore(connection, ddl);
+                }
             }
         } catch (Exception e) {
             throw new BrokenStoreException(e);
@@ -75,6 +83,12 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
             if (code == 0) {
                 log.info("JEventStore successfully created");
             }
+        }
+    }
+
+    private void verifyWritable() {
+        if (readOnly) {
+            throw new BrokenStoreException(getClass().getSimpleName() + " in a read-only mode. Can't write");
         }
     }
 
@@ -133,6 +147,7 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
 
     @Override
     public void write(@Nonnull Event event) {
+        verifyWritable();
         final String query = getPropety("jes.jdbc.statement.insert-events");
         try (final Connection connection = createConnection(dataSource);
              final PreparedStatement statement = connection.prepareStatement(query)) {
@@ -155,6 +170,7 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
 
     @Override
     public void write(@Nonnull Event... events) {
+        verifyWritable();
         try (final Connection connection = createConnection(dataSource)) {
             final boolean supportsBatches = connection.getMetaData().supportsBatchUpdates();
             // first check if we can use batch
@@ -213,6 +229,7 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
     @Override
     public void deleteBy(@Nonnull UUID uuid) {
         log.trace("Prepare to remove {} event stream", uuid);
+        verifyWritable();
         final String query = getPropety("jes.jdbc.statement.delete-events");
         try (Connection connection = createConnection(dataSource);
              PreparedStatement statement = connection.prepareStatement(query)) {

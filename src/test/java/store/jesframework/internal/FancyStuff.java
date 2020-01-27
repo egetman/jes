@@ -2,6 +2,7 @@ package store.jesframework.internal;
 
 import java.sql.Connection;
 import java.sql.Statement;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -22,13 +23,16 @@ import org.redisson.Redisson;
 import org.redisson.api.RedissonClient;
 import org.redisson.config.Config;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import store.jesframework.util.Pair;
 
 import static java.time.LocalDateTime.now;
 import static java.time.ZoneOffset.UTC;
+import static java.util.stream.Collectors.toList;
 import static org.hibernate.cfg.AvailableSettings.AUTOCOMMIT;
 import static org.hibernate.cfg.AvailableSettings.DIALECT;
 import static org.hibernate.cfg.AvailableSettings.FORMAT_SQL;
@@ -43,7 +47,7 @@ public final class FancyStuff {
 
     private static final int MAX_POOL_SIZE = 10;
     private static final int REDIS_EXPOSED_PORT = 6379;
-    private static final String REDDIS_URL_PATTERN = "redis://%s:%d";
+    private static final String REDIS_URL_PATTERN = "redis://%s:%d";
 
     private FancyStuff() {}
 
@@ -61,7 +65,7 @@ public final class FancyStuff {
         final GenericContainer<?> redisContainer = newRedisContainer();
         final Config config = new Config();
 
-        final String redisAddress = String.format(REDDIS_URL_PATTERN, redisContainer.getContainerIpAddress(),
+        final String redisAddress = String.format(REDIS_URL_PATTERN, redisContainer.getContainerIpAddress(),
                 redisContainer.getMappedPort(REDIS_EXPOSED_PORT));
         config.useSingleServer().setAddress(redisAddress);
         return Redisson.create(config);
@@ -71,7 +75,7 @@ public final class FancyStuff {
     private static PostgreSQLContainer<?> newPostgreSQLContainer(@Nonnull String dockerTag) {
         final String user = "user";
         final String password = "password";
-        final PostgreSQLContainer container = new PostgreSQLContainer(dockerTag)
+        final PostgreSQLContainer<?> container = new PostgreSQLContainer<>(dockerTag)
                 .withDatabaseName("jes")
                 .withUsername(user)
                 .withPassword(password);
@@ -101,7 +105,13 @@ public final class FancyStuff {
     @Nonnull
     public static DataSource newPostgresDataSource(@Nonnull String schemaName, @Nonnull String dockerTag) {
         schemaName = schemaName + "_" + now().toInstant(UTC).toEpochMilli();
-        PostgreSQLContainer<?> container = newPostgreSQLContainer(dockerTag);
+        final PostgreSQLContainer<?> container = newPostgreSQLContainer(dockerTag);
+        final DataSource dataSource = from(container, schemaName);
+        createSchema(dataSource, schemaName);
+        return dataSource;
+    }
+
+    private static DataSource from(@Nonnull JdbcDatabaseContainer<?> container, @Nonnull String schemaName) {
         final HikariConfig config = new HikariConfig();
 
         config.setUsername(container.getUsername());
@@ -112,15 +122,24 @@ public final class FancyStuff {
         config.setDriverClassName(container.getDriverClassName());
         final HikariDataSource dataSource = new HikariDataSource(config);
         log.debug("url: {}", config.getJdbcUrl());
-        createSchema(dataSource, schemaName);
-
         return dataSource;
+    }
+
+    @Nonnull
+    public static Pair<DataSource, Collection<DataSource>> newPostgresClusterDataSource(int replicasCount) {
+        final String schemaName =  "public_" + now().toInstant(UTC).toEpochMilli();
+        final PostgreSQLClusterContainer container = new PostgreSQLClusterContainer(replicasCount);
+        container.start();
+        final PostgreSQLClusterContainer.PostgresCluster cluster = container.getClusterInfo();
+        final DataSource master = from(cluster.getMaster(), schemaName);
+        createSchema(master, schemaName);
+        return Pair.of(master, cluster.getReplicas().stream().map(repl -> from(repl, schemaName)).collect(toList()));
     }
 
     /**
      * Connection will return non null schema name only if it exists for local containers run.
      *
-     * @param schemaName name of scheman to create.
+     * @param schemaName name of schema to create.
      */
     @SneakyThrows
     private static void createSchema(@Nonnull DataSource dataSource, @Nonnull String schemaName) {

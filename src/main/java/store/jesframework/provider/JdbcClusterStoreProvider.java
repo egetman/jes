@@ -16,8 +16,11 @@ import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 
 import store.jesframework.Event;
+import store.jesframework.ex.BrokenStoreException;
 import store.jesframework.serializer.api.SerializationOption;
 import store.jesframework.snapshot.SnapshotReader;
+
+import static java.util.concurrent.TimeUnit.MINUTES;
 
 /**
  * This implementation is similar to {@link JdbcStoreProvider} except reads distribution. It's intended to be used in
@@ -31,37 +34,50 @@ public class JdbcClusterStoreProvider<T> implements StoreProvider, SnapshotReade
     /**
      * Fair enough(?) amount of time to avoid replication lag issues.
      */
-    public static final int MAX_TRACKED_TIME = 5;
-
-    /**
-     * Fair enough(?) amount of writes to be tracked until the replication lag passes.
-     */
-    public static final int MAX_TRACKED_WRITES = 1500;
+    private static final int MAX_TRACKED_TIME = 5;
 
     private final JdbcStoreProvider<T> master;
     private final List<JdbcStoreProvider<T>> replicas = new ArrayList<>();
-    private final Cache<UUID, Object> writesTracker = Cache2kBuilder.of(UUID.class, Object.class)
-            .name(getClass())
-            .permitNullValues(true)
-            .boostConcurrency(true)
-            .entryCapacity(MAX_TRACKED_WRITES)
-            .expireAfterWrite(MAX_TRACKED_TIME, TimeUnit.MINUTES)
-            .build();
+    private final Cache<UUID, Object> writesTracker;
 
-    public JdbcClusterStoreProvider(@Nonnull DataSource master, @Nullable Collection<DataSource> replicas,
-                                    @Nullable SerializationOption... options) {
+    /**
+     * Builds a {@link JdbcClusterStoreProvider} instance by given params.
+     *
+     * @param master   is a datasource that will handle all the writes and querying events by its {@link Event#uuid()}
+     *                 (if such an event is tracked).
+     * @param replicas are collection of datasources that will handle the sequential events reads.
+     * @param timeout  the duration of events tracking. Must be greater than a replication lag. Note: cache has no max
+     *                 entries size, so all tracked within {@code timeout} event uuid's will be kept in-memory.
+     * @param timeUnit is just a time unit for {@code timeout}.
+     * @param options  are serialization extensions.
+     */
+    @SuppressWarnings("squid:S2589")
+    public JdbcClusterStoreProvider(@Nonnull DataSource master, @Nullable Collection<DataSource> replicas, int timeout,
+                                    @Nonnull TimeUnit timeUnit, @Nullable SerializationOption... options) {
+        //noinspection ConstantConditions
+        if (timeout <= 0 || timeUnit == null) {
+            throw new BrokenStoreException("Timeout must be > 0, timeunit must not be null: " + timeout + timeUnit);
+        }
+
         this.master = new JdbcStoreProvider<>(master, options);
         if (replicas == null || replicas.isEmpty()) {
             this.replicas.add(this.master);
         } else {
             for (DataSource replica : replicas) {
-                this.replicas.add(new JdbcStoreProvider<>(replica, options));
+                this.replicas.add(new JdbcStoreProvider<>(replica, true, options));
             }
         }
+        writesTracker = Cache2kBuilder.of(UUID.class, Object.class)
+                .name(getClass())
+                .permitNullValues(true)
+                .boostConcurrency(true)
+                .entryCapacity(Long.MAX_VALUE)
+                .expireAfterWrite(timeout, timeUnit)
+                .build();
     }
 
     public JdbcClusterStoreProvider(@Nonnull DataSource master, @Nullable DataSource... replicas) {
-        this(master, replicas != null ? Arrays.asList(replicas) : null);
+        this(master, replicas != null ? Arrays.asList(replicas) : null, MAX_TRACKED_TIME, MINUTES);
     }
 
     @Override
@@ -118,7 +134,7 @@ public class JdbcClusterStoreProvider<T> implements StoreProvider, SnapshotReade
         if (uuid == null) {
             return false;
         }
-        return writesTracker.get(uuid) != null;
+        return writesTracker.containsKey(uuid);
     }
 
     private JdbcStoreProvider<T> nextReplica() {
@@ -131,6 +147,7 @@ public class JdbcClusterStoreProvider<T> implements StoreProvider, SnapshotReade
         for (JdbcStoreProvider<T> replica : replicas) {
             replica.close();
         }
+        writesTracker.close();
     }
 
 }
