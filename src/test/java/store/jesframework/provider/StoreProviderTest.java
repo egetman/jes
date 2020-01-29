@@ -17,9 +17,11 @@ import javax.sql.DataSource;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import lombok.Cleanup;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import store.jesframework.Event;
@@ -69,7 +71,7 @@ class StoreProviderTest {
         // master-only config
         PROVIDERS.add(new JdbcClusterStoreProvider<>(newPostgresDataSource("es")));
         // master-slave config
-        final Pair<DataSource, Collection<DataSource>> pair = newPostgresClusterDataSource(2);
+        final Pair<DataSource, Collection<DataSource>> pair = newPostgresClusterDataSource(1);
         PROVIDERS.add(new JdbcClusterStoreProvider<>(pair.getKey(), pair.getValue().toArray(new DataSource[0])));
     }
 
@@ -248,6 +250,28 @@ class StoreProviderTest {
             try (final Stream<Event> stream = provider.readFrom(0)) {
                 final Set<UUID> uuids = stream.map(Event::uuid).filter(Objects::nonNull).collect(toSet());
                 uuids.forEach(provider::deleteBy);
+            }
+        }
+    }
+
+    @AfterEach
+    @Timeout(value = 10, unit = SECONDS)
+    void clearClusteredEventStore() {
+        for (StoreProvider provider : PROVIDERS) {
+            if (!(provider instanceof JdbcClusterStoreProvider)) {
+                continue;
+            }
+            try (final Stream<Event> stream = provider.readFrom(0)) {
+                final Set<UUID> uuids = stream.map(Event::uuid).filter(Objects::nonNull).collect(toSet());
+                uuids.forEach(provider::deleteBy);
+            }
+            // in case of clustered provider we need to wait a bit until deletion replicated to all servers
+            while (true) {
+                @Cleanup
+                Stream<Event> ignored = provider.readFrom(0);
+                if (ignored.count() == 0) {
+                    break;
+                }
             }
         }
     }

@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class AggregateTest {
 
     @Test
-    void notOverridedUuidInvokationShouldThrowNullPointerException() {
+    void notOverriddenUuidInvocationShouldThrowNullPointerException() {
         assertThrows(NullPointerException.class, () -> new Aggregate().uuid());
     }
 

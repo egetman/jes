@@ -2,7 +2,6 @@ package store.jesframework.provider.benchmarks;
 
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.openjdk.jmh.annotations.Benchmark;
@@ -66,8 +65,10 @@ public class ProvidersReadBenchmark {
             jpaProviderBytesEncoding = new JpaStoreProvider<>(newEntityManagerFactory(byte[].class), BINARY_KRYO);
             jpaProviderStringEncoding = new JpaStoreProvider<>(newEntityManagerFactory(String.class), JSON_JACKSON);
 
-            Event[] events = range(0, totalEventsToRead).mapToObj(i -> new SampleEvent("" + i, UUID.randomUUID()))
-                    .parallel().collect(Collectors.toList()).toArray(new Event[] {});
+            Event[] events = range(0, totalEventsToRead)
+                    .mapToObj(i -> new SampleEvent("" + i, UUID.randomUUID()))
+                    .parallel()
+                    .toArray(Event[]::new);
 
             inMemoryProvider.write(events);
             jdbcProviderBytesEncoding.write(events);

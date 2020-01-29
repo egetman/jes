@@ -25,7 +25,9 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 /**
  * This implementation is similar to {@link JdbcStoreProvider} except reads distribution. It's intended to be used in
  * cluster environments to use replicas for querying. It's provides {@literal read own writes} guarantee by caching last
- * requests (only for events with aggregate uuid).
+ * requests (only for events with aggregate uuid). There is one corner case with deletion: if you delete event stream
+ * by its uuid, and then read store by offset via {@link StoreProvider#readFrom(long)} you can see stale state,
+ * because offset reads always routed to the replicas.
  *
  * @param <T> type of event serialization.
  */
