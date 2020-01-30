@@ -20,7 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import static store.jesframework.util.JdbcUtils.createConnection;
 import static store.jesframework.util.JdbcUtils.unwrapJdbcType;
-import static store.jesframework.util.PropsReader.getPropety;
+import static store.jesframework.util.PropsReader.getProperty;
 import static java.util.Objects.requireNonNull;
 
 @Slf4j
@@ -72,8 +72,8 @@ public class JdbcSnapshotProvider<T> extends DefaultSnapshotProvider implements 
     public <A extends Aggregate> A snapshot(@Nonnull A aggregate) {
         // check if we already have a snapshot for that aggregate
         final boolean snapshotExists = existsAggregateByUuid(aggregate.uuid());
-        final String sql = snapshotExists ? getPropety("jes.jdbc.statement.update-aggregate")
-                : getPropety("jes.jdbc.statement.insert-aggregate");
+        final String sql = snapshotExists ? getProperty("jes.jdbc.statement.update-aggregate")
+                : getProperty("jes.jdbc.statement.insert-aggregate");
 
         final Integer affectedCount = execute(connection -> {
             try (PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -91,7 +91,7 @@ public class JdbcSnapshotProvider<T> extends DefaultSnapshotProvider implements 
     public void reset(@Nonnull UUID uuid) {
         Objects.requireNonNull(uuid);
         execute(connection -> {
-            final String query = getPropety("jes.jdbc.statement.delete-aggregate");
+            final String query = getProperty("jes.jdbc.statement.delete-aggregate");
             try (PreparedStatement statement = connection.prepareStatement(query)) {
                 statement.setObject(1, uuid);
                 final int deletedRows = statement.executeUpdate();
@@ -105,7 +105,7 @@ public class JdbcSnapshotProvider<T> extends DefaultSnapshotProvider implements 
     @SneakyThrows
     private Aggregate findAggregateByUuid(@Nonnull UUID uuid) {
         return execute(connection -> {
-            final String query = getPropety("jes.jdbc.statement.select-aggregate");
+            final String query = getProperty("jes.jdbc.statement.select-aggregate");
             try (final PreparedStatement statement = connection.prepareStatement(query)) {
                 statement.setObject(1, Objects.requireNonNull(uuid, "Aggregate uuid must not be null"));
                 try (final ResultSet set = statement.executeQuery()) {
@@ -121,7 +121,7 @@ public class JdbcSnapshotProvider<T> extends DefaultSnapshotProvider implements 
     @SneakyThrows
     private boolean existsAggregateByUuid(@Nonnull UUID uuid) {
         return execute(connection -> {
-            final String query = getPropety("jes.jdbc.statement.exists-aggregate");
+            final String query = getProperty("jes.jdbc.statement.exists-aggregate");
             try (final PreparedStatement statement = connection.prepareStatement(query)) {
                 statement.setObject(1, Objects.requireNonNull(uuid, "Aggregate uuid must not be null"));
                 try (final ResultSet set = statement.executeQuery()) {

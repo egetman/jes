@@ -14,6 +14,7 @@ import org.mockito.Mockito;
 
 import lombok.Cleanup;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import store.jesframework.Event;
 import store.jesframework.internal.Events.FancyEvent;
 import store.jesframework.internal.Events.SampleEvent;
@@ -31,6 +32,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@Slf4j
 class JdbcClusterStoreProviderTest {
 
     @Test

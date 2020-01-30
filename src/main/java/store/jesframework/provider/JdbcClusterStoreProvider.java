@@ -70,7 +70,7 @@ public class JdbcClusterStoreProvider<T> implements StoreProvider, SnapshotReade
             }
         }
         writesTracker = Cache2kBuilder.of(UUID.class, Object.class)
-                .name(getClass())
+                .name(getClass() + "-" + UUID.randomUUID())
                 .permitNullValues(true)
                 .boostConcurrency(true)
                 .entryCapacity(Long.MAX_VALUE)

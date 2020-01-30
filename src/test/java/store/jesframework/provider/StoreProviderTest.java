@@ -3,6 +3,7 @@ package store.jesframework.provider;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -17,11 +18,9 @@ import javax.sql.DataSource;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import lombok.Cleanup;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import store.jesframework.Event;
@@ -255,7 +254,6 @@ class StoreProviderTest {
     }
 
     @AfterEach
-    @Timeout(value = 10, unit = SECONDS)
     void clearClusteredEventStore() {
         for (StoreProvider provider : PROVIDERS) {
             if (!(provider instanceof JdbcClusterStoreProvider)) {
@@ -266,11 +264,14 @@ class StoreProviderTest {
                 uuids.forEach(provider::deleteBy);
             }
             // in case of clustered provider we need to wait a bit until deletion replicated to all servers
-            while (true) {
-                @Cleanup
-                Stream<Event> ignored = provider.readFrom(0);
-                if (ignored.count() == 0) {
-                    break;
+            final long start = System.currentTimeMillis();
+            while (System.currentTimeMillis() < start + SECONDS.toMillis(10)) {
+                try (Stream<Event> ignored = provider.readFrom(0)) {
+                    if (ignored.count() == 0) {
+                        break;
+                    }
+                } catch (NoSuchElementException ignored) {
+                    // known issue for delete-all load profile
                 }
             }
         }

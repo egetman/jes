@@ -18,6 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 import static java.time.temporal.ChronoUnit.SECONDS;
 
 @Slf4j
+@SuppressWarnings("SpellCheckingInspection")
 public class PostgreSQLClusterContainer extends GenericContainer<PostgreSQLClusterContainer> {
 
     private static final String IMAGE = "sameersbn/postgresql";

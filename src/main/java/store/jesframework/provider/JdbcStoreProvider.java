@@ -38,7 +38,7 @@ import static java.util.Spliterators.spliteratorUnknownSize;
 import static java.util.stream.Collectors.toList;
 import static store.jesframework.util.JdbcUtils.createConnection;
 import static store.jesframework.util.JdbcUtils.unwrapJdbcType;
-import static store.jesframework.util.PropsReader.getPropety;
+import static store.jesframework.util.PropsReader.getProperty;
 
 /**
  * JDBC {@link StoreProvider} implementation.
@@ -94,21 +94,21 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
 
     @Override
     public Stream<Event> readFrom(long offset) {
-        final String query = getPropety("jes.jdbc.statement.select-events");
+        final String query = getProperty("jes.jdbc.statement.select-events");
         final SequentialResultSetIterator iterator = new SequentialResultSetIterator(query, offset);
         return StreamSupport.stream(spliteratorUnknownSize(iterator, ORDERED), false).onClose(iterator::close);
     }
 
     @Override
     public Collection<Event> readBy(@Nonnull UUID uuid) {
-        try (final Stream<Event> stream = readBy(getPropety("jes.jdbc.statement.select-events-by-uuid"), uuid)) {
+        try (final Stream<Event> stream = readBy(getProperty("jes.jdbc.statement.select-events-by-uuid"), uuid)) {
             return stream.collect(toList());
         }
     }
 
     @Override
     public Collection<Event> readBy(@Nonnull UUID uuid, long skip) {
-        final String statement = getPropety("jes.jdbc.statement.select-events-by-uuid-with-skip");
+        final String statement = getProperty("jes.jdbc.statement.select-events-by-uuid-with-skip");
         try (final Stream<Event> stream = readBy(requireNonNull(statement), uuid, skip)) {
             return stream.collect(toList());
         }
@@ -148,7 +148,7 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
     @Override
     public void write(@Nonnull Event event) {
         verifyWritable();
-        final String query = getPropety("jes.jdbc.statement.insert-events");
+        final String query = getProperty("jes.jdbc.statement.insert-events");
         try (final Connection connection = createConnection(dataSource);
              final PreparedStatement statement = connection.prepareStatement(query)) {
 
@@ -184,7 +184,7 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
             }
             // ok, we can use it
             connection.setAutoCommit(false);
-            final String query = getPropety("jes.jdbc.statement.insert-events");
+            final String query = getProperty("jes.jdbc.statement.insert-events");
             try (final PreparedStatement statement = connection.prepareStatement(query)) {
                 for (Event event : events) {
                     final UUID uuid = event.uuid();
@@ -210,7 +210,7 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
         final UUID uuid = event.uuid();
         final long expectedVersion = event.expectedStreamVersion();
         if (uuid != null && expectedVersion != -1) {
-            final String query = getPropety("jes.jdbc.statement.select-events-version");
+            final String query = getProperty("jes.jdbc.statement.select-events-version");
             try (PreparedStatement statement = connection.prepareStatement(query)) {
                 statement.setObject(1, uuid);
                 try (final ResultSet resultSet = statement.executeQuery()) {
@@ -231,7 +231,7 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
     public void deleteBy(@Nonnull UUID uuid) {
         log.trace("Prepare to remove {} event stream", uuid);
         verifyWritable();
-        final String query = getPropety("jes.jdbc.statement.delete-events");
+        final String query = getProperty("jes.jdbc.statement.delete-events");
         try (Connection connection = createConnection(dataSource);
              PreparedStatement statement = connection.prepareStatement(query)) {
 
@@ -418,6 +418,7 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
                 case 1 should be avoided with MAX_RETRIES read retries.
                  */
                 beforeLastOffset++;
+                retryCount = 0;
             }
             return next();
         }

@@ -31,7 +31,7 @@ public final class JdbcUtils {
         if (schema != null && !schema.isEmpty()) {
             return schema;
         }
-        return PropsReader.getPropety("jes.jdbc.schema-name");
+        return PropsReader.getProperty("jes.jdbc.schema-name");
     }
 
     /**

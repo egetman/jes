@@ -20,8 +20,8 @@ public final class PropsReader {
     /**
      * Method used to read {@literal JES} properties.
      * First of all, it will cache all discovered property values and return it, if it found in the cache.
-     * If property not found in cache it will be searched in system properties.
-     * If property not found through system properties it will search the property in environment properies.
+     * If property not found in the cache it will be searched in system properties.
+     * If property not found through system properties it will search the property in environment properties.
      * If property not found through system properties it will read {@literal jes.properties} property file.
      * If property not found once again, {@link PropertyNotFoundException} will be thrown.
      *
@@ -31,7 +31,7 @@ public final class PropsReader {
      * @throws NullPointerException      if {@literal propertyName} is null.
      */
     @SneakyThrows
-    public static String getPropety(@Nonnull String propertyName) {
+    public static String getProperty(@Nonnull String propertyName) {
         final String cached = CACHE.get(Objects.requireNonNull(propertyName, "Property name must not be null"));
         if (cached != null) {
             return cached;
@@ -49,7 +49,7 @@ public final class PropsReader {
             return envProperty;
         }
 
-        ClassLoader loader = Thread.currentThread().getContextClassLoader();
+        final ClassLoader loader = Thread.currentThread().getContextClassLoader();
 
         try (final InputStream inputStream = loader.getResourceAsStream("jes.properties")) {
             final Properties properties = new Properties();
