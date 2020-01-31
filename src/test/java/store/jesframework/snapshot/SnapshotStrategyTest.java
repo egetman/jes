@@ -2,6 +2,7 @@ package store.jesframework.snapshot;
 
 import java.time.Duration;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
 
@@ -10,7 +11,6 @@ import store.jesframework.Aggregate;
 import store.jesframework.Event;
 import store.jesframework.internal.FancyAggregate;
 
-import static java.lang.Thread.sleep;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singleton;
@@ -67,7 +67,7 @@ class SnapshotStrategyTest {
 
         assertFalse(strategy.isSnapshotNecessary(aggregate, loadedEvents));
         // wait for the specified duration
-        sleep(50);
+        TimeUnit.MILLISECONDS.sleep(50);
         assertTrue(strategy.isSnapshotNecessary(aggregate, loadedEvents));
     }
 

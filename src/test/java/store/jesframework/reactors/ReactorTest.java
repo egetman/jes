@@ -202,7 +202,7 @@ class ReactorTest {
 
     @Test
     @SneakyThrows
-    void reactorShouldRetryFailurelimitedNumberOfTimes() {
+    void reactorShouldRetryFailureLimitedNumberOfTimes() {
         final StoreProvider storeProvider = mock(StoreProvider.class);
         final JEventStore eventStore = new JEventStore(storeProvider);
         final Trigger trigger = mock(Trigger.class);
@@ -215,7 +215,7 @@ class ReactorTest {
                 //noinspection InfiniteLoopStatement
                 while (true) {
                     runnable.run();
-                    Thread.sleep(0);
+                    TimeUnit.NANOSECONDS.sleep(1);
                 }
             } catch (InterruptedException ignored) {
                 Thread.currentThread().interrupt();
