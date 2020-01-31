@@ -13,7 +13,7 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 import static store.jesframework.util.JdbcUtils.createConnection;
-import static store.jesframework.util.PropsReader.getPropety;
+import static store.jesframework.util.PropsReader.getProperty;
 import static java.sql.Connection.TRANSACTION_READ_COMMITTED;
 
 @Slf4j
@@ -51,8 +51,8 @@ public class JdbcLock implements Lock {
             try {
                 connection.setAutoCommit(false);
                 connection.setTransactionIsolation(TRANSACTION_READ_COMMITTED);
-                final String lockQuery = getPropety("jes.jdbc.statement.insert-lock");
-                final String unlockQuery = getPropety("jes.jdbc.statement.delete-lock");
+                final String lockQuery = getProperty("jes.jdbc.statement.insert-lock");
+                final String unlockQuery = getProperty("jes.jdbc.statement.delete-lock");
                 try (final PreparedStatement lockStatement = connection.prepareStatement(lockQuery);
                      final PreparedStatement unlockStatement = connection.prepareStatement(unlockQuery)) {
 

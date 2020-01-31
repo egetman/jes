@@ -9,8 +9,7 @@ import javax.annotation.Nullable;
 public interface Event {
 
     /**
-     * Stream uuid.
-     * If the event is a part of aggregate, it will return it's uuid, null otherwise.
+     * Stream uuid. If the event is a part of aggregate, it will return it's uuid, null otherwise.
      *
      * @return stream (aggregate) uuid, if present.
      */
@@ -20,7 +19,7 @@ public interface Event {
     }
 
     /**
-     * @return expected stream (aggregate) version. Used for optimistic locking in concurrent env's (like user
+     * @return expected stream (aggregate) version. Used for optimistic locking in concurrent environments (like user
      *      interaction).
      */
     default long expectedStreamVersion() {

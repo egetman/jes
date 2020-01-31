@@ -15,7 +15,7 @@ import static store.jesframework.util.JdbcUtils.getSqlTypeByClassAndDatabaseName
 /**
  * Factory for vendor specific database dialects.
  */
-public class DDLFactory {
+public final class DDLFactory {
 
     private static final String DB_NAME_H2 = "H2";
     private static final String DB_NAME_POSTGRE_SQL = "PostgreSQL";

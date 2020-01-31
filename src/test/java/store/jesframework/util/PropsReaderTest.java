@@ -11,28 +11,28 @@ class PropsReaderTest {
     @Test
     void shouldThrowNullPointerExceptionOnNullPropertyName() {
         //noinspection ConstantConditions
-        assertThrows(NullPointerException.class, () -> PropsReader.getPropety(null));
+        assertThrows(NullPointerException.class, () -> PropsReader.getProperty(null));
     }
 
     @Test
     void shouldFindSystemPropertyIfExists() {
         System.setProperty("jes.foo", "jes.baz");
-        assertEquals("jes.baz", PropsReader.getPropety("jes.foo"));
+        assertEquals("jes.baz", PropsReader.getProperty("jes.foo"));
         // once again
-        assertEquals("jes.baz", PropsReader.getPropety("jes.foo"));
+        assertEquals("jes.baz", PropsReader.getProperty("jes.foo"));
     }
 
     @Test
     void shouldFindPropertyFromPropertyFileIfExists() {
-        assertEquals("es", PropsReader.getPropety("jes.jdbc.schema-name"));
+        assertEquals("es", PropsReader.getProperty("jes.jdbc.schema-name"));
         // once again
-        assertEquals("es", PropsReader.getPropety("jes.jdbc.schema-name"));
+        assertEquals("es", PropsReader.getProperty("jes.jdbc.schema-name"));
     }
 
     @Test
     void shouldThrowPropertyNotFoundExceptionOnMissingProperty() {
         final PropertyNotFoundException exception = assertThrows(PropertyNotFoundException.class,
-                () -> PropsReader.getPropety("bazz"));
+                () -> PropsReader.getProperty("bazz"));
 
         assertEquals("Can't find specified property: bazz in system properties and jes.properties file",
                 exception.getMessage());

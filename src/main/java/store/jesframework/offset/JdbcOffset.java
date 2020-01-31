@@ -13,7 +13,7 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 import static store.jesframework.util.JdbcUtils.createConnection;
-import static store.jesframework.util.PropsReader.getPropety;
+import static store.jesframework.util.PropsReader.getProperty;
 
 @Slf4j
 public class JdbcOffset implements Offset {
@@ -43,7 +43,7 @@ public class JdbcOffset implements Offset {
     @Override
     public long value(@Nonnull String key) {
         Objects.requireNonNull(key);
-        final String query = getPropety("jes.jdbc.statement.select-offset");
+        final String query = getProperty("jes.jdbc.statement.select-offset");
         try (final Connection connection = createConnection(dataSource);
              final PreparedStatement statement = connection.prepareStatement(query)) {
             statement.setString(1, key);
@@ -94,7 +94,7 @@ public class JdbcOffset implements Offset {
     @Override
     public void reset(@Nonnull String key) {
         Objects.requireNonNull(key);
-        final String query = getPropety("jes.jdbc.statement.update-offset-and-reset");
+        final String query = getProperty("jes.jdbc.statement.update-offset-and-reset");
         try (final Connection connection = createConnection(dataSource);
              final PreparedStatement statement = connection.prepareStatement(query)) {
 
@@ -110,7 +110,7 @@ public class JdbcOffset implements Offset {
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     private boolean incrementOffsetByKey(@Nonnull String key) {
-        final String query = getPropety("jes.jdbc.statement.update-offset-and-increment");
+        final String query = getProperty("jes.jdbc.statement.update-offset-and-increment");
         try (final Connection connection = createConnection(dataSource);
              final PreparedStatement statement = connection.prepareStatement(query)) {
 
@@ -123,7 +123,7 @@ public class JdbcOffset implements Offset {
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     private boolean addToOffsetByKey(@Nonnull String key, long value) {
-        final String query = getPropety("jes.jdbc.statement.update-offset-and-add");
+        final String query = getProperty("jes.jdbc.statement.update-offset-and-add");
         try (final Connection connection = createConnection(dataSource);
              final PreparedStatement statement = connection.prepareStatement(query)) {
 
@@ -136,7 +136,7 @@ public class JdbcOffset implements Offset {
     }
 
     private void createOffset(@Nonnull String key) {
-        final String query = getPropety("jes.jdbc.statement.insert-offset");
+        final String query = getProperty("jes.jdbc.statement.insert-offset");
         try (final Connection connection = createConnection(dataSource);
              final PreparedStatement statement = connection.prepareStatement(query)) {
 

@@ -25,7 +25,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 
 @Slf4j
-class StatefullSagaTest {
+class StatefulSagaTest {
 
     @Test
     void statelessSagaShouldThrowExceptionOnContextAccess() {
@@ -33,14 +33,14 @@ class StatefullSagaTest {
         final Offset offset = mock(Offset.class);
         final Lock lock = mock(Lock.class);
 
-        try (StatefullSaga saga = new StatefullSaga(store, offset, lock)) {
+        try (StatefulSaga saga = new StatefulSaga(store, offset, lock)) {
             Assertions.assertThrows(IllegalStateException.class, saga::getContext);
         }
     }
 
     @Test
     @SneakyThrows
-    void statefullSagasShouldSyncState() {
+    void statefulSagasShouldSyncState() {
         final JEventStore store = new JEventStore(new InMemoryStoreProvider());
         final AggregateStore aggregateStore = new AggregateStore(store);
         final Offset offset = new InMemoryOffset();
@@ -52,8 +52,8 @@ class StatefullSagaTest {
             return null;
         }).when(lock).doExclusively(anyString(), any(Runnable.class));
 
-        try (StatefullSaga first = new StatefullSaga(aggregateStore, offset, lock, 1);
-             StatefullSaga second = new StatefullSaga(aggregateStore, offset, lock, 1)) {
+        try (StatefulSaga first = new StatefulSaga(aggregateStore, offset, lock, 1);
+             StatefulSaga second = new StatefulSaga(aggregateStore, offset, lock, 1)) {
 
             store.write(new Events.SampleEvent("name"));
 
@@ -65,19 +65,19 @@ class StatefullSagaTest {
         }
     }
 
-    private static class StatefullSaga extends Saga {
+    private static class StatefulSaga extends Saga {
 
         private final CountDownLatch latch;
 
-        StatefullSaga(@Nonnull JEventStore store, @Nonnull Offset offset, @Nonnull Lock lock) {
+        StatefulSaga(@Nonnull JEventStore store, @Nonnull Offset offset, @Nonnull Lock lock) {
             super(store, offset, lock);
             latch = new CountDownLatch(0);
         }
 
-        StatefullSaga(@Nonnull AggregateStore aggregateStore, @Nonnull Offset offset, @Nonnull Lock lock,
-                      int stateCanges) {
+        StatefulSaga(@Nonnull AggregateStore aggregateStore, @Nonnull Offset offset, @Nonnull Lock lock,
+                     int stateChanges) {
             super(aggregateStore, offset, lock);
-            latch = new CountDownLatch(stateCanges);
+            latch = new CountDownLatch(stateChanges);
         }
 
         @ReactsOn

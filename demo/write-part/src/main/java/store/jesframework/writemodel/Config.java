@@ -29,7 +29,7 @@ public class Config {
     @Bean(destroyMethod = "close")
     @SuppressWarnings("ContextJavaBeanUnresolvedMethodsInspection")
     public StoreProvider storeProvider(DataSource dataSource, SerializationOption[] options) {
-        return new JdbcStoreProvider<>(dataSource, String.class, options);
+        return new JdbcStoreProvider<>(dataSource, options);
     }
 
     @Bean

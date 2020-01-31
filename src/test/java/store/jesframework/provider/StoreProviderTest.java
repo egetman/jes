@@ -1,17 +1,19 @@
 package store.jesframework.provider;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
+import javax.sql.DataSource;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -25,10 +27,13 @@ import store.jesframework.Event;
 import store.jesframework.ex.BrokenStoreException;
 import store.jesframework.ex.VersionMismatchException;
 import store.jesframework.internal.Events;
+import store.jesframework.util.Pair;
 
 import static java.lang.Runtime.getRuntime;
 import static java.util.Arrays.asList;
 import static java.util.UUID.randomUUID;
+import static java.util.concurrent.TimeUnit.DAYS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -39,6 +44,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static store.jesframework.internal.FancyStuff.newEntityManagerFactory;
 import static store.jesframework.internal.FancyStuff.newH2DataSource;
+import static store.jesframework.internal.FancyStuff.newPostgresClusterDataSource;
 import static store.jesframework.internal.FancyStuff.newPostgresDataSource;
 import static store.jesframework.serializer.api.Format.BINARY_KRYO;
 import static store.jesframework.serializer.api.Format.JSON_JACKSON;
@@ -47,26 +53,33 @@ import static store.jesframework.serializer.api.Format.XML_XSTREAM;
 @Slf4j
 class StoreProviderTest {
 
-    private static final Collection<StoreProvider> PROVIDERS = asList(
-            new InMemoryStoreProvider(),
-            new JdbcStoreProvider<>(newH2DataSource(), JSON_JACKSON),
-            new JdbcStoreProvider<>(newH2DataSource(), XML_XSTREAM),
-            new JdbcStoreProvider<>(newH2DataSource(), BINARY_KRYO),
-            new JdbcStoreProvider<>(newPostgresDataSource(), BINARY_KRYO),
-            new JdbcStoreProvider<>(newPostgresDataSource("es", "postgres:latest"), JSON_JACKSON),
-            new JdbcStoreProvider<>(newPostgresDataSource("es", "postgres:latest"), XML_XSTREAM),
-            new JdbcStoreProvider<>(newPostgresDataSource("es", "postgres:9.6"), JSON_JACKSON),
-            new JpaStoreProvider<>(newEntityManagerFactory(byte[].class), BINARY_KRYO),
-            new JpaStoreProvider<>(newEntityManagerFactory(String.class), JSON_JACKSON),
-            new JpaStoreProvider<>(newEntityManagerFactory(String.class), XML_XSTREAM)
-    );
+    private static final Collection<StoreProvider> PROVIDERS = new ArrayList<>();
 
-    private static Collection<StoreProvider> createProviders() {
+    static {
+        PROVIDERS.add(new InMemoryStoreProvider());
+        PROVIDERS.add(new JdbcStoreProvider<>(newH2DataSource(), JSON_JACKSON));
+        PROVIDERS.add(new JdbcStoreProvider<>(newH2DataSource(), XML_XSTREAM));
+        PROVIDERS.add(new JdbcStoreProvider<>(newH2DataSource(), BINARY_KRYO));
+        PROVIDERS.add(new JdbcStoreProvider<>(newPostgresDataSource(), BINARY_KRYO));
+        PROVIDERS.add(new JdbcStoreProvider<>(newPostgresDataSource("es", "postgres:latest"), JSON_JACKSON));
+        PROVIDERS.add(new JdbcStoreProvider<>(newPostgresDataSource("es", "postgres:latest"), XML_XSTREAM));
+        PROVIDERS.add(new JdbcStoreProvider<>(newPostgresDataSource("es", "postgres:9.6"), JSON_JACKSON));
+        PROVIDERS.add(new JpaStoreProvider<>(newEntityManagerFactory(byte[].class), BINARY_KRYO));
+        PROVIDERS.add(new JpaStoreProvider<>(newEntityManagerFactory(String.class), JSON_JACKSON));
+        PROVIDERS.add(new JpaStoreProvider<>(newEntityManagerFactory(String.class), XML_XSTREAM));
+        // master-only config
+        PROVIDERS.add(new JdbcClusterStoreProvider<>(newPostgresDataSource("es")));
+        // master-slave config
+        final Pair<DataSource, Collection<DataSource>> pair = newPostgresClusterDataSource(1);
+        PROVIDERS.add(new JdbcClusterStoreProvider<>(pair.getKey(), pair.getValue().toArray(new DataSource[0])));
+    }
+
+    private static Collection<StoreProvider> getProviders() {
         return PROVIDERS;
     }
 
     @ParameterizedTest
-    @MethodSource("createProviders")
+    @MethodSource("getProviders")
     void shouldReadOwnWrites(@Nonnull StoreProvider provider) {
 
         final List<Event> expected = asList(
@@ -80,14 +93,14 @@ class StoreProviderTest {
         try (final Stream<Event> stream = provider.readFrom(0)) {
             actual = stream.collect(toList());
         }
+        actual.forEach(event -> log.info("{}", event));
 
         assertNotNull(actual);
         assertIterableEquals(expected, actual);
-        actual.forEach(event -> log.info("{}", event));
     }
 
     @ParameterizedTest
-    @MethodSource("createProviders")
+    @MethodSource("getProviders")
     void shouldReadEventStreamByUuid(@Nonnull StoreProvider provider) {
         final UUID uuid = randomUUID();
         final List<Event> expected = asList(
@@ -106,7 +119,7 @@ class StoreProviderTest {
     }
 
     @ParameterizedTest
-    @MethodSource("createProviders")
+    @MethodSource("getProviders")
     void shouldReadBatchEventWrites(@Nonnull StoreProvider provider) {
         final UUID uuid = randomUUID();
         final List<Event> expected = asList(
@@ -125,7 +138,7 @@ class StoreProviderTest {
     }
 
     @ParameterizedTest
-    @MethodSource("createProviders")
+    @MethodSource("getProviders")
     void shouldSuccessfullyWriteVersionedEventStream(@Nonnull StoreProvider provider) {
         final UUID uuid = randomUUID();
         final List<Event> expected = asList(
@@ -138,7 +151,7 @@ class StoreProviderTest {
     }
 
     @ParameterizedTest
-    @MethodSource("createProviders")
+    @MethodSource("getProviders")
     void shouldThrowVersionMismatchException(@Nonnull StoreProvider provider) {
         final UUID uuid = randomUUID();
         final List<Event> expected = asList(
@@ -152,7 +165,7 @@ class StoreProviderTest {
     }
 
     @ParameterizedTest
-    @MethodSource("createProviders")
+    @MethodSource("getProviders")
     void shouldDeleteFullStreamByUuid(@Nonnull StoreProvider provider) {
         final UUID uuid = randomUUID();
         final UUID anotherUuid = randomUUID();
@@ -175,7 +188,7 @@ class StoreProviderTest {
     }
 
     @ParameterizedTest
-    @MethodSource("createProviders")
+    @MethodSource("getProviders")
     void deletingNonExistingEventStreamByUuidShouldNotFail(@Nonnull StoreProvider provider) {
         final Events.SampleEvent expected = new Events.SampleEvent("FOO", randomUUID());
 
@@ -189,7 +202,7 @@ class StoreProviderTest {
 
     @SneakyThrows
     @ParameterizedTest
-    @MethodSource("createProviders")
+    @MethodSource("getProviders")
     void providersShouldWriteAllEventsInConcurrentEnvironment(@Nonnull StoreProvider provider) {
         final int workersCount = getRuntime().availableProcessors();
         final int streamSize = 100;
@@ -203,7 +216,7 @@ class StoreProviderTest {
                     latch.countDown();
                 });
             }
-            assertTrue(latch.await(5, TimeUnit.SECONDS), "Dataset wasn't written in 5 sec");
+            assertTrue(latch.await(5, SECONDS), "Dataset wasn't written in 5 sec");
 
             try (Stream<Event> stream = provider.readFrom(0)) {
                 assertEquals(workersCount * streamSize, stream.count(), "Written events count wrong");
@@ -218,6 +231,11 @@ class StoreProviderTest {
     void providersShouldProtectItsInvariants() {
         assertThrows(BrokenStoreException.class, () -> new JdbcStoreProvider<>(null));
         assertThrows(BrokenStoreException.class, () -> new JpaStoreProvider<>(null));
+        assertThrows(BrokenStoreException.class, () -> new JdbcClusterStoreProvider<>(null));
+        assertThrows(BrokenStoreException.class,
+                () -> new JdbcClusterStoreProvider<>(newH2DataSource(), null, -1, DAYS));
+        assertThrows(BrokenStoreException.class,
+                () -> new JdbcClusterStoreProvider<>(newH2DataSource(), null, 1, null));
     }
 
     @SuppressWarnings("SameParameterValue")
@@ -228,9 +246,38 @@ class StoreProviderTest {
     @AfterEach
     void clearEventStore() {
         for (StoreProvider provider : PROVIDERS) {
+            if (provider instanceof JdbcClusterStoreProvider) {
+                // clean up only common providers
+                continue;
+            }
             try (final Stream<Event> stream = provider.readFrom(0)) {
                 final Set<UUID> uuids = stream.map(Event::uuid).filter(Objects::nonNull).collect(toSet());
                 uuids.forEach(provider::deleteBy);
+            }
+        }
+    }
+
+    @AfterEach
+    void clearClusteredEventStore() {
+        for (StoreProvider provider : PROVIDERS) {
+            if (!(provider instanceof JdbcClusterStoreProvider)) {
+                // clean up only clustered providers
+                continue;
+            }
+            try (final Stream<Event> stream = provider.readFrom(0)) {
+                final Set<UUID> uuids = stream.map(Event::uuid).filter(Objects::nonNull).collect(toSet());
+                uuids.forEach(provider::deleteBy);
+            }
+            // in case of clustered provider we need to wait a bit until deletion replicated to all servers
+            final long start = System.currentTimeMillis();
+            while (System.currentTimeMillis() < start + SECONDS.toMillis(10)) {
+                try (Stream<Event> ignored = provider.readFrom(0)) {
+                    if (ignored.count() == 0) {
+                        break;
+                    }
+                } catch (NoSuchElementException ignored) {
+                    // known issue for delete-all load profile
+                }
             }
         }
     }

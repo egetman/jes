@@ -38,7 +38,7 @@ import static java.util.Spliterators.spliteratorUnknownSize;
 import static java.util.stream.Collectors.toList;
 import static store.jesframework.util.JdbcUtils.createConnection;
 import static store.jesframework.util.JdbcUtils.unwrapJdbcType;
-import static store.jesframework.util.PropsReader.getPropety;
+import static store.jesframework.util.PropsReader.getProperty;
 
 /**
  * JDBC {@link StoreProvider} implementation.
@@ -50,18 +50,26 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
 
     private static final int FETCH_SIZE = 100;
 
+    private final boolean readOnly;
     private final DataSource dataSource;
     private final Serializer<Event, T> serializer;
 
     public JdbcStoreProvider(@Nonnull DataSource dataSource, @Nullable SerializationOption... options) {
+        this(dataSource, false, options);
+    }
+
+    JdbcStoreProvider(@Nonnull DataSource dataSource, boolean readOnly, @Nullable SerializationOption... options) {
         try {
-            this.dataSource = requireNonNull(dataSource);
+            this.readOnly = readOnly;
+            this.dataSource = requireNonNull(dataSource, "DataSource must not be null");
             this.serializer = SerializerFactory.newEventSerializer(options);
 
-            try (final Connection connection = createConnection(this.dataSource)) {
-                final Format format = this.serializer.format();
-                final String ddl = DDLFactory.getEventStoreDDL(connection, format.getJavaType());
-                createEventStore(connection, ddl);
+            if (!readOnly) {
+                try (final Connection connection = createConnection(this.dataSource)) {
+                    final Format format = this.serializer.format();
+                    final String ddl = DDLFactory.getEventStoreDDL(connection, format.getJavaType());
+                    createEventStore(connection, ddl);
+                }
             }
         } catch (Exception e) {
             throw new BrokenStoreException(e);
@@ -78,23 +86,29 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
         }
     }
 
+    private void verifyWritable() {
+        if (readOnly) {
+            throw new BrokenStoreException(getClass().getSimpleName() + " in a read-only mode. Can't write");
+        }
+    }
+
     @Override
     public Stream<Event> readFrom(long offset) {
-        final String query = getPropety("jes.jdbc.statement.select-events");
+        final String query = getProperty("jes.jdbc.statement.select-events");
         final SequentialResultSetIterator iterator = new SequentialResultSetIterator(query, offset);
         return StreamSupport.stream(spliteratorUnknownSize(iterator, ORDERED), false).onClose(iterator::close);
     }
 
     @Override
     public Collection<Event> readBy(@Nonnull UUID uuid) {
-        try (final Stream<Event> stream = readBy(getPropety("jes.jdbc.statement.select-events-by-uuid"), uuid)) {
+        try (final Stream<Event> stream = readBy(getProperty("jes.jdbc.statement.select-events-by-uuid"), uuid)) {
             return stream.collect(toList());
         }
     }
 
     @Override
     public Collection<Event> readBy(@Nonnull UUID uuid, long skip) {
-        final String statement = getPropety("jes.jdbc.statement.select-events-by-uuid-with-skip");
+        final String statement = getProperty("jes.jdbc.statement.select-events-by-uuid-with-skip");
         try (final Stream<Event> stream = readBy(requireNonNull(statement), uuid, skip)) {
             return stream.collect(toList());
         }
@@ -133,7 +147,8 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
 
     @Override
     public void write(@Nonnull Event event) {
-        final String query = getPropety("jes.jdbc.statement.insert-events");
+        verifyWritable();
+        final String query = getProperty("jes.jdbc.statement.insert-events");
         try (final Connection connection = createConnection(dataSource);
              final PreparedStatement statement = connection.prepareStatement(query)) {
 
@@ -155,10 +170,12 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
 
     @Override
     public void write(@Nonnull Event... events) {
+        verifyWritable();
         try (final Connection connection = createConnection(dataSource)) {
             final boolean supportsBatches = connection.getMetaData().supportsBatchUpdates();
             // first check if we can use batch
             if (!supportsBatches) {
+                //noinspection GrazieInspection
                 log.warn("Current db doesn't support batch updates. Separate updates will be used");
                 for (Event event : events) {
                     write(event);
@@ -167,7 +184,7 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
             }
             // ok, we can use it
             connection.setAutoCommit(false);
-            final String query = getPropety("jes.jdbc.statement.insert-events");
+            final String query = getProperty("jes.jdbc.statement.insert-events");
             try (final PreparedStatement statement = connection.prepareStatement(query)) {
                 for (Event event : events) {
                     final UUID uuid = event.uuid();
@@ -193,7 +210,7 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
         final UUID uuid = event.uuid();
         final long expectedVersion = event.expectedStreamVersion();
         if (uuid != null && expectedVersion != -1) {
-            final String query = getPropety("jes.jdbc.statement.select-events-version");
+            final String query = getProperty("jes.jdbc.statement.select-events-version");
             try (PreparedStatement statement = connection.prepareStatement(query)) {
                 statement.setObject(1, uuid);
                 try (final ResultSet resultSet = statement.executeQuery()) {
@@ -213,7 +230,8 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
     @Override
     public void deleteBy(@Nonnull UUID uuid) {
         log.trace("Prepare to remove {} event stream", uuid);
-        final String query = getPropety("jes.jdbc.statement.delete-events");
+        verifyWritable();
+        final String query = getProperty("jes.jdbc.statement.delete-events");
         try (Connection connection = createConnection(dataSource);
              PreparedStatement statement = connection.prepareStatement(query)) {
 
@@ -400,6 +418,7 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
                 case 1 should be avoided with MAX_RETRIES read retries.
                  */
                 beforeLastOffset++;
+                retryCount = 0;
             }
             return next();
         }

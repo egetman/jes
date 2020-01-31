@@ -174,10 +174,10 @@ public class Saga extends Reactor {
                     return true;
                 } catch (VersionMismatchException e) {
                     log.trace("Failed to update saga context: {}", e.toString());
-                    // wait until refresh triggered (to avoid too much useless spinning)
+                    // wait until a refresh triggered (to avoid too much useless spinning)
                     try {
                         Thread.sleep(STATE_REFRESH_DELAY);
-                    } catch (InterruptedException intx) {
+                    } catch (InterruptedException ex) {
                         Thread.currentThread().interrupt();
                     }
                     cachedVersion = streamVersion();
