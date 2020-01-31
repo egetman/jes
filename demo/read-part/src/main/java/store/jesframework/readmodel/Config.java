@@ -28,7 +28,7 @@ public class Config {
     @Bean(destroyMethod = "close")
     @SuppressWarnings("ContextJavaBeanUnresolvedMethodsInspection")
     public StoreProvider jdbcStoreProvider(DataSource dataSource, SerializationOption[] options) {
-        return new JdbcStoreProvider<>(dataSource, String.class, options);
+        return new JdbcStoreProvider<>(dataSource, options);
     }
 
     @Bean
@@ -47,7 +47,7 @@ public class Config {
     }
 
     // U can use any aliases for events. So u don't need to hardcode serialized class name of event.
-    // Every client can create it's own model to deserialize events from event store just using aliasing.
+    // Every client can create its own model to deserialize events from event store just using aliasing.
     @Bean
     public SerializationOption[] serializationOptions() {
         final TypeRegistry registry = new TypeRegistry();

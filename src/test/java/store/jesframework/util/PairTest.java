@@ -21,4 +21,15 @@ class PairTest {
         assertNull(nullPair.getValue());
     }
 
+    @Test
+    void shouldBeEqualWithEqualValues() {
+        assertEquals(Pair.of("Foo", "Bar"), Pair.of("Foo", "Bar"));
+    }
+
+    @Test
+    void shouldIncludeObjectsInToString() {
+        final Pair<String, String> pair = Pair.of("1", "2");
+        assertTrue(pair.toString().contains("1"));
+        assertTrue(pair.toString().contains("2"));
+    }
 }

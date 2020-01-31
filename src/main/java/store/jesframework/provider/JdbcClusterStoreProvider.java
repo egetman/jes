@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
@@ -132,11 +133,8 @@ public class JdbcClusterStoreProvider<T> implements StoreProvider, SnapshotReade
         }
     }
 
-    private boolean isTracked(@Nullable UUID uuid) {
-        if (uuid == null) {
-            return false;
-        }
-        return writesTracker.containsKey(uuid);
+    private boolean isTracked(@Nonnull UUID uuid) {
+        return writesTracker.containsKey(Objects.requireNonNull(uuid, "Uuid must not be null"));
     }
 
     private JdbcStoreProvider<T> nextReplica() {

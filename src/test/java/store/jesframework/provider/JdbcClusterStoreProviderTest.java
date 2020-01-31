@@ -122,6 +122,49 @@ class JdbcClusterStoreProviderTest {
 
     @Test
     @SneakyThrows
+    void readsWithSkipByWrittenUuidsShouldBeRoutedToMaster() {
+        final DataSource master = mockDataSource();
+        final DataSource replica = mockDataSource();
+        @Cleanup
+        final JdbcClusterStoreProvider<String> provider = new JdbcClusterStoreProvider<>(master, replica);
+        clearInvocations(master);
+
+        final UUID customUuid = UUID.randomUUID();
+        provider.write(new SampleEvent("Baz", customUuid), new FancyEvent("Bar", customUuid));
+
+        verify(master, times(1)).getConnection();
+        verify(replica, never()).getConnection();
+        clearInvocations(master);
+
+        provider.readBy(customUuid, 1);
+        verify(master, times(1)).getConnection();
+        verify(replica, never()).getConnection();
+        clearInvocations(master);
+    }
+
+    @Test
+    @SneakyThrows
+    void readsWithSkipByUnseenUuidsShouldBeRoutedToReplica() {
+        final DataSource master = mockDataSource();
+        final DataSource replica = mockDataSource();
+        @Cleanup
+        final JdbcClusterStoreProvider<String> provider = new JdbcClusterStoreProvider<>(master, replica);
+        clearInvocations(master);
+
+        provider.write(new SampleEvent("Baz"), new SampleEvent("Bar"));
+
+        verify(master, times(1)).getConnection();
+        verify(replica, never()).getConnection();
+        clearInvocations(master);
+
+        provider.readBy(UUID.randomUUID(), 1);
+        verify(master, never()).getConnection();
+        verify(replica, times(1)).getConnection();
+        clearInvocations(master);
+    }
+
+    @Test
+    @SneakyThrows
     void readsByDeletedUuidsShouldBeRoutedToMaster() {
         final DataSource master = mockDataSource();
         final DataSource replica = mockDataSource();
@@ -191,7 +234,7 @@ class JdbcClusterStoreProviderTest {
         clearInvocations(master);
 
         // just wait for some millis to definitely be sure about cache expiration
-        Thread.sleep(20);
+        MILLISECONDS.sleep(20);
         provider.readBy(customUuid);
         verify(master, never()).getConnection();
         verify(replica, times(1)).getConnection();

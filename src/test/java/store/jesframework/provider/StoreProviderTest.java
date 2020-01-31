@@ -246,6 +246,10 @@ class StoreProviderTest {
     @AfterEach
     void clearEventStore() {
         for (StoreProvider provider : PROVIDERS) {
+            if (provider instanceof JdbcClusterStoreProvider) {
+                // clean up only common providers
+                continue;
+            }
             try (final Stream<Event> stream = provider.readFrom(0)) {
                 final Set<UUID> uuids = stream.map(Event::uuid).filter(Objects::nonNull).collect(toSet());
                 uuids.forEach(provider::deleteBy);
@@ -257,6 +261,7 @@ class StoreProviderTest {
     void clearClusteredEventStore() {
         for (StoreProvider provider : PROVIDERS) {
             if (!(provider instanceof JdbcClusterStoreProvider)) {
+                // clean up only clustered providers
                 continue;
             }
             try (final Stream<Event> stream = provider.readFrom(0)) {
