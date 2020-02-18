@@ -1,4 +1,4 @@
--- schemaName & contentType are aliases. They will be replaced with actual types in runtime
+-- schemaName & contentType are aliases. They will be replaced with actual types at runtime.
 CREATE SCHEMA IF NOT EXISTS schemaName;
 
 -- noinspection SqlResolve

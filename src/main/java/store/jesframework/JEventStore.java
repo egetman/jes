@@ -121,7 +121,7 @@ public class JEventStore {
      * {@implNote it's implementation specific to use STW pause during this operation}.
      *
      * @param store   is an Event Store to copy all events.
-     * @param handler is an event transformator. It can transform one given event into another before storing it in
+     * @param handler is an event transformer. It can transform one given event into another before storing it in
      *                the given {@literal store}.
      * @throws NullPointerException if store or handler is null.
      * @see <a href="https://leanpub.com/esversioning/read#leanpub-auto-copy-transform">Copy-Transform pattern</a>

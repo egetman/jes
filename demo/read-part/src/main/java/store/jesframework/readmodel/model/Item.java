@@ -19,6 +19,7 @@ import lombok.Setter;
 @Entity
 @Table(name = "item", schema = "stock")
 @EqualsAndHashCode(of = "uuid")
+@SuppressWarnings("JpaDataSourceORMInspection")
 public class Item {
 
     @Id
