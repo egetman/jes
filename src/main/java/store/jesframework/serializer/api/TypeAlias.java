@@ -9,8 +9,9 @@ import lombok.RequiredArgsConstructor;
 
 /**
  * Aliasing strategy for specific type.
- * <p>
- * See {@link AliasingStrategy}. See {@link Serializer#fetchTypeName(Object)}.
+ *
+ * @see AliasingStrategy
+ * @see Serializer#fetchTypeName(Object)
  */
 @Data
 @Immutable
@@ -20,6 +21,15 @@ public final class TypeAlias implements SerializationOption {
     private final String alias;
     private final Class<?> type;
 
+    /**
+     * Create an aliasing rule for specified {@code type}.
+     *
+     * @param type  is a class to be aliased.
+     * @param alias is an alias name.
+     * @return constructed {@link TypeAlias} instance.
+     * @see SerializationOption
+     * @see store.jesframework.serializer.impl.Context
+     */
     public static TypeAlias of(Class<?> type, String alias) {
         Objects.requireNonNull(type, "Type must not be null");
         Objects.requireNonNull(alias, "Alias must not be null");

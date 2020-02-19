@@ -52,12 +52,13 @@ public class Context<T> {
     }
 
     // no need to try fetch event type/name if there is not upcasters at all
-    public boolean isUpcastingEnabled() {
+    boolean isUpcastingEnabled() {
         return !upcasters.isEmpty();
     }
 
+
     @Nonnull
-    public T tryUpcast(@Nonnull T raw, @Nullable String typeName) {
+    T tryUpcast(@Nonnull T raw, @Nullable String typeName) {
         if (upcasters.isEmpty() || typeName == null) {
             return raw;
         }
@@ -80,7 +81,7 @@ public class Context<T> {
     }
 
     @Nonnull
-    public Map<Class<?>, String> classesToAliases() {
+    Map<Class<?>, String> classesToAliases() {
         final Map<Class<?>, String> classesToAliases = new HashMap<>();
         // first: write all common aliases
         if (aliasingStrategy == AliasingStrategy.SHORT_CLASS_NAME) {
@@ -100,7 +101,7 @@ public class Context<T> {
 
     @Nonnull
     // todo: allow adding multiple aliases to single class.
-    public Map<String, Class<?>> aliasesToClasses() {
+    Map<String, Class<?>> aliasesToClasses() {
         final Map<String, Class<?>> aliasesToClasses = new HashMap<>();
         // first: write all common aliases
         if (aliasingStrategy == AliasingStrategy.SHORT_CLASS_NAME) {
