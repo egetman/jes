@@ -1,4 +1,4 @@
-package store.jesframework.serializer;
+package store.jesframework.serializer.impl;
 
 import java.util.Objects;
 import javax.annotation.Nonnull;
@@ -18,12 +18,12 @@ import store.jesframework.serializer.api.Serializer;
 @Slf4j
 class EventSerializerProxy<T> implements Serializer<Event, T> {
 
+    private final Context<T> context;
     private final Serializer<Event, T> actual;
-    private final UpcasterRegistry<T> registry;
 
-    EventSerializerProxy(@Nonnull Serializer<Event, T> actual, @Nonnull UpcasterRegistry<T> registry) {
+    EventSerializerProxy(@Nonnull Serializer<Event, T> actual, @Nonnull Context<T> context) {
         this.actual = Objects.requireNonNull(actual);
-        this.registry = Objects.requireNonNull(registry, "Upcaster registry must not be null");
+        this.context = Objects.requireNonNull(context, "Context must not be null");
     }
 
     @Nonnull
@@ -36,8 +36,10 @@ class EventSerializerProxy<T> implements Serializer<Event, T> {
     @Override
     public Event deserialize(@Nonnull T toDeserialize) {
         try {
-            final String typeName = fetchTypeName(toDeserialize);
-            toDeserialize = registry.tryUpcast(toDeserialize, typeName);
+            if (context.isUpcastingEnabled()) {
+                final String typeName = fetchTypeName(toDeserialize);
+                toDeserialize = context.tryUpcast(toDeserialize, typeName);
+            }
             return actual.deserialize(toDeserialize);
         } catch (TypeNotPresentException e) {
             log.trace("Can't find type information for {}", e.typeName());

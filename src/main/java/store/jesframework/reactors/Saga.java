@@ -38,8 +38,8 @@ public class Saga extends Reactor {
 
     private static final long STATE_REFRESH_DELAY = 100;
 
-    private Context context;
-    private AggregateStore aggregateStore;
+    private final Context context;
+    private final AggregateStore aggregateStore;
     private final UUID sagaUuid = uuidByKey(getKey());
 
     private final DaemonThreadFactory factory = new DaemonThreadFactory(getClass().getSimpleName());
@@ -49,6 +49,8 @@ public class Saga extends Reactor {
     public Saga(@Nonnull JEventStore store, @Nonnull Offset offset, @Nonnull Lock lock) {
         // stateless saga instance, no context will be tracked.
         super(store, offset, new BlockingPollingTrigger(lock));
+        this.context = null;
+        this.aggregateStore = null;
     }
 
     public Saga(@Nonnull AggregateStore aggregateStore, @Nonnull Offset offset, @Nonnull Lock lock) {
@@ -176,7 +178,7 @@ public class Saga extends Reactor {
                     log.trace("Failed to update saga context: {}", e.toString());
                     // wait until a refresh triggered (to avoid too much useless spinning)
                     try {
-                        Thread.sleep(STATE_REFRESH_DELAY);
+                        TimeUnit.MILLISECONDS.sleep(STATE_REFRESH_DELAY);
                     } catch (InterruptedException ex) {
                         Thread.currentThread().interrupt();
                     }

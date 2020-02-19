@@ -24,7 +24,7 @@ import store.jesframework.Event;
 import store.jesframework.ex.BrokenStoreException;
 import store.jesframework.ex.VersionMismatchException;
 import store.jesframework.provider.jdbc.DDLFactory;
-import store.jesframework.serializer.SerializerFactory;
+import store.jesframework.serializer.impl.SerializerFactory;
 import store.jesframework.serializer.api.Format;
 import store.jesframework.serializer.api.SerializationOption;
 import store.jesframework.serializer.api.Serializer;

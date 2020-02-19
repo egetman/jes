@@ -1,4 +1,4 @@
-package store.jesframework.serializer;
+package store.jesframework.serializer.impl;
 
 import java.util.Arrays;
 import java.util.UUID;
@@ -19,6 +19,7 @@ import store.jesframework.ex.SerializationException;
 import store.jesframework.internal.Events;
 import store.jesframework.internal.Events.FancyEvent;
 import store.jesframework.serializer.api.Serializer;
+import store.jesframework.serializer.api.TypeAlias;
 
 import static store.jesframework.serializer.api.Format.JSON_JACKSON;
 
@@ -26,17 +27,17 @@ class SerializerTest {
 
     private static Stream<Serializer<Event, ?>> eventSerializers() {
         return Stream.of(
-                new EventSerializerProxy<>(new KryoSerializer<>(), new UpcasterRegistry<>()),
-                new EventSerializerProxy<>(new JacksonSerializer<>(), new UpcasterRegistry<>()),
-                new EventSerializerProxy<>(new XStreamSerializer<>(), new UpcasterRegistry<>())
+                new EventSerializerProxy<>(new KryoSerializer<>(), Context.empty()),
+                new EventSerializerProxy<>(new JacksonSerializer<>(), Context.empty()),
+                new EventSerializerProxy<>(new XStreamSerializer<>(), Context.empty())
         );
     }
 
     private static Stream<Arguments> createInvariantsVerificationPair() {
         return Stream.of(
-                Arguments.of(new KryoSerializer(), new byte[]{}),
-                Arguments.of(new JacksonSerializer(), ""),
-                Arguments.of(new XStreamSerializer(), "")
+                Arguments.of(new KryoSerializer<>(), new byte[]{}),
+                Arguments.of(new JacksonSerializer<>(), ""),
+                Arguments.of(new XStreamSerializer<>(), "")
         );
     }
 
@@ -92,9 +93,10 @@ class SerializerTest {
 
     @Test
     void shouldSerializeObjectWithAliasIfTypeRegistryPassed() {
-        final TypeRegistry registry = new TypeRegistry();
-        registry.addAlias(Events.SampleEvent.class, "MyAlias");
-        final Serializer<Event, String> serializer = SerializerFactory.newEventSerializer(JSON_JACKSON, registry);
+        final Serializer<Event, String> serializer = SerializerFactory.newEventSerializer(
+                JSON_JACKSON,
+                TypeAlias.of(Events.SampleEvent.class, "MyAlias")
+        );
 
         final String serialized = serializer.serialize(new Events.SampleEvent("Sample", UUID.randomUUID()));
         Assertions.assertTrue(serialized.contains("\"@type\":\"MyAlias\""));
@@ -110,10 +112,9 @@ class SerializerTest {
         Arrays.fill(largeName, 'O');
         final String eventName = new String(largeName);
 
-        TypeRegistry registry = new TypeRegistry();
-        registry.addAlias(Events.SampleEvent.class, eventName);
+        final Context<String> context = Context.parse(TypeAlias.of(Events.SampleEvent.class, eventName));
 
-        final JacksonSerializer<Event> serializer = new JacksonSerializer<>(registry);
+        final JacksonSerializer<Event> serializer = new JacksonSerializer<>(context);
         final String serialized = serializer.serialize(new Events.SampleEvent("name", UUID.randomUUID()));
 
         Assertions.assertEquals(eventName, serializer.fetchTypeName(serialized));

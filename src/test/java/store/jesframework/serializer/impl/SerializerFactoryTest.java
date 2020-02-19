@@ -1,4 +1,4 @@
-package store.jesframework.serializer;
+package store.jesframework.serializer.impl;
 
 import javax.annotation.Nonnull;
 
@@ -11,9 +11,8 @@ import store.jesframework.serializer.api.SerializationOption;
 import store.jesframework.serializer.api.Serializer;
 import store.jesframework.serializer.api.Upcaster;
 
-import static store.jesframework.serializer.SerializerFactory.ParsedOptions;
-import static store.jesframework.serializer.SerializerFactory.newAggregateSerializer;
-import static store.jesframework.serializer.SerializerFactory.newEventSerializer;
+import static store.jesframework.serializer.impl.SerializerFactory.newAggregateSerializer;
+import static store.jesframework.serializer.impl.SerializerFactory.newEventSerializer;
 
 class SerializerFactoryTest {
 
@@ -86,7 +85,7 @@ class SerializerFactoryTest {
                 return "";
             }
         };
-        Assertions.assertDoesNotThrow(() -> ParsedOptions.<String>parse(byteUpcaster, stringUpcaster));
+        Assertions.assertDoesNotThrow(() -> Context.parse(byteUpcaster, stringUpcaster));
     }
 
 }

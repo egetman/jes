@@ -14,7 +14,7 @@ import store.jesframework.ex.BrokenStoreException;
 import store.jesframework.provider.jdbc.DDLFactory;
 import store.jesframework.serializer.api.SerializationOption;
 import store.jesframework.serializer.api.Serializer;
-import store.jesframework.serializer.SerializerFactory;
+import store.jesframework.serializer.impl.SerializerFactory;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 

@@ -1,35 +1,36 @@
-package store.jesframework.serializer;
+package store.jesframework.serializer.impl;
 
 import java.util.Map;
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.Xpp3Driver;
 import com.thoughtworks.xstream.mapper.CannotResolveClassException;
 import com.thoughtworks.xstream.security.AnyTypePermission;
 
+import lombok.extern.slf4j.Slf4j;
 import store.jesframework.ex.SerializationException;
 import store.jesframework.serializer.api.Format;
 import store.jesframework.serializer.api.Serializer;
 
+import static java.util.Objects.requireNonNull;
+
+@Slf4j
 class XStreamSerializer<S> implements Serializer<S, String> {
 
     // it's thread-safe, so it's ok to have just 1 instance
     private final XStream xstream = new XStream(new Xpp3Driver());
 
     XStreamSerializer() {
-        this(null);
+        this(Context.parse());
     }
 
-    XStreamSerializer(@Nullable TypeRegistry typeRegistry) {
+    XStreamSerializer(@Nonnull Context<?> context) {
         XStream.setupDefaultSecurity(xstream);
         xstream.addPermission(AnyTypePermission.ANY);
-
-        if (typeRegistry != null) {
-            final Map<Class<?>, String> aliases = typeRegistry.getAliases();
-            aliases.forEach((clazz, name) -> xstream.alias(name, clazz));
-        }
+        final Map<Class<?>, String> aliases = requireNonNull(context, "Context must not be null").classesToAliases();
+        log.debug("Prepared {} type alias(es)", aliases.size());
+        aliases.forEach((clazz, name) -> xstream.alias(name, clazz));
     }
 
     @Nonnull
