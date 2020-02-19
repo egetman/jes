@@ -20,24 +20,31 @@ class CheckTest {
     @SuppressWarnings("ConstantConditions")
     void shouldCorrectlyVerifyCollectionWithNonEmpty() {
         final Map<?, ?> nullMap = null;
+        final Object[] nullArray = null;
         final Collection<?> nullCollection = null;
 
         assertThrows(FooException.class, () -> Check.nonEmpty(nullMap, FooException::new));
+        assertThrows(FooException.class, () -> Check.nonEmpty(nullArray, FooException::new));
         assertThrows(FooException.class, () -> Check.nonEmpty(nullCollection, FooException::new));
 
+        assertThrows(FooException.class, () -> Check.nonEmpty(new Object[0], FooException::new));
         assertThrows(FooException.class, () -> Check.nonEmpty(Collections.emptyMap(), FooException::new));
         assertThrows(FooException.class, () -> Check.nonEmpty(Collections.emptyList(), FooException::new));
 
         assertThrows(NullPointerException.class, () -> Check.nonEmpty(nullMap, () -> null));
+        assertThrows(NullPointerException.class, () -> Check.nonEmpty(nullArray, () -> null));
         assertThrows(NullPointerException.class, () -> Check.nonEmpty(nullCollection, () -> null));
 
+        final Object[] array = {"FOO"};
         final Set<String> collection = Collections.singleton("FOO");
         final Map<String, String> map = Collections.singletonMap("FOO", "BAR");
 
         assertThrows(NullPointerException.class, () -> Check.nonEmpty(map, null));
+        assertThrows(NullPointerException.class, () -> Check.nonEmpty(array, null));
         assertThrows(NullPointerException.class, () -> Check.nonEmpty(collection, null));
 
         assertDoesNotThrow(() -> Check.nonEmpty(map, FooException::new));
+        assertDoesNotThrow(() -> Check.nonEmpty(array, FooException::new));
         assertDoesNotThrow(() -> Check.nonEmpty(collection, FooException::new));
     }
 

@@ -22,7 +22,6 @@ import store.jesframework.common.StreamSplittedTo;
 import store.jesframework.ex.EmptyEventStreamException;
 import store.jesframework.ex.EventStreamRewriteUnsupportedException;
 import store.jesframework.ex.EventStreamSplitUnsupportedException;
-import store.jesframework.internal.Events;
 import store.jesframework.provider.JdbcStoreProvider;
 import store.jesframework.serializer.api.Format;
 
@@ -38,6 +37,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.TestInstance.Lifecycle;
+import static store.jesframework.internal.Events.FancyEvent;
+import static store.jesframework.internal.Events.SampleEvent;
 import static store.jesframework.internal.FancyStuff.newPostgresDataSource;
 
 @TestInstance(Lifecycle.PER_CLASS)
@@ -54,18 +55,17 @@ class UnsafeOpsTest {
     @Test
     void eventStreamToUniqUuidShouldCorrectlyFilterEvents() {
         final UUID uuid = randomUUID();
-        assertThrows(NullPointerException.class, () -> unsafeOps.eventStreamToUniqUuid(emptyList()));
+        assertThrows(NullPointerException.class, () -> unsafeOps.eventStreamToUniqUuid(new Event[0]));
 
-        assertEquals(uuid, unsafeOps.eventStreamToUniqUuid(singletonList(new Events.SampleEvent("", uuid))));
-        assertEquals(uuid, unsafeOps.eventStreamToUniqUuid(asList(
-                new Events.SampleEvent("FOO", uuid),
-                new Events.SampleEvent("BAR", uuid)
-        )));
+        assertEquals(uuid, unsafeOps.eventStreamToUniqUuid(new Event[] {new SampleEvent("", uuid)}));
+        assertEquals(uuid, unsafeOps.eventStreamToUniqUuid(new Event[] {
+                new SampleEvent("FOO", uuid),
+                new SampleEvent("BAR", uuid)}));
 
-        assertThrows(EventStreamSplitUnsupportedException.class, () -> unsafeOps.eventStreamToUniqUuid(asList(
-                new Events.SampleEvent("FOO"),
-                new Events.SampleEvent("BAR")
-        )));
+        assertThrows(EventStreamSplitUnsupportedException.class, () -> unsafeOps.eventStreamToUniqUuid(new Event[] {
+                new SampleEvent("FOO"),
+                new SampleEvent("BAR")
+        }));
     }
 
     @Test
@@ -74,7 +74,7 @@ class UnsafeOpsTest {
         assertThrows(NullPointerException.class, () -> unsafeOps.traverseAndReplace(null, identity()));
 
         final UUID uuid = randomUUID();
-        store.write(new Events.SampleEvent("FOO", uuid));
+        store.write(new SampleEvent("FOO", uuid));
         //noinspection ConstantConditions
         assertThrows(NullPointerException.class, () -> unsafeOps.traverseAndReplace(uuid, null));
     }
@@ -85,7 +85,7 @@ class UnsafeOpsTest {
         assertThrows(NullPointerException.class, () -> unsafeOps.traverseAndSplit(null, collection -> emptyMap()));
 
         final UUID uuid = randomUUID();
-        store.write(new Events.SampleEvent("FOO", uuid));
+        store.write(new SampleEvent("FOO", uuid));
         //noinspection ConstantConditions
         assertThrows(NullPointerException.class, () -> unsafeOps.traverseAndSplit(uuid, null));
     }
@@ -96,7 +96,7 @@ class UnsafeOpsTest {
         assertThrows(NullPointerException.class, () -> unsafeOps.traverseAndMerge(null, map -> emptyList()));
 
         final UUID uuid = randomUUID();
-        store.write(new Events.SampleEvent("FOO", uuid));
+        store.write(new SampleEvent("FOO", uuid));
         //noinspection ConstantConditions
         assertThrows(NullPointerException.class, () -> unsafeOps.traverseAndMerge(singleton(uuid), null));
     }
@@ -109,7 +109,8 @@ class UnsafeOpsTest {
 
     @Test
     void traverseAndSplitShouldThrowEmptyEventStreamExceptionWhenEventsNotFoundByUuid() {
-        assertThrows(EmptyEventStreamException.class, () -> unsafeOps.traverseAndSplit(randomUUID(), colection -> emptyMap()));
+        assertThrows(EmptyEventStreamException.class,
+                () -> unsafeOps.traverseAndSplit(randomUUID(), collection -> emptyMap()));
     }
 
     @Test
@@ -119,7 +120,7 @@ class UnsafeOpsTest {
 
     @Test
     void traverseAndReplaceShouldThrowEmptyEventStreamExceptionWhenNoEventsProducedByHandler() {
-        final Events.SampleEvent event = new Events.SampleEvent("FOO", randomUUID());
+        final SampleEvent event = new SampleEvent("FOO", randomUUID());
         store.write(event);
 
         assertThrows(EmptyEventStreamException.class, () -> unsafeOps.traverseAndReplace(event.uuid(), obj -> null));
@@ -128,20 +129,20 @@ class UnsafeOpsTest {
     @Test
     void traverseAndSplitShouldThrowEmptyEventStreamExceptionWhenNoEventsProducedByHandler() {
         final UUID uuid = randomUUID();
-        final Events.SampleEvent event = new Events.SampleEvent("FOO", uuid);
+        final SampleEvent event = new SampleEvent("FOO", uuid);
         store.write(event);
 
         Map<UUID, Collection<Event>> fakeResults = new HashMap<>();
         fakeResults.put(randomUUID(), emptyList());
 
-        assertThrows(EmptyEventStreamException.class, () -> unsafeOps.traverseAndSplit(uuid, colection -> emptyMap()));
+        assertThrows(EmptyEventStreamException.class, () -> unsafeOps.traverseAndSplit(uuid, collection -> emptyMap()));
         assertThrows(EmptyEventStreamException.class, () -> unsafeOps.traverseAndSplit(uuid, collection -> fakeResults));
     }
 
     @Test
     void traverseAndMergeShouldThrowEmptyEventStreamExceptionWhenNoEventsProducedByHandler() {
-        final Event fancy = new Events.FancyEvent("BAR", UUID.randomUUID());
-        final Event sample = new Events.SampleEvent("FOO", randomUUID());
+        final Event fancy = new FancyEvent("BAR", UUID.randomUUID());
+        final Event sample = new SampleEvent("FOO", randomUUID());
         store.write(fancy);
         store.write(sample);
 
@@ -155,12 +156,12 @@ class UnsafeOpsTest {
     @Test
     void traverseAndReplaceShouldThrowEventStreamSplitUnsupportedExceptionWhenMultipleEventsProducedByHandlerWithDifferentUuid() {
         final UUID uuid = randomUUID();
-        final Collection<Event> source = asList(new Events.SampleEvent("FOO", uuid), new Events.SampleEvent("BAR", uuid));
+        final Collection<Event> source = asList(new SampleEvent("FOO", uuid), new SampleEvent("BAR", uuid));
         source.forEach(store::write);
 
         assertThrows(EventStreamSplitUnsupportedException.class, () -> unsafeOps.traverseAndReplace(uuid, event -> {
-            final Events.SampleEvent sampleEvent = (Events.SampleEvent) event;
-            return new Events.SampleEvent(sampleEvent.getName(), randomUUID());
+            final SampleEvent sampleEvent = (SampleEvent) event;
+            return new SampleEvent(sampleEvent.getName(), randomUUID());
         }));
     }
 
@@ -169,9 +170,9 @@ class UnsafeOpsTest {
         // write source events for future processing
         final UUID uuid = randomUUID();
         final Collection<Event> source = asList(
-                new Events.SampleEvent("FOO", uuid),
-                new Events.SampleEvent("BAR", uuid),
-                new Events.SampleEvent("BAZ", uuid)
+                new SampleEvent("FOO", uuid),
+                new SampleEvent("BAR", uuid),
+                new SampleEvent("BAZ", uuid)
         );
         source.forEach(store::write);
 
@@ -182,10 +183,10 @@ class UnsafeOpsTest {
 
             @Override
             public Event apply(Event event) {
-                if (event instanceof Events.SampleEvent) {
-                    final Events.SampleEvent sampleEvent = (Events.SampleEvent) event;
+                if (event instanceof SampleEvent) {
+                    final SampleEvent sampleEvent = (SampleEvent) event;
                     if ("BAZ".equals(sampleEvent.getName())) {
-                        return new Events.FancyEvent(sampleEvent.getName(), randomUUID);
+                        return new FancyEvent(sampleEvent.getName(), randomUUID);
                     }
                 }
                 return null;
@@ -194,7 +195,7 @@ class UnsafeOpsTest {
 
         final UUID newStreamUuid = unsafeOps.traverseAndReplace(uuid, new StreamChanger());
 
-        final Collection<Event> expected = singletonList(new Events.FancyEvent("BAZ", newStreamUuid));
+        final Collection<Event> expected = singletonList(new FancyEvent("BAZ", newStreamUuid));
         assertIterableEquals(expected, store.readBy(newStreamUuid));
 
         // check reference from the old stream to the new stream exists
@@ -206,7 +207,7 @@ class UnsafeOpsTest {
 
     @Test
     void traverseAndReplaceShouldThrowEventStreamRewriteUnsupportedExceptionWhenUuidsEqual() {
-        final Events.SampleEvent event = new Events.SampleEvent("FOO", randomUUID());
+        final SampleEvent event = new SampleEvent("FOO", randomUUID());
         store.write(event);
 
         assertThrows(EventStreamRewriteUnsupportedException.class,
@@ -220,7 +221,7 @@ class UnsafeOpsTest {
         assertThrows(NullPointerException.class, () -> unsafeOps.traverseAndReplaceAll(null, identity()));
 
         final UUID uuid = randomUUID();
-        store.write(new Events.SampleEvent("FOO", uuid));
+        store.write(new SampleEvent("FOO", uuid));
         //noinspection ConstantConditions
         assertThrows(NullPointerException.class, () -> unsafeOps.traverseAndReplaceAll(uuid, null));
     }
@@ -233,7 +234,7 @@ class UnsafeOpsTest {
 
     @Test
     void traverseAndReplaceAllShouldThrowEmptyEventStreamExceptionWhenNoEventsProducedByHandler() {
-        final Events.SampleEvent event = new Events.SampleEvent("FOO", randomUUID());
+        final SampleEvent event = new SampleEvent("FOO", randomUUID());
         store.write(event);
 
         assertThrows(EmptyEventStreamException.class,
@@ -245,15 +246,15 @@ class UnsafeOpsTest {
     @Test
     void traverseAndReplaceAllShouldThrowEventStreamSplitUnsupportedExceptionWhenMultipleEventsProducedByHandlerWithDifferentUuid() {
         final UUID uuid = randomUUID();
-        final Collection<Event> source = asList(new Events.SampleEvent("FOO", uuid), new Events.SampleEvent("BAR", uuid));
+        final Collection<Event> source = asList(new SampleEvent("FOO", uuid), new SampleEvent("BAR", uuid));
         source.forEach(store::write);
 
         assertThrows(EventStreamSplitUnsupportedException.class, () -> unsafeOps.traverseAndReplaceAll(uuid, events -> {
             Collection<Event> processed = new ArrayList<>();
             for (Event event : events) {
-                if (event instanceof Events.SampleEvent) {
-                    final Events.SampleEvent sampleEvent = (Events.SampleEvent) event;
-                    processed.add(new Events.SampleEvent(sampleEvent.getName(), randomUUID()));
+                if (event instanceof SampleEvent) {
+                    final SampleEvent sampleEvent = (SampleEvent) event;
+                    processed.add(new SampleEvent(sampleEvent.getName(), randomUUID()));
                 } else {
                     processed.add(event);
                 }
@@ -267,9 +268,9 @@ class UnsafeOpsTest {
         // write source events for future processing
         final UUID uuid = randomUUID();
         final Collection<Event> source = asList(
-                new Events.SampleEvent("FOO", uuid),
-                new Events.SampleEvent("BAR", uuid),
-                new Events.SampleEvent("BAZ", uuid)
+                new SampleEvent("FOO", uuid),
+                new SampleEvent("BAR", uuid),
+                new SampleEvent("BAZ", uuid)
         );
         source.forEach(store::write);
 
@@ -282,12 +283,12 @@ class UnsafeOpsTest {
             public Collection<Event> apply(Collection<Event> events) {
                 Collection<Event> result = new ArrayList<>();
                 for (Event event : events) {
-                    if (event instanceof Events.SampleEvent) {
-                        final Events.SampleEvent sampleEvent = (Events.SampleEvent) event;
+                    if (event instanceof SampleEvent) {
+                        final SampleEvent sampleEvent = (SampleEvent) event;
                         if ("BAZ".equals(sampleEvent.getName())) {
-                            result.add(new Events.FancyEvent(sampleEvent.getName(), randomUUID));
+                            result.add(new FancyEvent(sampleEvent.getName(), randomUUID));
                         } else if ("FOO".equals(sampleEvent.getName())) {
-                            result.add(new Events.SampleEvent(sampleEvent.getName(), randomUUID));
+                            result.add(new SampleEvent(sampleEvent.getName(), randomUUID));
                         }
                     }
                 }
@@ -298,8 +299,8 @@ class UnsafeOpsTest {
         final UUID newStreamUuid = unsafeOps.traverseAndReplaceAll(uuid, new StreamChanger());
 
         final Collection<Event> expected = asList(
-                new Events.SampleEvent("FOO", newStreamUuid),
-                new Events.FancyEvent("BAZ", newStreamUuid)
+                new SampleEvent("FOO", newStreamUuid),
+                new FancyEvent("BAZ", newStreamUuid)
         );
         assertIterableEquals(expected, store.readBy(newStreamUuid));
 
@@ -312,7 +313,7 @@ class UnsafeOpsTest {
 
     @Test
     void traverseAndReplaceAllShouldThrowEventStreamRewriteUnsupportedExceptionWhenUuidsEqual() {
-        final Events.SampleEvent event = new Events.SampleEvent("FOO", randomUUID());
+        final SampleEvent event = new SampleEvent("FOO", randomUUID());
         store.write(event);
 
         assertThrows(EventStreamRewriteUnsupportedException.class,
@@ -324,9 +325,9 @@ class UnsafeOpsTest {
         // write source events for future processing
         final UUID uuid = randomUUID();
         final Collection<Event> source = asList(
-                new Events.SampleEvent("FOO_1", uuid),
-                new Events.SampleEvent("FOO_2", uuid),
-                new Events.SampleEvent("FOO_3", uuid)
+                new SampleEvent("FOO_1", uuid),
+                new SampleEvent("FOO_2", uuid),
+                new SampleEvent("FOO_3", uuid)
         );
         source.forEach(store::write);
 
@@ -335,18 +336,16 @@ class UnsafeOpsTest {
 
             @Override
             public Map<UUID, Collection<Event>> apply(Collection<Event> events) {
-                // lets devide events by 2
+                // let's divide events by 2
                 Map<UUID, Collection<Event>> result = new HashMap<>();
                 UUID generated = UUID.randomUUID();
                 for (Event event : events) {
                     result.putIfAbsent(generated, new ArrayList<>());
-                    if (result.get(generated).size() < 2) {
-                        result.get(generated).add(new Events.SampleEvent(((Events.SampleEvent) event).getName(), generated));
-                    } else {
+                    if (result.get(generated).size() >= 2) {
                         generated = UUID.randomUUID();
                         result.put(generated, new ArrayList<>());
-                        result.get(generated).add(new Events.SampleEvent(((Events.SampleEvent) event).getName(), generated));
                     }
+                    result.get(generated).add(new SampleEvent(((SampleEvent) event).getName(), generated));
                 }
                 return result;
             }
@@ -360,10 +359,10 @@ class UnsafeOpsTest {
             final Collection<Event> read = store.readBy(newStreamUuid);
             if (read.size() == 1) {
                 // ok, it's second stream
-                assertIterableEquals(singletonList(new Events.SampleEvent("FOO_3", newStreamUuid)), read);
+                assertIterableEquals(singletonList(new SampleEvent("FOO_3", newStreamUuid)), read);
             } else {
                 assertIterableEquals(
-                        asList(new Events.SampleEvent("FOO_1", newStreamUuid), new Events.SampleEvent("FOO_2", newStreamUuid)),
+                        asList(new SampleEvent("FOO_1", newStreamUuid), new SampleEvent("FOO_2", newStreamUuid)),
                         read
                 );
             }
@@ -380,10 +379,10 @@ class UnsafeOpsTest {
     void traverseAndMergeShouldMergeTwoStreamsInToOne() {
 
         final UUID fancyUuid = UUID.randomUUID();
-        final Event fancy = new Events.FancyEvent("FANCY", fancyUuid);
+        final Event fancy = new FancyEvent("FANCY", fancyUuid);
 
         final UUID sampleUuid = UUID.randomUUID();
-        final Event sample = new Events.SampleEvent("SAMPLE", sampleUuid);
+        final Event sample = new SampleEvent("SAMPLE", sampleUuid);
 
         store.write(fancy);
         store.write(sample);
@@ -398,10 +397,10 @@ class UnsafeOpsTest {
             @Override
             public Collection<Event> apply(Map<UUID, Collection<Event>> events) {
                 return events.values().stream().flatMap(Collection::stream).map(event -> {
-                    if (event instanceof Events.SampleEvent) {
-                        return new Events.SampleEvent(((Events.SampleEvent) event).getName(), uuid);
-                    } else if (event instanceof Events.FancyEvent) {
-                        return new Events.FancyEvent(((Events.FancyEvent) event).getName(), uuid);
+                    if (event instanceof SampleEvent) {
+                        return new SampleEvent(((SampleEvent) event).getName(), uuid);
+                    } else if (event instanceof FancyEvent) {
+                        return new FancyEvent(((FancyEvent) event).getName(), uuid);
                     }
                     return event;
                 }).collect(Collectors.toList());
@@ -412,8 +411,8 @@ class UnsafeOpsTest {
 
         final Comparator<Event> comparator = Comparator.comparing(Event::hashCode);
         final List<Event> expected = asList(
-                new Events.FancyEvent("FANCY", newStreamUuid),
-                new Events.SampleEvent("SAMPLE", newStreamUuid)
+                new FancyEvent("FANCY", newStreamUuid),
+                new SampleEvent("SAMPLE", newStreamUuid)
         );
         final List<Event> actual = new ArrayList<>(store.readBy(newStreamUuid));
         // "read" order not specified, so if u pass n uuid's there is no garantee, which will be read first

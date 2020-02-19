@@ -9,20 +9,19 @@ import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import javax.annotation.Nonnull;
 
+import lombok.extern.slf4j.Slf4j;
 import store.jesframework.common.StreamMergedTo;
 import store.jesframework.common.StreamMovedTo;
 import store.jesframework.common.StreamSplittedTo;
 import store.jesframework.ex.EmptyEventStreamException;
 import store.jesframework.ex.EventStreamRewriteUnsupportedException;
 import store.jesframework.ex.EventStreamSplitUnsupportedException;
-import lombok.extern.slf4j.Slf4j;
-import store.jesframework.util.Check;
 
-import static store.jesframework.util.Check.nonEmpty;
 import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
+import static store.jesframework.util.Check.nonEmpty;
+import static store.jesframework.util.Check.nonEqual;
 
 /**
  * This class contains some unsafe methods for manipulating an {@literal Event Store}.
@@ -67,7 +66,8 @@ public class UnsafeOps {
     public UUID traverseAndReplace(@Nonnull UUID streamUuid, @Nonnull UnaryOperator<Event> handler) {
         requireNonNull(handler, NULL_HANDLER_ERROR);
         final Collection<Event> original = readStream(streamUuid);
-        final Collection<Event> replaced = original.stream().map(handler).filter(Objects::nonNull).collect(toList());
+        final Event[] replaced = original.stream().map(handler).filter(Objects::nonNull).toArray(Event[]::new);
+        nonEmpty(replaced, () -> new EmptyEventStreamException(NO_PRODUCED_EVENTS_ERROR));
         return rewriteStream(streamUuid, replaced);
     }
 
@@ -96,7 +96,8 @@ public class UnsafeOps {
         requireNonNull(handler, NULL_HANDLER_ERROR);
         final Collection<Event> original = readStream(streamUuid);
         final Collection<Event> replaced = handler.apply(original);
-        return rewriteStream(streamUuid, replaced);
+        nonEmpty(replaced, () -> new EmptyEventStreamException(NO_PRODUCED_EVENTS_ERROR));
+        return rewriteStream(streamUuid, replaced.toArray(new Event[0]));
     }
 
     /**
@@ -126,10 +127,11 @@ public class UnsafeOps {
     public UUID traverseAndMerge(@Nonnull Set<UUID> streamUuids,
                                  @Nonnull Function<Map<UUID, Collection<Event>>, Collection<Event>> handler) {
         requireNonNull(handler, NULL_HANDLER_ERROR);
-        requireNonNull(streamUuids, "Stream uids must not be null");
+        requireNonNull(streamUuids, "Stream uuids must not be null");
         final Map<UUID, Collection<Event>> original = readStreams(streamUuids);
         final Collection<Event> replaced = handler.apply(original);
-        return mergeStreams(streamUuids, replaced);
+        nonEmpty(replaced, () -> new EmptyEventStreamException(NO_PRODUCED_EVENTS_ERROR));
+        return mergeStreams(streamUuids, replaced.toArray(new Event[0]));
     }
 
     /**
@@ -163,7 +165,7 @@ public class UnsafeOps {
     }
 
     @Nonnull
-    UUID eventStreamToUniqUuid(@Nonnull Collection<? extends Event> events) {
+    UUID eventStreamToUniqUuid(@Nonnull Event[] events) {
         UUID uuid = null;
         for (Event event : events) {
             final UUID streamUuid = requireNonNull(event.uuid(), "Event uuid must not be null");
@@ -173,17 +175,17 @@ public class UnsafeOps {
                 throw new EventStreamSplitUnsupportedException(asList(uuid, streamUuid));
             }
         }
-        return Objects.requireNonNull(uuid, "Produced uuid not found");
+        return requireNonNull(uuid, "Produced uuid not found");
     }
 
     // not transactional rewrite. Change it or not?
     @Nonnull
-    private UUID rewriteStream(@Nonnull UUID streamUuid, @Nonnull Collection<Event> events) {
-        nonEmpty(events, () -> new EmptyEventStreamException(NO_PRODUCED_EVENTS_ERROR));
+    private UUID rewriteStream(@Nonnull UUID streamUuid, @Nonnull Event[] events) {
         final UUID newStreamUuid = eventStreamToUniqUuid(events);
-        Check.nonEqual(streamUuid, newStreamUuid, () -> new EventStreamRewriteUnsupportedException(streamUuid));
 
-        events.forEach(store::write);
+        nonEqual(streamUuid, newStreamUuid, () -> new EventStreamRewriteUnsupportedException(streamUuid));
+
+        store.write(events);
         final Event moved = new StreamMovedTo(streamUuid, newStreamUuid);
         log.debug(APPEND_DEBUG, moved);
         store.write(moved);
@@ -198,7 +200,7 @@ public class UnsafeOps {
 
         // need to validate all streams before rewriting. Yes, that is additional collection traverse
         for (UUID newStreamUuid : newStreamUuids) {
-            Check.nonEqual(streamUuid, newStreamUuid, () -> new EventStreamRewriteUnsupportedException(streamUuid));
+            nonEqual(streamUuid, newStreamUuid, () -> new EventStreamRewriteUnsupportedException(streamUuid));
             nonEmpty(events.get(newStreamUuid),
                     () -> new EmptyEventStreamException("No events found for uuid: " + newStreamUuid));
         }
@@ -215,13 +217,12 @@ public class UnsafeOps {
 
     // not transactional rewrite. Change it or not?
     @Nonnull
-    private UUID mergeStreams(@Nonnull Set<UUID> streamUuids, @Nonnull Collection<Event> events) {
-        nonEmpty(events, () -> new EmptyEventStreamException(NO_PRODUCED_EVENTS_ERROR));
+    private UUID mergeStreams(@Nonnull Set<UUID> streamUuids, @Nonnull Event[] events) {
         final UUID newStreamUuid = eventStreamToUniqUuid(events);
         for (UUID streamUuid : streamUuids) {
-            Check.nonEqual(streamUuid, newStreamUuid, () -> new EventStreamRewriteUnsupportedException(streamUuid));
+            nonEqual(streamUuid, newStreamUuid, () -> new EventStreamRewriteUnsupportedException(streamUuid));
         }
-        events.forEach(store::write);
+        store.write(events);
         // second cycle to verify operations consistency
         for (UUID streamUuid : streamUuids) {
             final Event merged = new StreamMergedTo(streamUuid, newStreamUuid);
