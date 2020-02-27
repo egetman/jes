@@ -2,12 +2,11 @@ package store.jesframework.internal;
 
 import java.util.UUID;
 
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 import store.jesframework.Aggregate;
 import store.jesframework.internal.Events.FancyEvent;
 import store.jesframework.internal.Events.ProcessingTerminated;
-import store.jesframework.internal.Events.SampleEvent;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
@@ -22,14 +21,8 @@ public class FancyAggregate extends Aggregate {
     }
 
     protected FancyAggregate() {
-        registerApplier(SampleEvent.class, this::handle);
         registerApplier(FancyEvent.class, this::handle);
         registerApplier(ProcessingTerminated.class, this::handle);
-    }
-
-    // assume it's first (initial) event in use case
-    private void handle(SampleEvent event) {
-        uuid = event.uuid();
     }
 
     private void handle(FancyEvent fancyEvent) {

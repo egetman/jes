@@ -15,7 +15,7 @@ public interface SnapshotProvider {
      *
      * @param uuid is event stream (aggregate) identifier.
      * @param type is the class of aggregate.
-     * @param <T>  is the type of agregate.
+     * @param <T>  is the type of aggregate.
      * @return aggregate of type {@literal T} initialized with initial state.
      */
     @Nonnull
@@ -37,7 +37,7 @@ public interface SnapshotProvider {
     }
 
     /**
-     * Resets concreate aggregate snapshot by given {@code uuid}.
+     * Resets the concrete aggregate snapshot by given {@code uuid}.
      *
      * @param uuid is an event stream (aggregate) identifier to remove.
      */

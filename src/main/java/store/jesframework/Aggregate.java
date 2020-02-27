@@ -22,6 +22,7 @@ public class Aggregate {
     protected UUID uuid;
     private long streamVersion;
 
+
     @Nonnull
     public UUID uuid() {
         return Objects.requireNonNull(uuid, "Aggregate#uuid must not be null");
