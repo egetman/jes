@@ -92,17 +92,21 @@ public final class DDLFactory {
         final String databaseName = JdbcUtils.getDatabaseName(connection);
         final String schemaName = getSchemaName(connection);
 
-        if (DB_NAME_POSTGRE_SQL.equals(databaseName)) {
-            final int postgreSqlVersion = JdbcUtils.getDatabaseMajorVersion(connection);
-            if (postgreSqlVersion >= POSTGRESQL_WITH_IDENTITY_VERSION) {
-                return  replaceWith(readDDL("ddl/postgresql/v10/offsets-postgres.ddl"), schemaName);
-            } else {
-                return replaceWith(readDDL("ddl/postgresql/v9/offsets-postgres.ddl"), schemaName);
-            }
-        } else if (DB_NAME_H2.equals(databaseName)) {
-            return replaceWith(readDDL("ddl/h2/offsets-h2.ddl"), schemaName);
+        switch (databaseName) {
+            case DB_NAME_POSTGRE_SQL:
+                final int postgreSqlVersion = JdbcUtils.getDatabaseMajorVersion(connection);
+                if (postgreSqlVersion >= POSTGRESQL_WITH_IDENTITY_VERSION) {
+                    return replaceWith(readDDL("ddl/postgresql/v10/offsets-postgres.ddl"), schemaName);
+                } else {
+                    return replaceWith(readDDL("ddl/postgresql/v9/offsets-postgres.ddl"), schemaName);
+                }
+            case DB_NAME_H2:
+                return replaceWith(readDDL("ddl/h2/offsets-h2.ddl"), schemaName);
+            case DB_NAME_MY_SQL:
+                return replaceWith(readDDL("ddl/mysql/offsets-mysql.ddl"), schemaName);
+            default:
+                throw new IllegalArgumentException(format(UNSUPPORTED_TYPE, databaseName));
         }
-        throw new IllegalArgumentException(format(UNSUPPORTED_TYPE, databaseName));
     }
 
     /**

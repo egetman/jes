@@ -61,6 +61,7 @@ class DDLFactoryTest {
     @Test
     void getOffsetDDLShouldReturnScriptOnCorrectValue() {
         assertNotNull(getOffsetsDDL(newConnectionMock(H2, "FOO")));
+        assertNotNull(getOffsetsDDL(newConnectionMock(MY_SQL, "FOO")).getClass());
         assertNotNull(getOffsetsDDL(newConnectionMock(POSTGRE_SQL, "FOO")).getClass());
         assertNotNull(getOffsetsDDL(newConnectionMock(POSTGRE_SQL, "FOO", 7)).getClass());
     }

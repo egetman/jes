@@ -18,29 +18,31 @@ import org.junit.jupiter.params.provider.MethodSource;
 import lombok.SneakyThrows;
 import store.jesframework.ex.BrokenStoreException;
 
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static store.jesframework.internal.FancyStuff.newPostgresDataSource;
-import static store.jesframework.internal.FancyStuff.newRedissonClient;
 import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static store.jesframework.internal.FancyStuff.newMySqlDataSource;
+import static store.jesframework.internal.FancyStuff.newPostgresDataSource;
+import static store.jesframework.internal.FancyStuff.newRedissonClient;
 
 class OffsetTest {
 
     private static final List<Offset> OFFSETS = asList(
             new InMemoryOffset(),
             new RedisOffset(newRedissonClient()),
-            new JdbcOffset(newPostgresDataSource())
+            new JdbcOffset(newPostgresDataSource()),
+            new JdbcOffset(newMySqlDataSource("es"))
     );
 
-    private static Collection<Offset> createOffsets() {
+    private static Collection<Offset> offsets() {
         return OFFSETS;
     }
 
     @ParameterizedTest
-    @MethodSource("createOffsets")
+    @MethodSource("offsets")
     @SuppressWarnings("ConstantConditions")
     void shouldThrowNpeOnNullArguments(@Nonnull Offset offset) {
         assertThrows(NullPointerException.class, () -> offset.value(null));
@@ -49,7 +51,7 @@ class OffsetTest {
     }
 
     @ParameterizedTest
-    @MethodSource("createOffsets")
+    @MethodSource("offsets")
     void shouldIncrementOffsetValueByKey(@Nonnull Offset offset) {
         final String key = getClass().getName();
 
@@ -62,7 +64,7 @@ class OffsetTest {
     }
 
     @ParameterizedTest
-    @MethodSource("createOffsets")
+    @MethodSource("offsets")
     void shouldResetOffsetByKey(@Nonnull Offset offset) {
         final String first = UUID.randomUUID().toString();
         final String second = UUID.randomUUID().toString();
@@ -98,7 +100,7 @@ class OffsetTest {
 
         // ok, create new one, try all other methods
         final JdbcOffset offset = new JdbcOffset(dataSource);
-        when(statement.executeUpdate()).thenThrow(SQLException.class);
+        when(statement.executeUpdate()).thenThrow(new SQLException("Test exception"));
 
         assertThrows(BrokenStoreException.class, () -> offset.add("", 1));
         assertThrows(BrokenStoreException.class, () -> offset.increment(""));
