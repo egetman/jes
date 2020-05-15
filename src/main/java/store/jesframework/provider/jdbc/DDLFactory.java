@@ -122,6 +122,8 @@ public final class DDLFactory {
             } else {
                 return replaceWith(readDDL("ddl/postgresql/v9/locks-postgres.ddl"), schemaName);
             }
+        } else if (DB_NAME_MY_SQL.equals(databaseName)) {
+            return replaceWith(readDDL("ddl/mysql/locks-mysql.ddl"), schemaName);
         }
         throw new IllegalArgumentException(format(UNSUPPORTED_TYPE, databaseName));
     }

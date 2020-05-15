@@ -94,8 +94,9 @@ class DDLFactoryTest {
 
     @Test
     void getLockDDLShouldReturnScriptOnCorrectValue() {
-        assertNotNull(getOffsetsDDL(newConnectionMock(POSTGRE_SQL, "FOO")));
-        assertNotNull(getOffsetsDDL(newConnectionMock(POSTGRE_SQL, "FOO", 9)));
+        assertNotNull(getLockDDL(newConnectionMock(POSTGRE_SQL, "FOO")));
+        assertNotNull(getLockDDL(newConnectionMock(POSTGRE_SQL, "FOO", 9)));
+        assertNotNull(getLockDDL(newConnectionMock(MY_SQL, "FOO")));
     }
 
     @Test
