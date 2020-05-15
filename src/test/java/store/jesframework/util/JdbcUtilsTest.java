@@ -96,15 +96,18 @@ class JdbcUtilsTest {
 
     @Test
     void getSqlTypeByClassAndDatabaseNameShouldThrowIllegalArgumentExceptionOnUnknownTypeOrDBName() {
-        assertThrows(IllegalArgumentException.class, () -> getSqlTypeByClassAndDatabaseName(boolean.class, "H2"));
-        assertThrows(IllegalArgumentException.class, () -> getSqlTypeByClassAndDatabaseName(String.class, "Oracle"));
+        assertThrows(IllegalArgumentException.class, () -> getSqlTypeByClassAndDatabaseName(boolean.class, "H21"));
+        assertThrows(IllegalArgumentException.class, () -> getSqlTypeByClassAndDatabaseName(String.class, "OracleNew"));
     }
 
     @Test
     void getSqlTypeByClassAndDatabaseNameShouldReturnCorrectValuesOnValidInput() {
         assertEquals("TEXT", getSqlTypeByClassAndDatabaseName(String.class, "H2"));
+        assertEquals("TEXT", getSqlTypeByClassAndDatabaseName(String.class, "PostgreSQL"));
+        assertEquals("TEXT", getSqlTypeByClassAndDatabaseName(String.class, "MySQL"));
         assertEquals("BYTEA", getSqlTypeByClassAndDatabaseName(byte[].class, "PostgreSQL"));
         assertEquals("BLOB", getSqlTypeByClassAndDatabaseName(byte[].class, "H2"));
+        assertEquals("BLOB", getSqlTypeByClassAndDatabaseName(byte[].class, "MySQL"));
     }
 
 }

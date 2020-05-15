@@ -31,6 +31,7 @@ public final class JdbcUtils {
         if (schema != null && !schema.isEmpty()) {
             return schema;
         }
+        log.trace("Schema name cannot be obtained via connection. Using config.");
         return PropsReader.getProperty("jes.jdbc.schema-name");
     }
 
@@ -50,7 +51,7 @@ public final class JdbcUtils {
      * Returns the database version, obtained via connection
      *
      * @param connection is an active connection to datasource.
-     * @return the database majow version, obtained via connection.
+     * @return the database major version, obtained via connection.
      */
     @SneakyThrows
     public static int getDatabaseMajorVersion(@Nonnull Connection connection) {
@@ -107,11 +108,12 @@ public final class JdbcUtils {
     public static String getSqlTypeByClassAndDatabaseName(@Nonnull Class<?> type, @Nonnull String databaseName) {
         Objects.requireNonNull(type, "Java type to resolve jdbc type must not be null");
         Objects.requireNonNull(databaseName, "Database name must not be null");
-        if (type == String.class && ("PostgreSQL".equals(databaseName) || "H2".equals(databaseName))) {
+        if (type == String.class && ("PostgreSQL".equals(databaseName) || "H2".equals(databaseName)
+                || "MySQL".equals(databaseName))) {
             return "TEXT";
         } else if (type == byte[].class && "PostgreSQL".equals(databaseName)) {
             return "BYTEA";
-        } else if (type == byte[].class && "H2".equals(databaseName)) {
+        } else if (type == byte[].class && ("H2".equals(databaseName) || "MySQL".equals(databaseName))) {
             return "BLOB";
         }
         throw new IllegalArgumentException("Unsupported content type: " + type + " for db " + databaseName);
