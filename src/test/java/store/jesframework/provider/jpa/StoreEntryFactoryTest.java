@@ -4,15 +4,17 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Execution;
 
 import store.jesframework.ex.SerializationException;
 
-import static store.jesframework.provider.jpa.StoreEntry.StoreBinaryEntry;
-import static store.jesframework.provider.jpa.StoreEntry.StoreStringEntry;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.parallel.ExecutionMode.CONCURRENT;
+import static store.jesframework.provider.jpa.StoreEntry.StoreBinaryEntry;
+import static store.jesframework.provider.jpa.StoreEntry.StoreStringEntry;
 
+@Execution(CONCURRENT)
 class StoreEntryFactoryTest {
 
     @Test

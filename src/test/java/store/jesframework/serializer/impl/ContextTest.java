@@ -8,6 +8,7 @@ import javax.annotation.Nullable;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Execution;
 
 import store.jesframework.internal.FancyAggregate;
 import store.jesframework.serializer.api.AliasingStrategy;
@@ -19,10 +20,11 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.parallel.ExecutionMode.CONCURRENT;
 import static store.jesframework.internal.Events.FancyEvent;
 import static store.jesframework.internal.Events.SampleEvent;
 
-
+@Execution(CONCURRENT)
 class ContextTest {
 
     @Test

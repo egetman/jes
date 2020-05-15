@@ -8,9 +8,11 @@ import java.sql.DatabaseMetaData;
 import javax.sql.DataSource;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Execution;
 
 import lombok.SneakyThrows;
 
+import static org.junit.jupiter.api.parallel.ExecutionMode.CONCURRENT;
 import static store.jesframework.util.JdbcUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
@@ -18,6 +20,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@Execution(CONCURRENT)
 class JdbcUtilsTest {
 
     @Test

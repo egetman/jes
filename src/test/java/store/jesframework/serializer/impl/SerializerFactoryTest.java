@@ -4,6 +4,7 @@ import javax.annotation.Nonnull;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Execution;
 
 import store.jesframework.Event;
 import store.jesframework.serializer.api.Format;
@@ -11,9 +12,11 @@ import store.jesframework.serializer.api.SerializationOption;
 import store.jesframework.serializer.api.Serializer;
 import store.jesframework.serializer.api.Upcaster;
 
+import static org.junit.jupiter.api.parallel.ExecutionMode.CONCURRENT;
 import static store.jesframework.serializer.impl.SerializerFactory.newAggregateSerializer;
 import static store.jesframework.serializer.impl.SerializerFactory.newEventSerializer;
 
+@Execution(CONCURRENT)
 class SerializerFactoryTest {
 
     @Test

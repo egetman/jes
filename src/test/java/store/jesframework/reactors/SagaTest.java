@@ -53,7 +53,7 @@ class SagaTest {
     @Test
     @SneakyThrows
     @Timeout(value = 1, unit = TimeUnit.MINUTES)
-    void cuncurrentSagasMustNotProcessDuplicates() {
+    void concurrentSagasMustNotProcessDuplicates() {
         final DataSource dataSource = newPostgresDataSource();
         final JEventStore store = new JEventStore(new JdbcStoreProvider<>(dataSource));
         final Lock lock = new JdbcLock(dataSource);

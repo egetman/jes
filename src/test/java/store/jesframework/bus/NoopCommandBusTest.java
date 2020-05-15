@@ -2,9 +2,13 @@ package store.jesframework.bus;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Execution;
 
 import store.jesframework.Command;
 
+import static org.junit.jupiter.api.parallel.ExecutionMode.CONCURRENT;
+
+@Execution(CONCURRENT)
 class NoopCommandBusTest {
 
     @Test

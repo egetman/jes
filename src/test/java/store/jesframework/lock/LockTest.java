@@ -15,6 +15,7 @@ import javax.sql.DataSource;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -28,6 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.parallel.ExecutionMode.CONCURRENT;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -35,6 +37,7 @@ import static store.jesframework.internal.FancyStuff.newPostgresDataSource;
 import static store.jesframework.internal.FancyStuff.newRedissonClient;
 
 @Slf4j
+@Execution(CONCURRENT)
 class LockTest {
 
     private static final Collection<Lock> REENTRANT_LOCK_MANAGERS = asList(
