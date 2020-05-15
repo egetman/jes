@@ -78,6 +78,8 @@ public final class DDLFactory {
             } else {
                 return replaceWith(readDDL("ddl/postgresql/v9/snapshot-store-postgres.ddl"), schemaName);
             }
+        } else if (DB_NAME_MY_SQL.equals(databaseName)) {
+            return replaceWith(readDDL("ddl/mysql/snapshot-store-mysql.ddl"), schemaName);
         }
         throw new IllegalArgumentException(format(UNSUPPORTED_TYPE, databaseName));
     }

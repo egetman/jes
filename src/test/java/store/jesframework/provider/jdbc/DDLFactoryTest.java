@@ -56,6 +56,7 @@ class DDLFactoryTest {
     void getAggregateStoreDDLShouldReturnScriptOnCorrectValue() {
         assertNotNull(getAggregateStoreDDL(newConnectionMock(POSTGRE_SQL, "FOO")));
         assertNotNull(getAggregateStoreDDL(newConnectionMock(POSTGRE_SQL, "FOO", 8)));
+        assertNotNull(getAggregateStoreDDL(newConnectionMock(MY_SQL, "FOO")));
     }
 
     @Test

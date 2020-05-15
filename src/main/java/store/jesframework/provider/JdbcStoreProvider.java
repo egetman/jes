@@ -175,7 +175,6 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
             final boolean supportsBatches = connection.getMetaData().supportsBatchUpdates();
             // first check if we can use batch
             if (!supportsBatches) {
-                //noinspection GrazieInspection
                 log.warn("Current db doesn't support batch updates. Separate updates will be used");
                 for (Event event : events) {
                     write(event);
