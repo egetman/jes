@@ -5,7 +5,7 @@
 [![quality gate status](https://sonarcloud.io/api/project_badges/measure?project=store.jesframework.jes-core&metric=alert_status)](https://sonarcloud.io/dashboard?id=store.jesframework.jes-core)
 ![apache license](https://img.shields.io/hexpm/l/plug.svg)
 [![maven central](https://img.shields.io/maven-central/v/store.jesframework/jes-core.svg?label=maven%20central)](https://search.maven.org/search?q=g:%22store.jesframework%22%20AND%20a:%22jes-core%22)
-# Jes 
+![Jes](docs/img/jes.png | width=200) 
 ###### Strongly inspired by:
 * [Versioning in an Event Sourced System](https://leanpub.com/esversioning) by Greg Young
 * [The dark side of event sourcing: Managing data conversion](https://ieeexplore.ieee.org/document/7884621) by Michiel Overeem, Marten Spoor & Slinger Jansen 
