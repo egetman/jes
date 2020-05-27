@@ -27,6 +27,7 @@ import org.redisson.config.Config;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.containers.MySQLContainer;
+import org.testcontainers.containers.OracleContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 
 import lombok.SneakyThrows;
@@ -54,8 +55,8 @@ public final class FancyStuff {
     private static final int MAX_POOL_SIZE = 10;
     private static final int REDIS_EXPOSED_PORT = 6379;
     private static final String REDIS_URL_PATTERN = "redis://%s:%d";
-    private static final String DEFAULT_TEST_USER = "user";
-    private static final String DEFAULT_TEST_PASSWORD = "password";
+    private static final String DEFAULT_TEST_USER = "jes_user";
+    private static final String DEFAULT_TEST_PASSWORD = "jes_password";
 
     private FancyStuff() {}
 
@@ -96,6 +97,20 @@ public final class FancyStuff {
                 .withUsername(DEFAULT_TEST_USER)
                 .withPassword(DEFAULT_TEST_PASSWORD);
         container.start();
+        return container;
+    }
+
+    @Nonnull
+    private static OracleContainer newOracleContainer(@Nonnull String dockerTag) {
+        final OracleContainer container = new OracleContainer(dockerTag)
+                .withUsername("system")
+                .withPassword("oracle")
+                .withSharedMemorySize(2147483648L)
+                .withEnv("ORACLE_ALLOW_REMOTE", "true")
+                .withEnv("ORACLE_ENABLE_XDB", "true")
+                .withInitScript("ddl/oracle-schema-setup.ddl");
+        container.start();
+        container.withUsername(DEFAULT_TEST_USER).withPassword(DEFAULT_TEST_PASSWORD);
         return container;
     }
 
@@ -142,6 +157,17 @@ public final class FancyStuff {
         final DataSource dataSource = from(container, schemaName, dataSourceProperties);
         createSchema(dataSource, schemaName);
         return dataSource;
+    }
+
+    @Nonnull
+    public static DataSource newOracleDataSource() {
+        return newOracleDataSource("oracleinanutshell/oracle-xe-11g");
+    }
+
+    @Nonnull
+    public static DataSource newOracleDataSource(@Nonnull String dockerTag) {
+        final OracleContainer container = newOracleContainer(dockerTag);
+        return from(container, container.getUsername(), null);
     }
 
     private static DataSource from(@Nonnull JdbcDatabaseContainer<?> container, @Nonnull String schemaName,
