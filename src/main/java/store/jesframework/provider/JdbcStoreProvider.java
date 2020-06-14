@@ -72,6 +72,7 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
                 }
             }
         } catch (Exception e) {
+            log.error("Failed to init {}", this.getClass(), e);
             throw new BrokenStoreException(e);
         }
     }

@@ -12,9 +12,11 @@ import static java.lang.String.format;
 import static store.jesframework.util.JdbcUtils.getSchemaName;
 import static store.jesframework.util.JdbcUtils.getSqlTypeByClassAndDatabaseName;
 
+// todo: refactor this
 /**
  * Factory for vendor specific database dialects.
  */
+@SuppressWarnings("squid:S1135")
 public final class DDLFactory {
 
     private static final String DB_NAME_H2 = "H2";

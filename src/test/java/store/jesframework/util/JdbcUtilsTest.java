@@ -24,7 +24,7 @@ import static org.mockito.Mockito.when;
 class JdbcUtilsTest {
 
     @Test
-    void getSchemaShouldThrowNullPoinerExceptionIfConnectionIsNull() {
+    void getSchemaShouldThrowNullPointerExceptionIfConnectionIsNull() {
         //noinspection ConstantConditions
         assertThrows(NullPointerException.class, () -> getSchemaName(null));
     }
@@ -47,7 +47,7 @@ class JdbcUtilsTest {
     }
 
     @Test
-    void getDatabaseNameShouldThrowNullPoinerExceptionIfConnectionIsNull() {
+    void getDatabaseNameShouldThrowNullPointerExceptionIfConnectionIsNull() {
         //noinspection ConstantConditions
         assertThrows(NullPointerException.class, () -> getDatabaseName(null));
     }
