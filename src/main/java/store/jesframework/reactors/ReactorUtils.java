@@ -50,7 +50,7 @@ class ReactorUtils {
     }
 
     static void ensureReactsOnHasOneParameter(@Nonnull Method method) {
-        if (method.getParameterCount() != 1 ) {
+        if (method.getParameterCount() != 1) {
             throw new BrokenReactorException("@ReactsOn method should have only 1 parameter");
         }
     }

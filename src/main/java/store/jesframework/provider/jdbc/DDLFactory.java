@@ -12,12 +12,15 @@ import static java.lang.String.format;
 import static store.jesframework.util.JdbcUtils.getSchemaName;
 import static store.jesframework.util.JdbcUtils.getSqlTypeByClassAndDatabaseName;
 
+// todo: refactor this
 /**
  * Factory for vendor specific database dialects.
  */
+@SuppressWarnings("squid:S1135")
 public final class DDLFactory {
 
     private static final String DB_NAME_H2 = "H2";
+    private static final String DB_NAME_MY_SQL = "MySQL";
     private static final String DB_NAME_POSTGRE_SQL = "PostgreSQL";
     private static final int POSTGRESQL_WITH_IDENTITY_VERSION = 10;
 
@@ -42,17 +45,21 @@ public final class DDLFactory {
         final String schemaName = getSchemaName(connection);
         final String contentType = getSqlTypeByClassAndDatabaseName(type, databaseName);
 
-        if (DB_NAME_POSTGRE_SQL.equals(databaseName)) {
-            final int postgreSqlVersion = JdbcUtils.getDatabaseMajorVersion(connection);
-            if (postgreSqlVersion >= POSTGRESQL_WITH_IDENTITY_VERSION) {
-                return replaceWith(readDDL("ddl/postgresql/v10/event-store-postgres.ddl"), schemaName, contentType);
-            } else {
-                return replaceWith(readDDL("ddl/postgresql/v9/event-store-postgres.ddl"), schemaName, contentType);
-            }
-        } else if (DB_NAME_H2.equals(databaseName)) {
-            return replaceWith(readDDL("ddl/h2/event-store-h2.ddl"), schemaName, contentType);
+        switch (databaseName) {
+            case DB_NAME_POSTGRE_SQL:
+                final int postgreSqlVersion = JdbcUtils.getDatabaseMajorVersion(connection);
+                if (postgreSqlVersion >= POSTGRESQL_WITH_IDENTITY_VERSION) {
+                    return replaceWith(readDDL("ddl/postgresql/v10/event-store-postgres.ddl"), schemaName, contentType);
+                } else {
+                    return replaceWith(readDDL("ddl/postgresql/v9/event-store-postgres.ddl"), schemaName, contentType);
+                }
+            case DB_NAME_H2:
+                return replaceWith(readDDL("ddl/h2/event-store-h2.ddl"), schemaName, contentType);
+            case DB_NAME_MY_SQL:
+                return replaceWith(readDDL("ddl/mysql/event-store-mysql.ddl"), schemaName, contentType);
+            default:
+                throw new IllegalArgumentException(format(UNSUPPORTED_TYPE, databaseName));
         }
-        throw new IllegalArgumentException(format(UNSUPPORTED_TYPE, databaseName));
     }
 
     /**
@@ -73,6 +80,8 @@ public final class DDLFactory {
             } else {
                 return replaceWith(readDDL("ddl/postgresql/v9/snapshot-store-postgres.ddl"), schemaName);
             }
+        } else if (DB_NAME_MY_SQL.equals(databaseName)) {
+            return replaceWith(readDDL("ddl/mysql/snapshot-store-mysql.ddl"), schemaName);
         }
         throw new IllegalArgumentException(format(UNSUPPORTED_TYPE, databaseName));
     }
@@ -87,17 +96,21 @@ public final class DDLFactory {
         final String databaseName = JdbcUtils.getDatabaseName(connection);
         final String schemaName = getSchemaName(connection);
 
-        if (DB_NAME_POSTGRE_SQL.equals(databaseName)) {
-            final int postgreSqlVersion = JdbcUtils.getDatabaseMajorVersion(connection);
-            if (postgreSqlVersion >= POSTGRESQL_WITH_IDENTITY_VERSION) {
-                return  replaceWith(readDDL("ddl/postgresql/v10/offsets-postgres.ddl"), schemaName);
-            } else {
-                return replaceWith(readDDL("ddl/postgresql/v9/offsets-postgres.ddl"), schemaName);
-            }
-        } else if (DB_NAME_H2.equals(databaseName)) {
-            return replaceWith(readDDL("ddl/h2/offsets-h2.ddl"), schemaName);
+        switch (databaseName) {
+            case DB_NAME_POSTGRE_SQL:
+                final int postgreSqlVersion = JdbcUtils.getDatabaseMajorVersion(connection);
+                if (postgreSqlVersion >= POSTGRESQL_WITH_IDENTITY_VERSION) {
+                    return replaceWith(readDDL("ddl/postgresql/v10/offsets-postgres.ddl"), schemaName);
+                } else {
+                    return replaceWith(readDDL("ddl/postgresql/v9/offsets-postgres.ddl"), schemaName);
+                }
+            case DB_NAME_H2:
+                return replaceWith(readDDL("ddl/h2/offsets-h2.ddl"), schemaName);
+            case DB_NAME_MY_SQL:
+                return replaceWith(readDDL("ddl/mysql/offsets-mysql.ddl"), schemaName);
+            default:
+                throw new IllegalArgumentException(format(UNSUPPORTED_TYPE, databaseName));
         }
-        throw new IllegalArgumentException(format(UNSUPPORTED_TYPE, databaseName));
     }
 
     /**
@@ -117,6 +130,8 @@ public final class DDLFactory {
             } else {
                 return replaceWith(readDDL("ddl/postgresql/v9/locks-postgres.ddl"), schemaName);
             }
+        } else if (DB_NAME_MY_SQL.equals(databaseName)) {
+            return replaceWith(readDDL("ddl/mysql/locks-mysql.ddl"), schemaName);
         }
         throw new IllegalArgumentException(format(UNSUPPORTED_TYPE, databaseName));
     }

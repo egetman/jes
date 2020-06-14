@@ -49,7 +49,7 @@ public class ProvidersReadBenchmark {
     public static class Providers {
 
         @SuppressWarnings("FieldCanBeLocal")
-        private int totalEventsToRead = 10000;
+        private final int totalEventsToRead = 10000;
 
         private StoreProvider inMemoryProvider;
         private StoreProvider jdbcProviderBytesEncoding;

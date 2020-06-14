@@ -24,7 +24,7 @@ import store.jesframework.Event;
 import store.jesframework.ex.BrokenStoreException;
 import store.jesframework.ex.VersionMismatchException;
 import store.jesframework.provider.jdbc.DDLFactory;
-import store.jesframework.serializer.SerializerFactory;
+import store.jesframework.serializer.impl.SerializerFactory;
 import store.jesframework.serializer.api.Format;
 import store.jesframework.serializer.api.SerializationOption;
 import store.jesframework.serializer.api.Serializer;
@@ -72,6 +72,7 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
                 }
             }
         } catch (Exception e) {
+            log.error("Failed to init {}", this.getClass(), e);
             throw new BrokenStoreException(e);
         }
     }
@@ -175,7 +176,6 @@ public class JdbcStoreProvider<T> implements StoreProvider, SnapshotReader, Auto
             final boolean supportsBatches = connection.getMetaData().supportsBatchUpdates();
             // first check if we can use batch
             if (!supportsBatches) {
-                //noinspection GrazieInspection
                 log.warn("Current db doesn't support batch updates. Separate updates will be used");
                 for (Event event : events) {
                     write(event);

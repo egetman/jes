@@ -29,6 +29,20 @@ public final class Check {
     }
 
     /**
+     * Verify that given array not null or empty.
+     *
+     * @param elements array to check against emptiness.
+     * @param supplier the exception producer.
+     */
+    public static void nonEmpty(@Nullable Object[] elements,
+                                @Nonnull Supplier<? extends RuntimeException> supplier) {
+        Objects.requireNonNull(supplier, NO_SUPPLIER_ERROR);
+        if (elements == null || elements.length == 0) {
+            throw Objects.requireNonNull(supplier.get(), NO_SUPPLIER_VALUE_ERROR);
+        }
+    }
+
+    /**
      * Verify that given map not null or empty.
      *
      * @param elements map to check against emptiness.

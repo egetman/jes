@@ -28,6 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static store.jesframework.internal.FancyStuff.newMySqlDataSource;
 import static store.jesframework.internal.FancyStuff.newPostgresDataSource;
 import static store.jesframework.internal.FancyStuff.newRedissonClient;
 import static store.jesframework.serializer.api.Format.XML_XSTREAM;
@@ -37,6 +38,7 @@ class SnapshotProviderTest {
     private static final Collection<SnapshotProvider> SNAPSHOT_PROVIDERS = asList(
             new InMemorySnapshotProvider(),
             new JdbcSnapshotProvider<>(newPostgresDataSource()),
+            new JdbcSnapshotProvider<>(newMySqlDataSource("es")),
             new RedisSnapshotProvider(newRedissonClient())
     );
 
@@ -115,7 +117,7 @@ class SnapshotProviderTest {
 
     @ParameterizedTest
     @MethodSource("createSnapshotProviders")
-    void initialStateShouldReturnNewInstanceIfSnapshotWasReseted(@Nonnull SnapshotProvider provider) {
+    void initialStateShouldReturnNewInstanceIfSnapshotWasReset(@Nonnull SnapshotProvider provider) {
         final FancyAggregate sample = new FancyAggregate(randomUUID());
         sample.setFancyName("Name");
         provider.snapshot(sample);
@@ -129,7 +131,7 @@ class SnapshotProviderTest {
 
     @ParameterizedTest
     @MethodSource("createSnapshotProviders")
-    void sholdCreateSnapshotAndUpdateItReadThroughAggregateStore(@Nonnull SnapshotProvider provider) {
+    void shouldCreateSnapshotAndUpdateItReadThroughAggregateStore(@Nonnull SnapshotProvider provider) {
         final JEventStore eventStore = new JEventStore(new JdbcStoreProvider<>(newPostgresDataSource(), XML_XSTREAM));
         final AggregateStore aggregateStore = new AggregateStore(eventStore, provider);
 
@@ -173,14 +175,14 @@ class SnapshotProviderTest {
 
     @Test
     @SuppressWarnings("ConstantConditions")
-    void defaultSnaphotProviderShouldNotPermitNullValues() {
+    void defaultSnapshotProviderShouldNotPermitNullValues() {
         final DefaultSnapshotProvider provider = new DefaultSnapshotProvider();
         assertThrows(NullPointerException.class, () -> provider.addAggregateCreator(null, ((uuid, aClass) -> null)));
         assertThrows(NullPointerException.class, () -> provider.addAggregateCreator(Aggregate.class, null));
     }
 
     @Test
-    void defaultSnaphotProviderShouldNotReturnNull() {
+    void defaultSnapshotProviderShouldNotReturnNull() {
         final DefaultSnapshotProvider provider = new DefaultSnapshotProvider();
         provider.addAggregateCreator(Aggregate.class, (uuid, aClass) -> null);
         assertThrows(AggregateCreationException.class, () -> provider.initialStateOf(randomUUID(), Aggregate.class));

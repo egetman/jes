@@ -44,6 +44,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static store.jesframework.internal.FancyStuff.newEntityManagerFactory;
 import static store.jesframework.internal.FancyStuff.newH2DataSource;
+import static store.jesframework.internal.FancyStuff.newMySqlDataSource;
 import static store.jesframework.internal.FancyStuff.newPostgresClusterDataSource;
 import static store.jesframework.internal.FancyStuff.newPostgresDataSource;
 import static store.jesframework.serializer.api.Format.BINARY_KRYO;
@@ -60,13 +61,20 @@ class StoreProviderTest {
         PROVIDERS.add(new JdbcStoreProvider<>(newH2DataSource(), JSON_JACKSON));
         PROVIDERS.add(new JdbcStoreProvider<>(newH2DataSource(), XML_XSTREAM));
         PROVIDERS.add(new JdbcStoreProvider<>(newH2DataSource(), BINARY_KRYO));
+
         PROVIDERS.add(new JdbcStoreProvider<>(newPostgresDataSource(), BINARY_KRYO));
         PROVIDERS.add(new JdbcStoreProvider<>(newPostgresDataSource("es", "postgres:latest"), JSON_JACKSON));
         PROVIDERS.add(new JdbcStoreProvider<>(newPostgresDataSource("es", "postgres:latest"), XML_XSTREAM));
         PROVIDERS.add(new JdbcStoreProvider<>(newPostgresDataSource("es", "postgres:9.6"), JSON_JACKSON));
+
+        PROVIDERS.add(new JdbcStoreProvider<>(newMySqlDataSource("es"), BINARY_KRYO));
+        PROVIDERS.add(new JdbcStoreProvider<>(newMySqlDataSource("es", "mysql:latest"), JSON_JACKSON));
+        PROVIDERS.add(new JdbcStoreProvider<>(newMySqlDataSource("es", "mysql:latest"), XML_XSTREAM));
+
         PROVIDERS.add(new JpaStoreProvider<>(newEntityManagerFactory(byte[].class), BINARY_KRYO));
         PROVIDERS.add(new JpaStoreProvider<>(newEntityManagerFactory(String.class), JSON_JACKSON));
         PROVIDERS.add(new JpaStoreProvider<>(newEntityManagerFactory(String.class), XML_XSTREAM));
+
         // master-only config
         PROVIDERS.add(new JdbcClusterStoreProvider<>(newPostgresDataSource("es")));
         // master-slave config
@@ -219,7 +227,7 @@ class StoreProviderTest {
             assertTrue(latch.await(5, SECONDS), "Dataset wasn't written in 5 sec");
 
             try (Stream<Event> stream = provider.readFrom(0)) {
-                assertEquals(workersCount * streamSize, stream.count(), "Written events count wrong");
+                assertEquals(workersCount * (long) streamSize, stream.count(), "Written events count wrong");
             }
         } finally {
             executor.shutdown();
@@ -289,7 +297,9 @@ class StoreProviderTest {
             if (provider instanceof AutoCloseable) {
                 try {
                     ((AutoCloseable) provider).close();
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                    // noop
+                }
             }
         }
     }

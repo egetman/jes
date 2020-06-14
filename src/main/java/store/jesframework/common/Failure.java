@@ -9,14 +9,12 @@ import javax.annotation.Nullable;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import lombok.ToString;
 import store.jesframework.Event;
 
 /**
  * Common system event that indicates handling failure.
  */
 @Getter
-@ToString
 @EqualsAndHashCode
 class Failure implements Event {
 
@@ -43,7 +41,7 @@ class Failure implements Event {
     Failure(@Nonnull Event source, @Nonnull String byWhom, long offset, @Nullable String cause) {
         this.cause = cause;
         this.offset = offset;
-        this.source = Objects.requireNonNull(source, "Failed source must not be null");
+        this.source = Objects.requireNonNull(source, "A failed source must not be null");
         this.byWhom = Objects.requireNonNull(byWhom, "Client identifier must not be null");
         this.uuid = source.uuid();
     }
@@ -54,4 +52,16 @@ class Failure implements Event {
         return uuid;
     }
 
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder(getClass().getSimpleName() + " [");
+        sb.append("uuid: ").append(uuid);
+        sb.append(", offset: ").append(offset);
+        sb.append(", source: ").append(source);
+        sb.append(", cause: ").append(cause);
+        sb.append(", byWhom: ").append(byWhom);
+        sb.append(", when: ").append(when);
+        sb.append(']');
+        return sb.toString();
+    }
 }

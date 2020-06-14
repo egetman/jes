@@ -8,10 +8,8 @@ import javax.annotation.Nullable;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import lombok.ToString;
 import store.jesframework.Event;
 
-@ToString
 @EqualsAndHashCode
 public class ContextUpdated implements Event {
 
@@ -39,5 +37,16 @@ public class ContextUpdated implements Event {
     @Override
     public long expectedStreamVersion() {
         return version;
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder(getClass().getSimpleName() + " [");
+        sb.append("uuid: ").append(uuid);
+        sb.append(", key: ").append(key);
+        sb.append(", value: ").append(value);
+        sb.append(", version: ").append(version);
+        sb.append(']');
+        return sb.toString();
     }
 }

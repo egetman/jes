@@ -1,13 +1,9 @@
 -- schemaName is alias. It will be replaced with actual types in runtime
 CREATE SCHEMA IF NOT EXISTS schemaName;
 
--- noinspection SqlResolve
-
 CREATE TABLE IF NOT EXISTS schemaName.offsets
 (
-    id         BIGSERIAL PRIMARY KEY,
-    offset_key VARCHAR(256) NOT NULL UNIQUE,
+    id         BIGINT       NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    offset_key VARCHAR(255) NOT NULL UNIQUE,
     value      BIGINT       NOT NULL DEFAULT 0
-);
-
-CREATE INDEX IF NOT EXISTS offsets_key_idx ON schemaName.offsets (offset_key);
+) ENGINE = InnoDB;

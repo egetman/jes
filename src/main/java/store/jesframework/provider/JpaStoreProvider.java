@@ -23,7 +23,7 @@ import store.jesframework.provider.jpa.StoreEntryFactory;
 import store.jesframework.serializer.api.Format;
 import store.jesframework.serializer.api.SerializationOption;
 import store.jesframework.serializer.api.Serializer;
-import store.jesframework.serializer.SerializerFactory;
+import store.jesframework.serializer.impl.SerializerFactory;
 import store.jesframework.snapshot.SnapshotReader;
 import lombok.extern.slf4j.Slf4j;
 

@@ -1,4 +1,4 @@
-package store.jesframework.serializer;
+package store.jesframework.serializer.impl;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;

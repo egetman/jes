@@ -8,9 +8,11 @@ import java.sql.DatabaseMetaData;
 import javax.sql.DataSource;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Execution;
 
 import lombok.SneakyThrows;
 
+import static org.junit.jupiter.api.parallel.ExecutionMode.CONCURRENT;
 import static store.jesframework.util.JdbcUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
@@ -18,10 +20,11 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@Execution(CONCURRENT)
 class JdbcUtilsTest {
 
     @Test
-    void getSchemaShouldThrowNullPoinerExceptionIfConnectionIsNull() {
+    void getSchemaShouldThrowNullPointerExceptionIfConnectionIsNull() {
         //noinspection ConstantConditions
         assertThrows(NullPointerException.class, () -> getSchemaName(null));
     }
@@ -44,7 +47,7 @@ class JdbcUtilsTest {
     }
 
     @Test
-    void getDatabaseNameShouldThrowNullPoinerExceptionIfConnectionIsNull() {
+    void getDatabaseNameShouldThrowNullPointerExceptionIfConnectionIsNull() {
         //noinspection ConstantConditions
         assertThrows(NullPointerException.class, () -> getDatabaseName(null));
     }
@@ -96,15 +99,18 @@ class JdbcUtilsTest {
 
     @Test
     void getSqlTypeByClassAndDatabaseNameShouldThrowIllegalArgumentExceptionOnUnknownTypeOrDBName() {
-        assertThrows(IllegalArgumentException.class, () -> getSqlTypeByClassAndDatabaseName(boolean.class, "H2"));
-        assertThrows(IllegalArgumentException.class, () -> getSqlTypeByClassAndDatabaseName(String.class, "Oracle"));
+        assertThrows(IllegalArgumentException.class, () -> getSqlTypeByClassAndDatabaseName(boolean.class, "H21"));
+        assertThrows(IllegalArgumentException.class, () -> getSqlTypeByClassAndDatabaseName(String.class, "OracleNew"));
     }
 
     @Test
     void getSqlTypeByClassAndDatabaseNameShouldReturnCorrectValuesOnValidInput() {
         assertEquals("TEXT", getSqlTypeByClassAndDatabaseName(String.class, "H2"));
+        assertEquals("TEXT", getSqlTypeByClassAndDatabaseName(String.class, "PostgreSQL"));
+        assertEquals("TEXT", getSqlTypeByClassAndDatabaseName(String.class, "MySQL"));
         assertEquals("BYTEA", getSqlTypeByClassAndDatabaseName(byte[].class, "PostgreSQL"));
         assertEquals("BLOB", getSqlTypeByClassAndDatabaseName(byte[].class, "H2"));
+        assertEquals("BLOB", getSqlTypeByClassAndDatabaseName(byte[].class, "MySQL"));
     }
 
 }

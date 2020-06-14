@@ -6,8 +6,10 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Properties;
 import java.util.UUID;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.spi.PersistenceUnitInfo;
 import javax.sql.DataSource;
@@ -24,12 +26,16 @@ import org.redisson.api.RedissonClient;
 import org.redisson.config.Config;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.JdbcDatabaseContainer;
+import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import store.jesframework.util.Pair;
 
+import static com.mysql.cj.conf.PropertyDefinitions.DatabaseTerm.SCHEMA;
+import static com.mysql.cj.conf.PropertyKey.allowMultiQueries;
+import static com.mysql.cj.conf.PropertyKey.databaseTerm;
 import static java.time.LocalDateTime.now;
 import static java.time.ZoneOffset.UTC;
 import static java.util.stream.Collectors.toList;
@@ -48,6 +54,8 @@ public final class FancyStuff {
     private static final int MAX_POOL_SIZE = 10;
     private static final int REDIS_EXPOSED_PORT = 6379;
     private static final String REDIS_URL_PATTERN = "redis://%s:%d";
+    private static final String DEFAULT_TEST_USER = "jes_user";
+    private static final String DEFAULT_TEST_PASSWORD = "jes_password";
 
     private FancyStuff() {}
 
@@ -73,12 +81,20 @@ public final class FancyStuff {
 
     @Nonnull
     private static PostgreSQLContainer<?> newPostgreSQLContainer(@Nonnull String dockerTag) {
-        final String user = "user";
-        final String password = "password";
         final PostgreSQLContainer<?> container = new PostgreSQLContainer<>(dockerTag)
                 .withDatabaseName("jes")
-                .withUsername(user)
-                .withPassword(password);
+                .withUsername(DEFAULT_TEST_USER)
+                .withPassword(DEFAULT_TEST_PASSWORD);
+        container.start();
+        return container;
+    }
+
+    @Nonnull
+    private static MySQLContainer<?> newMySQLContainer(@Nonnull String dockerTag, @Nonnull String schemaName) {
+        final MySQLContainer<?> container = new MySQLContainer<>(dockerTag)
+                .withDatabaseName(schemaName)
+                .withUsername(DEFAULT_TEST_USER)
+                .withPassword(DEFAULT_TEST_PASSWORD);
         container.start();
         return container;
     }
@@ -86,8 +102,8 @@ public final class FancyStuff {
     @Nonnull
     public static DataSource newH2DataSource() {
         final JdbcDataSource jdbcDataSource = new JdbcDataSource();
-        jdbcDataSource.setUser("admin");
-        jdbcDataSource.setPasswordChars("password".toCharArray());
+        jdbcDataSource.setUser(DEFAULT_TEST_USER);
+        jdbcDataSource.setPasswordChars(DEFAULT_TEST_PASSWORD.toCharArray());
         jdbcDataSource.setUrl("jdbc:h2:mem:jes-" + UUID.randomUUID());
         return JdbcConnectionPool.create(jdbcDataSource);
     }
@@ -106,12 +122,30 @@ public final class FancyStuff {
     public static DataSource newPostgresDataSource(@Nonnull String schemaName, @Nonnull String dockerTag) {
         schemaName = schemaName + "_" + now().toInstant(UTC).toEpochMilli();
         final PostgreSQLContainer<?> container = newPostgreSQLContainer(dockerTag);
-        final DataSource dataSource = from(container, schemaName);
+        final DataSource dataSource = from(container, schemaName, null);
         createSchema(dataSource, schemaName);
         return dataSource;
     }
 
-    private static DataSource from(@Nonnull JdbcDatabaseContainer<?> container, @Nonnull String schemaName) {
+    @Nonnull
+    public static DataSource newMySqlDataSource(@Nonnull String schemaName) {
+        return newMySqlDataSource(schemaName, "mysql:latest");
+    }
+
+    @Nonnull
+    public static DataSource newMySqlDataSource(@Nonnull String schemaName, @Nonnull String dockerTag) {
+        schemaName = schemaName + "_" + now().toInstant(UTC).toEpochMilli();
+        final MySQLContainer<?> container = newMySQLContainer(dockerTag, schemaName);
+        final Properties dataSourceProperties = new Properties();
+        dataSourceProperties.put(databaseTerm, SCHEMA);
+        dataSourceProperties.put(allowMultiQueries, true);
+        final DataSource dataSource = from(container, schemaName, dataSourceProperties);
+        createSchema(dataSource, schemaName);
+        return dataSource;
+    }
+
+    private static DataSource from(@Nonnull JdbcDatabaseContainer<?> container, @Nonnull String schemaName,
+                                   @Nullable Properties properties) {
         final HikariConfig config = new HikariConfig();
 
         config.setUsername(container.getUsername());
@@ -120,6 +154,9 @@ public final class FancyStuff {
         config.setMaximumPoolSize(MAX_POOL_SIZE);
         config.setJdbcUrl(container.getJdbcUrl());
         config.setDriverClassName(container.getDriverClassName());
+        if (properties != null) {
+            config.setDataSourceProperties(properties);
+        }
         final HikariDataSource dataSource = new HikariDataSource(config);
         log.debug("url: {}", config.getJdbcUrl());
         return dataSource;
@@ -131,9 +168,10 @@ public final class FancyStuff {
         final PostgreSQLClusterContainer container = new PostgreSQLClusterContainer(replicasCount);
         container.start();
         final PostgreSQLClusterContainer.PostgresCluster cluster = container.getClusterInfo();
-        final DataSource master = from(cluster.getMaster(), schemaName);
+        final DataSource master = from(cluster.getMaster(), schemaName, null);
         createSchema(master, schemaName);
-        return Pair.of(master, cluster.getReplicas().stream().map(repl -> from(repl, schemaName)).collect(toList()));
+        return Pair.of(master,
+                cluster.getReplicas().stream().map(repl -> from(repl, schemaName, null)).collect(toList()));
     }
 
     /**

@@ -4,10 +4,12 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Execution;
 
 import lombok.SneakyThrows;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.parallel.ExecutionMode.CONCURRENT;
 import static store.jesframework.provider.jdbc.DDLFactory.*;
 import static store.jesframework.provider.jdbc.DDLFactory.getAggregateStoreDDL;
 import static store.jesframework.provider.jdbc.DDLFactory.getEventStoreDDL;
@@ -18,8 +20,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+@Execution(CONCURRENT)
 class DDLFactoryTest {
 
+    private static final String H2 = "H2";
+    private static final String MY_SQL = "MySQL";
     private static final String POSTGRE_SQL = "PostgreSQL";
 
     private Connection newConnectionMock(String databaseName, String schema) {
@@ -41,19 +46,23 @@ class DDLFactoryTest {
     @Test
     void getEventStoreDDLShouldReturnScriptOnCorrectValue() {
         assertNotNull(getEventStoreDDL(newConnectionMock(POSTGRE_SQL, "FOO"), byte[].class));
-        assertNotNull(getEventStoreDDL(newConnectionMock(POSTGRE_SQL, "FOO", 9), byte[].class));
-        assertNotNull(getEventStoreDDL(newConnectionMock("H2", "FOO"), String.class));
+        assertNotNull(getEventStoreDDL(newConnectionMock(POSTGRE_SQL, "FOO", 9), String.class));
+        assertNotNull(getEventStoreDDL(newConnectionMock(H2, "FOO"), String.class));
+        assertNotNull(getEventStoreDDL(newConnectionMock(MY_SQL, "FOO"), byte[].class));
+        assertNotNull(getEventStoreDDL(newConnectionMock(MY_SQL, "FOO"), String.class));
     }
 
     @Test
     void getAggregateStoreDDLShouldReturnScriptOnCorrectValue() {
         assertNotNull(getAggregateStoreDDL(newConnectionMock(POSTGRE_SQL, "FOO")));
         assertNotNull(getAggregateStoreDDL(newConnectionMock(POSTGRE_SQL, "FOO", 8)));
+        assertNotNull(getAggregateStoreDDL(newConnectionMock(MY_SQL, "FOO")));
     }
 
     @Test
-    void getOffsetDDLShouldReturnStriptOnCorrectValue() {
-        assertNotNull(getOffsetsDDL(newConnectionMock("H2", "FOO")));
+    void getOffsetDDLShouldReturnScriptOnCorrectValue() {
+        assertNotNull(getOffsetsDDL(newConnectionMock(H2, "FOO")));
+        assertNotNull(getOffsetsDDL(newConnectionMock(MY_SQL, "FOO")).getClass());
         assertNotNull(getOffsetsDDL(newConnectionMock(POSTGRE_SQL, "FOO")).getClass());
         assertNotNull(getOffsetsDDL(newConnectionMock(POSTGRE_SQL, "FOO", 7)).getClass());
     }
@@ -66,13 +75,13 @@ class DDLFactoryTest {
     @Test
     void getEventStoreDDLShouldThrowIllegalArgumentExceptionOnAnyOtherValue() {
         assertThrows(IllegalArgumentException.class,
-                () -> getEventStoreDDL(newConnectionMock("Oracle DB", "BAR"), String.class));
+                () -> getEventStoreDDL(newConnectionMock("Oracle DB+", "BAR"), String.class));
         assertThrows(IllegalArgumentException.class,
-                () -> getEventStoreDDL(newConnectionMock("MySQL", "FOO"), byte[].class));
+                () -> getEventStoreDDL(newConnectionMock("YourSQL", "FOO"), byte[].class));
         assertThrows(IllegalArgumentException.class,
-                () -> getEventStoreDDL(newConnectionMock("DB2", "BAZ"), String.class));
+                () -> getEventStoreDDL(newConnectionMock("DB3", "BAZ"), String.class));
         assertThrows(IllegalArgumentException.class,
-                () -> getEventStoreDDL(newConnectionMock("H2", "BAZ"), byte.class));
+                () -> getEventStoreDDL(newConnectionMock(H2, "BAZ"), byte.class));
     }
 
     @Test
@@ -87,8 +96,9 @@ class DDLFactoryTest {
 
     @Test
     void getLockDDLShouldReturnScriptOnCorrectValue() {
-        assertNotNull(getOffsetsDDL(newConnectionMock(POSTGRE_SQL, "FOO")));
-        assertNotNull(getOffsetsDDL(newConnectionMock(POSTGRE_SQL, "FOO", 9)));
+        assertNotNull(getLockDDL(newConnectionMock(POSTGRE_SQL, "FOO")));
+        assertNotNull(getLockDDL(newConnectionMock(POSTGRE_SQL, "FOO", 9)));
+        assertNotNull(getLockDDL(newConnectionMock(MY_SQL, "FOO")));
     }
 
     @Test

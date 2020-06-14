@@ -1,7 +1,6 @@
-package store.jesframework.serializer;
+package store.jesframework.serializer.impl;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -12,9 +11,11 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DatabindContext;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.jsontype.TypeIdResolver;
 import com.fasterxml.jackson.databind.jsontype.impl.TypeIdResolverBase;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 
+import lombok.extern.slf4j.Slf4j;
 import store.jesframework.ex.SerializationException;
 import store.jesframework.serializer.api.Format;
 import store.jesframework.serializer.api.Serializer;
@@ -31,10 +32,11 @@ import static com.fasterxml.jackson.databind.ObjectMapper.DefaultTyping;
 import static com.fasterxml.jackson.databind.SerializationFeature.FAIL_ON_EMPTY_BEANS;
 import static com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS;
 
+@Slf4j
 class JacksonSerializer<S> implements Serializer<S, String> {
 
     /**
-     * A little hack to faster resolve type name. All json events (for now) starts with {"@type":"
+     * A little hack to faster resolve type name. All json (jackson) events (for now) starts with {"@type":"
      */
     private static final int START_TYPE_NAME_POSITION = 10;
     static final int DEFAULT_NAME_SIZE = 60;
@@ -43,34 +45,30 @@ class JacksonSerializer<S> implements Serializer<S, String> {
     private final TypeReference<S> serializationType = new TypeReference<S>() {};
 
     JacksonSerializer() {
-        this(null);
+        this(Context.parse());
     }
 
-    JacksonSerializer(@Nullable TypeRegistry registry) {
-        this(new ObjectMapper(), registry);
+    JacksonSerializer(@Nonnull Context<?> context) {
+        this(new ObjectMapper(), context);
     }
 
-    @SuppressWarnings("WeakerAccess")
-    public JacksonSerializer(@Nonnull ObjectMapper mapper, @Nullable TypeRegistry registry) {
+    JacksonSerializer(@Nonnull ObjectMapper mapper, @Nonnull Context<?> context) {
         this.mapper = Objects.requireNonNull(mapper, "ObjectMapper must not be null");
-        configureMapper(this.mapper, registry);
+        Objects.requireNonNull(context, "Context must not be null");
+        configureMapper(this.mapper, context);
     }
 
-    private void configureMapper(@Nonnull ObjectMapper mapper, @Nullable TypeRegistry registry) {
+    private void configureMapper(@Nonnull ObjectMapper mapper, @Nonnull Context<?> context) {
         mapper.disable(FAIL_ON_EMPTY_BEANS);
         mapper.disable(FAIL_ON_UNKNOWN_PROPERTIES);
         mapper.disable(WRITE_DATES_AS_TIMESTAMPS);
         mapper.disable(ADJUST_DATES_TO_CONTEXT_TIME_ZONE);
         mapper.setSerializationInclusion(NON_NULL);
 
-        final Map<Class<?>, String> aliases = registry == null ? new HashMap<>() : registry.getAliases();
-        final Map<String, Class<?>> reversed = new HashMap<>();
-        for (Map.Entry<Class<?>, String> entry : aliases.entrySet()) {
-            reversed.put(entry.getValue(), entry.getKey());
-        }
+        final TypeIdResolver resolver = new TypeIdWithClassNameFallbackResolver(context);
 
         mapper.setDefaultTyping(new DefaultTypeResolverBuilder(DefaultTyping.NON_FINAL)
-                .init(Id.CUSTOM, new TypeIdWithClassNameFallbackResolver(aliases, reversed))
+                .init(Id.CUSTOM, resolver)
                 .inclusion(As.PROPERTY)
                 .typeProperty("@type"));
         mapper.setVisibility(mapper.getSerializationConfig().getDefaultVisibilityChecker()
@@ -133,16 +131,13 @@ class JacksonSerializer<S> implements Serializer<S, String> {
 
         private final Map<Class<?>, String> serializationAliases;
         private final Map<String, Class<?>> deserializationAliases;
-        private final Map<Class<?>, JavaType> typesCache = new ConcurrentHashMap<>();
+        // concurrent access at runtime
+        private final Map<Class<?>, JavaType> typeCache = new ConcurrentHashMap<>();
 
-        TypeIdWithClassNameFallbackResolver(@Nullable Map<Class<?>, String> serializationAliases,
-                                            @Nullable Map<String, Class<?>> deserializationAliases) {
-            this.serializationAliases = getNonNullOrDefault(serializationAliases, new HashMap<>());
-            this.deserializationAliases = getNonNullOrDefault(deserializationAliases, new HashMap<>());
-        }
-
-        private <K, V> Map<K, V> getNonNullOrDefault(@Nullable Map<K, V> map, @Nonnull Map<K, V> defaultValue) {
-            return map != null ? map : Objects.requireNonNull(defaultValue, "Default value must not be null");
+        TypeIdWithClassNameFallbackResolver(@Nonnull Context<?> context) {
+            this.serializationAliases = context.classesToAliases();
+            this.deserializationAliases = context.aliasesToClasses();
+            log.debug("Prepared {} type alias(es)", serializationAliases.size());
         }
 
         @Override
@@ -171,7 +166,7 @@ class JacksonSerializer<S> implements Serializer<S, String> {
                     throw new TypeNotPresentException(id, e);
                 }
             }
-            return typesCache.computeIfAbsent(clazz, key -> TypeFactory.defaultInstance().constructType(key));
+            return typeCache.computeIfAbsent(clazz, key -> TypeFactory.defaultInstance().constructType(key));
         }
 
         @Override

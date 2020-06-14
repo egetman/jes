@@ -38,4 +38,13 @@ public class UnknownTypeResolved implements Event {
         //noinspection unchecked
         return (T) raw;
     }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder(getClass().getSimpleName() + " [");
+        sb.append("type: ").append(type);
+        sb.append(", raw: ").append(raw);
+        sb.append(']');
+        return sb.toString();
+    }
 }

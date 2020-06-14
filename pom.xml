@@ -6,7 +6,7 @@
 
     <groupId>store.jesframework</groupId>
     <artifactId>jes-core</artifactId>
-    <version>1.1.0</version>
+    <version>1.2.0</version>
     <packaging>jar</packaging>
 
     <name>Jes</name>
@@ -58,18 +58,20 @@
         <xstream.version>1.4.11.1</xstream.version>
         <cache2k.version>1.2.4.Final</cache2k.version>
         <byte-buddy.version>1.10.1</byte-buddy.version>
+        <reflections.version>0.9.12</reflections.version>
         <jackson.databind.version>2.9.10.4</jackson.databind.version>
         <java-uuid-generator.version>3.2.0</java-uuid-generator.version>
         <javax.persistence-api.version>2.2</javax.persistence-api.version>
 
         <!-- test dependencies versions -->
         <h2.version>1.4.199</h2.version>
+        <mysql.version>8.0.20</mysql.version>
         <HikariCP.version>3.4.0</HikariCP.version>
         <postgresql.version>42.2.8</postgresql.version>
         <hibernate.version>5.4.1.Final</hibernate.version>
         <mockito-core.version>3.0.0</mockito-core.version>
-        <junit-jupiter.version>5.5.2</junit-jupiter.version>
-        <testcontainers.version>1.12.5</testcontainers.version>
+        <junit-jupiter.version>5.6.2</junit-jupiter.version>
+        <testcontainers.version>1.14.1</testcontainers.version>
 
         <!-- for performance experiments dependencies -->
         <jmh.version>1.21</jmh.version>
@@ -216,6 +218,13 @@
             <version>${logback.version}</version>
         </dependency>
 
+        <!-- some reflection magic -->
+        <dependency>
+            <groupId>org.reflections</groupId>
+            <artifactId>reflections</artifactId>
+            <version>${reflections.version}</version>
+        </dependency>
+
         <!-- test dependencies -->
 
         <!-- for JdbcStoreProvider-->
@@ -236,6 +245,20 @@
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
             <version>${h2.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>${mysql.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.oracle.ojdbc</groupId>
+            <artifactId>ojdbc8</artifactId>
+            <version>19.3.0.0</version>
             <scope>test</scope>
         </dependency>
 
@@ -269,6 +292,20 @@
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>postgresql</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>mysql</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>oracle-xe</artifactId>
             <version>${testcontainers.version}</version>
             <scope>test</scope>
         </dependency>
