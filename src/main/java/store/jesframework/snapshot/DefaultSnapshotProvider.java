@@ -39,6 +39,7 @@ class DefaultSnapshotProvider implements SnapshotProvider {
 
     @Nonnull
     @Override
+    @SuppressWarnings("squid:S3011")
     public <T extends Aggregate> T initialStateOf(@Nonnull UUID uuid, @Nonnull Class<T> type) {
         final BiFunction<UUID, Class<? extends Aggregate>, Aggregate> function = conversions.get(type);
         if (function != null) {
@@ -71,6 +72,7 @@ class DefaultSnapshotProvider implements SnapshotProvider {
             if (cached != null) {
                 return cached;
             }
+
             for (Field field : candidate.getDeclaredFields()) {
                 if ("uuid".equals(field.getName())) {
                     fieldCache.putIfAbsent(candidate, field);

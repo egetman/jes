@@ -62,16 +62,15 @@ class UnsafeOpsTest {
                 new SampleEvent("FOO", uuid),
                 new SampleEvent("BAR", uuid)}));
 
-        assertThrows(EventStreamSplitUnsupportedException.class, () -> unsafeOps.eventStreamToUniqUuid(new Event[] {
-                new SampleEvent("FOO"),
-                new SampleEvent("BAR")
-        }));
+        final Event[] events = {new SampleEvent("FOO"), new SampleEvent("BAR")};
+        assertThrows(EventStreamSplitUnsupportedException.class, () -> unsafeOps.eventStreamToUniqUuid(events));
     }
 
     @Test
     void traverseAndReplaceShouldThrowNullPointerOnNullArguments() {
+        final UnaryOperator<Event> identity = identity();
         //noinspection ConstantConditions
-        assertThrows(NullPointerException.class, () -> unsafeOps.traverseAndReplace(null, identity()));
+        assertThrows(NullPointerException.class, () -> unsafeOps.traverseAndReplace(null, identity));
 
         final UUID uuid = randomUUID();
         store.write(new SampleEvent("FOO", uuid));
@@ -97,33 +96,38 @@ class UnsafeOpsTest {
 
         final UUID uuid = randomUUID();
         store.write(new SampleEvent("FOO", uuid));
+        final Set<UUID> uuids = singleton(uuid);
         //noinspection ConstantConditions
-        assertThrows(NullPointerException.class, () -> unsafeOps.traverseAndMerge(singleton(uuid), null));
+        assertThrows(NullPointerException.class, () -> unsafeOps.traverseAndMerge(uuids, null));
     }
 
     // empty stream exception will be thrown cause no stream with given uuid exists
     @Test
     void traverseAndReplaceShouldThrowEmptyEventStreamExceptionWhenEventsNotFoundByUuid() {
-        assertThrows(EmptyEventStreamException.class, () -> unsafeOps.traverseAndReplace(randomUUID(), identity()));
+        final UUID uuid = randomUUID();
+        final UnaryOperator<Event> identity = identity();
+        assertThrows(EmptyEventStreamException.class, () -> unsafeOps.traverseAndReplace(uuid, identity));
     }
 
     @Test
     void traverseAndSplitShouldThrowEmptyEventStreamExceptionWhenEventsNotFoundByUuid() {
-        assertThrows(EmptyEventStreamException.class,
-                () -> unsafeOps.traverseAndSplit(randomUUID(), collection -> emptyMap()));
+        final UUID uuid = randomUUID();
+        assertThrows(EmptyEventStreamException.class, () -> unsafeOps.traverseAndSplit(uuid, collection -> emptyMap()));
     }
 
     @Test
     void traverseAndMergeShouldThrowEmptyEventStreamExceptionWhenEventsNotFoundByUuid() {
-        assertThrows(EmptyEventStreamException.class, () -> unsafeOps.traverseAndMerge(emptySet(), map -> emptyList()));
+        final Set<UUID> emptySet = emptySet();
+        assertThrows(EmptyEventStreamException.class, () -> unsafeOps.traverseAndMerge(emptySet, map -> emptyList()));
     }
 
     @Test
     void traverseAndReplaceShouldThrowEmptyEventStreamExceptionWhenNoEventsProducedByHandler() {
-        final SampleEvent event = new SampleEvent("FOO", randomUUID());
+        final UUID uuid = randomUUID();
+        final SampleEvent event = new SampleEvent("FOO", uuid);
         store.write(event);
 
-        assertThrows(EmptyEventStreamException.class, () -> unsafeOps.traverseAndReplace(event.uuid(), obj -> null));
+        assertThrows(EmptyEventStreamException.class, () -> unsafeOps.traverseAndReplace(uuid, obj -> null));
     }
 
     @Test
@@ -207,18 +211,20 @@ class UnsafeOpsTest {
 
     @Test
     void traverseAndReplaceShouldThrowEventStreamRewriteUnsupportedExceptionWhenUuidsEqual() {
-        final SampleEvent event = new SampleEvent("FOO", randomUUID());
+        final UUID uuid = randomUUID();
+        final SampleEvent event = new SampleEvent("FOO", uuid);
         store.write(event);
 
-        assertThrows(EventStreamRewriteUnsupportedException.class,
-                () -> unsafeOps.traverseAndReplace(event.uuid(), identity()));
+        final UnaryOperator<Event> identity = identity();
+        assertThrows(EventStreamRewriteUnsupportedException.class, () -> unsafeOps.traverseAndReplace(uuid, identity));
 
     }
 
     @Test
     void traverseAndReplaceAllShouldThrowNullPointerOnNullArguments() {
+        final UnaryOperator<Collection<Event>> identity = identity();
         //noinspection ConstantConditions
-        assertThrows(NullPointerException.class, () -> unsafeOps.traverseAndReplaceAll(null, identity()));
+        assertThrows(NullPointerException.class, () -> unsafeOps.traverseAndReplaceAll(null, identity));
 
         final UUID uuid = randomUUID();
         store.write(new SampleEvent("FOO", uuid));
@@ -229,18 +235,20 @@ class UnsafeOpsTest {
     // empty stream exception will be thrown cause no stream with given uuid exists
     @Test
     void traverseAndReplaceAllShouldThrowEmptyEventStreamExceptionWhenEventsNotFoundByUuid() {
-        assertThrows(EmptyEventStreamException.class, () -> unsafeOps.traverseAndReplaceAll(randomUUID(), identity()));
+        final UUID uuid = randomUUID();
+        final UnaryOperator<Collection<Event>> identity = identity();
+        assertThrows(EmptyEventStreamException.class, () -> unsafeOps.traverseAndReplaceAll(uuid, identity));
     }
 
     @Test
     void traverseAndReplaceAllShouldThrowEmptyEventStreamExceptionWhenNoEventsProducedByHandler() {
-        final SampleEvent event = new SampleEvent("FOO", randomUUID());
+        final UUID uuid = randomUUID();
+        final SampleEvent event = new SampleEvent("FOO", uuid);
         store.write(event);
 
+        assertThrows(EmptyEventStreamException.class, () -> unsafeOps.traverseAndReplaceAll(uuid, collection -> null));
         assertThrows(EmptyEventStreamException.class,
-                () -> unsafeOps.traverseAndReplaceAll(event.uuid(), collection -> null));
-        assertThrows(EmptyEventStreamException.class,
-                () -> unsafeOps.traverseAndReplaceAll(event.uuid(), collection -> emptyList()));
+                () -> unsafeOps.traverseAndReplaceAll(uuid, collection -> emptyList()));
     }
 
     @Test
@@ -313,11 +321,13 @@ class UnsafeOpsTest {
 
     @Test
     void traverseAndReplaceAllShouldThrowEventStreamRewriteUnsupportedExceptionWhenUuidsEqual() {
-        final SampleEvent event = new SampleEvent("FOO", randomUUID());
+        final UUID uuid = randomUUID();
+        final SampleEvent event = new SampleEvent("FOO", uuid);
         store.write(event);
 
+        final UnaryOperator<Collection<Event>> identity = identity();
         assertThrows(EventStreamRewriteUnsupportedException.class,
-                () -> unsafeOps.traverseAndReplaceAll(event.uuid(), identity()));
+                () -> unsafeOps.traverseAndReplaceAll(uuid, identity));
     }
 
     @Test

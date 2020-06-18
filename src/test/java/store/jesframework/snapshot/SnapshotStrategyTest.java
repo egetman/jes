@@ -58,7 +58,9 @@ class SnapshotStrategyTest {
     void timeBasedStrategyMustNotPermitNullOrNegativeDuration() {
         assertDoesNotThrow(() -> new TimeBasedSnapshotStrategy(Duration.ofHours(1)));
         assertThrows(NullPointerException.class, () -> new TimeBasedSnapshotStrategy(null));
-        assertThrows(IllegalArgumentException.class, () -> new TimeBasedSnapshotStrategy(Duration.ofNanos(-10)));
+
+        final Duration duration = Duration.ofNanos(-10);
+        assertThrows(IllegalArgumentException.class, () -> new TimeBasedSnapshotStrategy(duration));
     }
 
     @Test

@@ -53,10 +53,10 @@ public final class DDLFactory {
                 } else {
                     return replaceWith(readDDL("ddl/postgresql/v9/event-store-postgres.ddl"), schemaName, contentType);
                 }
-            case DB_NAME_H2:
-                return replaceWith(readDDL("ddl/h2/event-store-h2.ddl"), schemaName, contentType);
             case DB_NAME_MY_SQL:
                 return replaceWith(readDDL("ddl/mysql/event-store-mysql.ddl"), schemaName, contentType);
+            case DB_NAME_H2:
+                return replaceWith(readDDL("ddl/h2/event-store-h2.ddl"), schemaName, contentType);
             default:
                 throw new IllegalArgumentException(format(UNSUPPORTED_TYPE, databaseName));
         }

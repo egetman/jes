@@ -66,8 +66,9 @@ class JdbcUtilsTest {
 
     @Test
     void unwrapJdbcTypeShouldThrowIllegalArgumentExceptionIfTypeIsNullOrUnsupported() {
+        final Object type = new Object();
+        assertThrows(IllegalArgumentException.class, () -> unwrapJdbcType(type));
         assertThrows(IllegalArgumentException.class, () -> unwrapJdbcType(null));
-        assertThrows(IllegalArgumentException.class, () -> unwrapJdbcType(new Object()));
     }
 
     @Test

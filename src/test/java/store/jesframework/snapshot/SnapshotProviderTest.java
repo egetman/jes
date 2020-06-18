@@ -55,7 +55,8 @@ class SnapshotProviderTest {
                 // do nothing, just to disable no-arg constructor
             }
         }
-        assertThrows(AggregateCreationException.class, () -> provider.initialStateOf(randomUUID(), FooAggregate.class));
+        final UUID uuid = randomUUID();
+        assertThrows(AggregateCreationException.class, () -> provider.initialStateOf(uuid, FooAggregate.class));
     }
 
     @ParameterizedTest
@@ -110,9 +111,10 @@ class SnapshotProviderTest {
 
     @Test
     void resetFallbackShouldBeNoop() {
+        final SnapshotProvider provider = new SnapshotProvider() {};
         //noinspection ConstantConditions
-        assertThrows(NullPointerException.class, () -> new SnapshotProvider() {}.reset(null));
-        assertDoesNotThrow(() -> new SnapshotProvider() {}.reset(randomUUID()));
+        assertThrows(NullPointerException.class, () -> provider.reset(null));
+        assertDoesNotThrow(() -> provider.reset(randomUUID()));
     }
 
     @ParameterizedTest
@@ -161,8 +163,9 @@ class SnapshotProviderTest {
             private final UUID uuid;
         }
 
+        final UUID random = randomUUID();
         assertThrows(AggregateCreationException.class,
-                () -> provider.initialStateOf(randomUUID(), AggregateWithoutDefaultConstructor.class));
+                () -> provider.initialStateOf(random, AggregateWithoutDefaultConstructor.class));
 
         final DefaultSnapshotProvider defaultProvider = (DefaultSnapshotProvider) provider;
         defaultProvider.addAggregateCreator(
@@ -170,7 +173,7 @@ class SnapshotProviderTest {
                 (uuid, aClass) -> new AggregateWithoutDefaultConstructor(uuid)
         );
 
-        assertDoesNotThrow(() -> provider.initialStateOf(randomUUID(), AggregateWithoutDefaultConstructor.class));
+        assertDoesNotThrow(() -> provider.initialStateOf(random, AggregateWithoutDefaultConstructor.class));
     }
 
     @Test
@@ -185,7 +188,9 @@ class SnapshotProviderTest {
     void defaultSnapshotProviderShouldNotReturnNull() {
         final DefaultSnapshotProvider provider = new DefaultSnapshotProvider();
         provider.addAggregateCreator(Aggregate.class, (uuid, aClass) -> null);
-        assertThrows(AggregateCreationException.class, () -> provider.initialStateOf(randomUUID(), Aggregate.class));
+
+        final UUID uuid = randomUUID();
+        assertThrows(AggregateCreationException.class, () -> provider.initialStateOf(uuid, Aggregate.class));
     }
 
     @AfterAll

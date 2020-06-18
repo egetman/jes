@@ -84,8 +84,8 @@ class CommandHandlerTest {
             }
         };
 
-        final BrokenHandlerException exception = assertThrows(BrokenHandlerException.class,
-                () -> bus.dispatch(new Commands.SampleCommand("Bar")));
+        final Commands.SampleCommand sample = new Commands.SampleCommand("Bar");
+        final BrokenHandlerException exception = assertThrows(BrokenHandlerException.class, () -> bus.dispatch(sample));
 
         Assertions.assertEquals("Test: Bar", exception.getMessage());
     }

@@ -75,7 +75,8 @@ class ContextTest {
 
     @Test
     void UpcastersWithoutEventNameShouldBeProhibited() {
-        assertThrows(NullPointerException.class, () -> Context.parse((new SampleUpcaster(null, identity()))));
+        final SampleUpcaster upcaster = new SampleUpcaster(null, identity());
+        assertThrows(NullPointerException.class, () -> Context.parse(upcaster));
     }
 
     @Test

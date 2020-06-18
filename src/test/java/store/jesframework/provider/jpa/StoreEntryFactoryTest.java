@@ -20,8 +20,9 @@ class StoreEntryFactoryTest {
     @Test
     @SuppressWarnings("ConstantConditions")
     void factoryShouldThrowNullPointerExceptionOnNullArguments() {
+        final UUID uuid = UUID.randomUUID();
+        assertThrows(NullPointerException.class, () -> StoreEntryFactory.newEntry(uuid, null));
         assertThrows(NullPointerException.class, () -> StoreEntryFactory.entryTypeOf(null));
-        assertThrows(NullPointerException.class, () -> StoreEntryFactory.newEntry(UUID.randomUUID(), null));
     }
 
     @Test
@@ -32,7 +33,9 @@ class StoreEntryFactoryTest {
     @Test
     void factoryShouldThrowSerializationExceptionOnUnknownType() {
         assertThrows(SerializationException.class, () -> StoreEntryFactory.entryTypeOf(UUID.class));
-        assertThrows(SerializationException.class, () -> StoreEntryFactory.newEntry(UUID.randomUUID(), Class.class));
+
+        final UUID uuid = UUID.randomUUID();
+        assertThrows(SerializationException.class, () -> StoreEntryFactory.newEntry(uuid, Class.class));
     }
 
     @Test

@@ -2,6 +2,7 @@ package store.jesframework.util;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -31,8 +32,11 @@ class CheckTest {
         assertThrows(FooException.class, () -> Check.nonEmpty(nullCollection, FooException::new));
 
         assertThrows(FooException.class, () -> Check.nonEmpty(new Object[0], FooException::new));
-        assertThrows(FooException.class, () -> Check.nonEmpty(Collections.emptyMap(), FooException::new));
-        assertThrows(FooException.class, () -> Check.nonEmpty(Collections.emptyList(), FooException::new));
+
+        final List<Object> emptyList = Collections.emptyList();
+        final Map<Object, Object> emptyMap = Collections.emptyMap();
+        assertThrows(FooException.class, () -> Check.nonEmpty(emptyMap, FooException::new));
+        assertThrows(FooException.class, () -> Check.nonEmpty(emptyList, FooException::new));
 
         assertThrows(NullPointerException.class, () -> Check.nonEmpty(nullMap, () -> null));
         assertThrows(NullPointerException.class, () -> Check.nonEmpty(nullArray, () -> null));

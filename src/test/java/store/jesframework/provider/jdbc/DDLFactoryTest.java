@@ -69,29 +69,33 @@ class DDLFactoryTest {
 
     @Test
     void getAggregateStoreDDLShouldThrowIllegalArgumentExceptionOnUnknownValue() {
-        assertThrows(IllegalArgumentException.class, () -> getAggregateStoreDDL(newConnectionMock("FOO", "FOO")));
+        final Connection connection = newConnectionMock("FOO", "FOO");
+        assertThrows(IllegalArgumentException.class, () -> getAggregateStoreDDL(connection));
     }
 
     @Test
     void getEventStoreDDLShouldThrowIllegalArgumentExceptionOnAnyOtherValue() {
-        assertThrows(IllegalArgumentException.class,
-                () -> getEventStoreDDL(newConnectionMock("Oracle DB+", "BAR"), String.class));
-        assertThrows(IllegalArgumentException.class,
-                () -> getEventStoreDDL(newConnectionMock("YourSQL", "FOO"), byte[].class));
-        assertThrows(IllegalArgumentException.class,
-                () -> getEventStoreDDL(newConnectionMock("DB3", "BAZ"), String.class));
-        assertThrows(IllegalArgumentException.class,
-                () -> getEventStoreDDL(newConnectionMock(H2, "BAZ"), byte.class));
+        final Connection oraPlusConnection = newConnectionMock("Oracle DB+", "BAR");
+        final Connection yourSqlConnection = newConnectionMock("YourSQL", "FOO");
+        final Connection db3Connection = newConnectionMock("DB3", "BAZ");
+        final Connection h2Connection = newConnectionMock(H2, "BAZ");
+
+        assertThrows(IllegalArgumentException.class, () -> getEventStoreDDL(oraPlusConnection, String.class));
+        assertThrows(IllegalArgumentException.class, () -> getEventStoreDDL(yourSqlConnection, byte[].class));
+        assertThrows(IllegalArgumentException.class, () -> getEventStoreDDL(db3Connection, String.class));
+        assertThrows(IllegalArgumentException.class, () -> getEventStoreDDL(h2Connection, byte.class));
     }
 
     @Test
     void getOffsetsDDLShouldThrowIllegalArgumentExceptionOnUnknownValue() {
-        assertThrows(IllegalArgumentException.class, () -> getOffsetsDDL(newConnectionMock("FOO", "FOO")));
+        final Connection connection = newConnectionMock("FOO", "FOO");
+        assertThrows(IllegalArgumentException.class, () -> getOffsetsDDL(connection));
     }
 
     @Test
     void getLockDDLShouldThrowIllegalArgumentExceptionOnUnknownValue() {
-        assertThrows(IllegalArgumentException.class, () -> getLockDDL(newConnectionMock("FOO", "FOO")));
+        final Connection connection = newConnectionMock("FOO", "FOO");
+        assertThrows(IllegalArgumentException.class, () -> getLockDDL(connection));
     }
 
     @Test

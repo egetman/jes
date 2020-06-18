@@ -1,5 +1,5 @@
 [![actions status](https://github.com/egetman/jes/workflows/Jes%20build/badge.svg)](https://github.com/egetman/jes/actions)
-![version](https://img.shields.io/badge/version-1.1.0-green.svg)
+![version](https://img.shields.io/badge/version-1.2.0-green.svg)
 ![code coverage](https://codecov.io/gh/egetman/jes/branch/master/graph/badge.svg)
 [![maintainability rating](https://sonarcloud.io/api/project_badges/measure?project=store.jesframework.jes-core&metric=sqale_rating)](https://sonarcloud.io/dashboard?id=store.jesframework.jes-core)
 [![quality gate status](https://sonarcloud.io/api/project_badges/measure?project=store.jesframework.jes-core&metric=alert_status)](https://sonarcloud.io/dashboard?id=store.jesframework.jes-core)

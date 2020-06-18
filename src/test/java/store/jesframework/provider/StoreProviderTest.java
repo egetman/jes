@@ -240,10 +240,10 @@ class StoreProviderTest {
         assertThrows(BrokenStoreException.class, () -> new JdbcStoreProvider<>(null));
         assertThrows(BrokenStoreException.class, () -> new JpaStoreProvider<>(null));
         assertThrows(BrokenStoreException.class, () -> new JdbcClusterStoreProvider<>(null));
-        assertThrows(BrokenStoreException.class,
-                () -> new JdbcClusterStoreProvider<>(newH2DataSource(), null, -1, DAYS));
-        assertThrows(BrokenStoreException.class,
-                () -> new JdbcClusterStoreProvider<>(newH2DataSource(), null, 1, null));
+
+        final DataSource dataSource = newH2DataSource();
+        assertThrows(BrokenStoreException.class, () -> new JdbcClusterStoreProvider<>(dataSource, null, -1, DAYS));
+        assertThrows(BrokenStoreException.class, () -> new JdbcClusterStoreProvider<>(dataSource, null, 1, null));
     }
 
     @SuppressWarnings("SameParameterValue")
