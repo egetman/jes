@@ -1,5 +1,8 @@
 package store.jesframework.common;
 
+import java.util.Set;
+import java.util.UUID;
+
 import org.junit.jupiter.api.Test;
 
 import static java.util.Collections.emptySet;
@@ -12,9 +15,11 @@ class StreamSplittedToTest {
     @Test
     @SuppressWarnings("ConstantConditions")
     void streamSplittedToEventShouldProtectItsInvariants() {
-        assertThrows(NullPointerException.class, () -> new StreamSplittedTo(null, singleton(randomUUID())));
-        assertThrows(NullPointerException.class, () -> new StreamSplittedTo(randomUUID(), null));
-        assertThrows(IllegalArgumentException.class, () -> new StreamSplittedTo(randomUUID(), emptySet()));
+        final UUID uuid = randomUUID();
+        final Set<UUID> uuids = singleton(uuid);
+        assertThrows(NullPointerException.class, () -> new StreamSplittedTo(null, uuids));
+        assertThrows(NullPointerException.class, () -> new StreamSplittedTo(uuid, null));
+        assertThrows(IllegalArgumentException.class, () -> new StreamSplittedTo(uuid, emptySet()));
     }
 
 }

@@ -28,8 +28,9 @@ class HandlerUtilsTest {
         };
 
         final Method accept = sample.getClass().getMethod("accept", Command.class);
+        final Commands.SampleCommand command = new Commands.SampleCommand("name");
         final BrokenHandlerException exception = assertThrows(BrokenHandlerException.class,
-                () -> HandlerUtils.invokeHandle(accept, sample, new Commands.SampleCommand("name")));
+                () -> HandlerUtils.invokeHandle(accept, sample, command));
 
         assertEquals("Foo", exception.getMessage());
         assertEquals(UnsupportedOperationException.class, exception.getCause().getClass());

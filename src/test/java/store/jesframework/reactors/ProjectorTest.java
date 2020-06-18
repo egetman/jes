@@ -49,8 +49,9 @@ class ProjectorTest {
     @SuppressWarnings({"unused", "ConstantConditions"})
     void shouldHandleInvariants() {
         final JEventStore store = Mockito.mock(JEventStore.class);
+        final InMemoryOffset offset = new InMemoryOffset();
 
-        assertThrows(NullPointerException.class, () -> new Projector(store, new InMemoryOffset(), null) {
+        assertThrows(NullPointerException.class, () -> new Projector(store, offset, null) {
             @ReactsOn
             private void foo(Event event) {}
 

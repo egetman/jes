@@ -27,8 +27,9 @@ class ReactorUtilsTest {
         };
 
         final Method accept = sample.getClass().getMethod("accept", Event.class);
+        final Events.SampleEvent event = new Events.SampleEvent("");
         final BrokenReactorException exception = assertThrows(BrokenReactorException.class,
-                () -> ReactorUtils.invokeReactsOn(accept, sample, new Events.SampleEvent("")));
+                () -> ReactorUtils.invokeReactsOn(accept, sample, event));
 
         assertEquals("Boom", exception.getMessage());
         assertEquals(UnsupportedOperationException.class, exception.getCause().getClass());

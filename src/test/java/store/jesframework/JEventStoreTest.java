@@ -63,13 +63,15 @@ class JEventStoreTest {
 
     @Test
     void shouldThrowIllegalArgumentExceptionWhenNegativeSkip() {
-        assertThrows(IllegalArgumentException.class, () -> source.readBy(UUID.randomUUID(), -1));
+        final UUID uuid = UUID.randomUUID();
+        assertThrows(IllegalArgumentException.class, () -> source.readBy(uuid, -1));
     }
 
     @Test
     void shouldThrowIllegalStateExceptionWhenStoreCantReadSnapshots() {
         final JEventStore store = new JEventStore(new InMemoryStoreProvider());
-        assertThrows(IllegalStateException.class, () -> store.readBy(UUID.randomUUID(), 1));
+        final UUID uuid = UUID.randomUUID();
+        assertThrows(IllegalStateException.class, () -> store.readBy(uuid, 1));
     }
 
     @Test

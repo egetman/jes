@@ -9,7 +9,8 @@ class AggregateTest {
 
     @Test
     void notOverriddenUuidInvocationShouldThrowNullPointerException() {
-        assertThrows(NullPointerException.class, () -> new Aggregate().uuid());
+        final Aggregate aggregate = new Aggregate();
+        assertThrows(NullPointerException.class, aggregate::uuid);
     }
 
     @Test

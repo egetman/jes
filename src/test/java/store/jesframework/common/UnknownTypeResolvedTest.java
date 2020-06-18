@@ -10,7 +10,8 @@ class UnknownTypeResolvedTest {
     @Test
     @SuppressWarnings("ConstantConditions")
     void unknownTypeResolvedShouldProtectItsInvariants() {
-        assertThrows(NullPointerException.class, () -> new UnknownTypeResolved(null, new Object()));
+        final Object object = new Object();
+        assertThrows(NullPointerException.class, () -> new UnknownTypeResolved(null, object));
         assertThrows(NullPointerException.class, () -> new UnknownTypeResolved("", null));
 
         assertEquals(new UnknownTypeResolved("", ""), new UnknownTypeResolved("", ""));
