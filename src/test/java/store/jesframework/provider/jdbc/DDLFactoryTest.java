@@ -9,16 +9,16 @@ import org.junit.jupiter.api.parallel.Execution;
 import lombok.SneakyThrows;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.parallel.ExecutionMode.CONCURRENT;
-import static store.jesframework.provider.jdbc.DDLFactory.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static store.jesframework.provider.jdbc.DDLFactory.DDLReader.readDDL;
 import static store.jesframework.provider.jdbc.DDLFactory.getAggregateStoreDDL;
 import static store.jesframework.provider.jdbc.DDLFactory.getEventStoreDDL;
 import static store.jesframework.provider.jdbc.DDLFactory.getLockDDL;
 import static store.jesframework.provider.jdbc.DDLFactory.getOffsetsDDL;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 @Execution(CONCURRENT)
 class DDLFactoryTest {
