@@ -67,14 +67,16 @@ class FailureTest {
         final JdbcStoreProvider<String> provider = new JdbcStoreProvider<>(newPostgresDataSource(), JSON_JACKSON);
 
         final SampleEvent event = new SampleEvent("SampleName", UUID.randomUUID(), 100500);
-        final ProjectionFailure failure = new ProjectionFailure(event, getClass().getName(), 2, "NullPointerException");
+        final ProjectionFailure expected = new ProjectionFailure(event, getClass().getName(), 2, "NullPointerException");
 
-        assertDoesNotThrow(() -> provider.write(failure));
+        assertDoesNotThrow(() -> provider.write(expected));
 
         final Collection<Event> read = provider.readBy(event.uuid());
         // just single element
         assertEquals(1, read.size());
-        assertEquals(failure, read.iterator().next());
+
+        final Event actual = read.iterator().next();
+        assertEquals(expected, actual);
     }
 
     @Test

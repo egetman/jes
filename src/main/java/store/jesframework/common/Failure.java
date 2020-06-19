@@ -11,6 +11,9 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import store.jesframework.Event;
 
+import static java.time.Instant.now;
+import static java.time.ZoneOffset.systemDefault;
+
 /**
  * Common system event that indicates handling failure.
  */
@@ -27,7 +30,7 @@ class Failure implements Event {
     /**
      * A date-time of the incident. Default is #now().
      */
-    private final ZonedDateTime when = ZonedDateTime.now();
+    private final ZonedDateTime when = ZonedDateTime.now(systemDefault().getRules().getOffset(now()));
 
     /**
      * Constructor for {@literal Failure} event.

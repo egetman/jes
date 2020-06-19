@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.DatabindContext;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.jsontype.TypeIdResolver;
+import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
 import com.fasterxml.jackson.databind.jsontype.impl.TypeIdResolverBase;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 
@@ -28,7 +29,7 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import static com.fasterxml.jackson.databind.DeserializationFeature.ADJUST_DATES_TO_CONTEXT_TIME_ZONE;
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 import static com.fasterxml.jackson.databind.ObjectMapper.DefaultTypeResolverBuilder;
-import static com.fasterxml.jackson.databind.ObjectMapper.DefaultTyping;
+import static com.fasterxml.jackson.databind.ObjectMapper.DefaultTyping.NON_FINAL;
 import static com.fasterxml.jackson.databind.SerializationFeature.FAIL_ON_EMPTY_BEANS;
 import static com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS;
 
@@ -67,7 +68,7 @@ class JacksonSerializer<S> implements Serializer<S, String> {
 
         final TypeIdResolver resolver = new TypeIdWithClassNameFallbackResolver(context);
 
-        mapper.setDefaultTyping(new DefaultTypeResolverBuilder(DefaultTyping.NON_FINAL)
+        mapper.setDefaultTyping(new DefaultTypeResolverBuilder(NON_FINAL, LaissezFaireSubTypeValidator.instance)
                 .init(Id.CUSTOM, resolver)
                 .inclusion(As.PROPERTY)
                 .typeProperty("@type"));
