@@ -64,7 +64,7 @@
         <javax.persistence-api.version>2.2</javax.persistence-api.version>
 
         <!-- test dependencies versions -->
-        <h2.version>1.4.199</h2.version>
+        <h2.version>2.1.210</h2.version>
         <mysql.version>8.0.20</mysql.version>
         <HikariCP.version>3.4.0</HikariCP.version>
         <postgresql.version>42.2.8</postgresql.version>
