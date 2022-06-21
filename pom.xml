@@ -65,7 +65,7 @@
 
         <!-- test dependencies versions -->
         <h2.version>1.4.199</h2.version>
-        <mysql.version>8.0.20</mysql.version>
+        <mysql.version>8.0.28</mysql.version>
         <HikariCP.version>3.4.0</HikariCP.version>
         <postgresql.version>42.2.8</postgresql.version>
         <hibernate.version>5.4.1.Final</hibernate.version>
